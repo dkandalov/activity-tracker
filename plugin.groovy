@@ -1,7 +1,6 @@
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.WindowManager
@@ -23,7 +22,7 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 			new DefaultActionGroup().with{
 				add(new AnAction() {
 					@Override void actionPerformed(AnActionEvent event) {
-						def trackingIsOn = changeGlobalVar(isTrackingVarName, true){ !it }
+						def trackingIsOn = changeGlobalVar(isTrackingVarName, false){ !it }
 						show("Tracking current file: " + (trackingIsOn ? "ON" : "OFF"))
 						if (trackingIsOn) startTracking()
 					}
@@ -76,8 +75,9 @@ LogEvent createLogEvent(Date now) {
 	// (e.g. when "Rename class" frame is active)
 	if (activeFrame == null) return new LogEvent(now, "", "", "")
 	def project = activeFrame.project
-
 	def editor = currentEditorIn(project)
+	if (editor == null) return new LogEvent(now, project.name, "", "")
+
 	def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
 	PsiMethod psiMethod = findParent(elementAtOffset, {it instanceof PsiMethod})
 	PsiFile psiFile = findParent(elementAtOffset, {it instanceof PsiFile})
@@ -91,8 +91,7 @@ LogEvent createLogEvent(Date now) {
 }
 
 private static String fullNameOf(PsiElement psiElement) {
-	if (psiElement == null) "null"
-	else if (psiElement instanceof PsiFile) ""
+	if (psiElement == null || psiElement instanceof PsiFile) ""
 	else if (psiElement in PsiAnonymousClass) {
 		def parentName = fullNameOf(psiElement.parent)
 		def name = "[" + psiElement.baseClassType.className + "]"
