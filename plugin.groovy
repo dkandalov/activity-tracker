@@ -4,17 +4,15 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.WindowManager
-import com.intellij.psi.PsiAnonymousClass
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiMethod
+import com.intellij.psi.*
 
-import javax.swing.SwingUtilities
+import javax.swing.*
 import java.text.SimpleDateFormat
+import java.util.concurrent.atomic.AtomicReference
 
 import static intellijeval.PluginUtil.*
 
+def statsWriter = new StatsWriter(pluginPath)
 
 registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEvent ->
 	def isTrackingVarName = "WhatIWorkOnStats.isTracking"
@@ -24,19 +22,20 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 			new DefaultActionGroup().with{
 				add(new AnAction() {
 					@Override void actionPerformed(AnActionEvent event) {
-						def isTracking = changeGlobalVar(isTrackingVarName, true){ !it }
-						show("Tracking current file: " + (isTracking ? "ON" : "OFF"))
+						def trackingIsOn = changeGlobalVar(isTrackingVarName, true){ !it }
+						show("Tracking current file: " + (trackingIsOn ? "ON" : "OFF"))
+						if (trackingIsOn) startTracking()
+					}
 
-						if (isTracking) {
-							new Thread({
-								while (getGlobalVar(isTrackingVarName)) {
-									SwingUtilities.invokeLater{
-										log(createLogEvent(new Date()).toCsv())
-									}
-									Thread.sleep(1000)
-								}
-							} as Runnable).start()
-						}
+					private void startTracking() {
+						new Thread({
+							while (getGlobalVar(isTrackingVarName)) {
+								AtomicReference logEvent = new AtomicReference<LogEvent>()
+								SwingUtilities.invokeAndWait { logEvent.set(createLogEvent(new Date())) }
+								if (logEvent != null) statsWriter.append(logEvent.get().toCsv())
+								Thread.sleep(1000)
+							}
+						} as Runnable).start()
 					}
 
 					@Override void update(AnActionEvent event) {
@@ -56,7 +55,19 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 			true
 	).showCenteredInCurrentWindow(actionEvent.project)
 }
-show("started")
+show("reloaded")
+
+class StatsWriter {
+	private final String statsFilePath
+
+	StatsWriter(String path) {
+		this.statsFilePath = path + "/stats.csv"
+	}
+
+	def append(String csvLine) {
+		new File(statsFilePath).append(csvLine + "\n")
+	}
+}
 
 LogEvent createLogEvent(Date now) {
 	IdeFrame activeFrame = WindowManager.instance.allProjectFrames.find{it.active}
