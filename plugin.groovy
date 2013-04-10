@@ -1,6 +1,7 @@
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.WindowManager
@@ -85,7 +86,7 @@ LogEvent createLogEvent(Date now) {
 	// this doesn't take into account time spent in toolwindows
 	// (when the same frame is active but editor doesn't have focus)
 	def file = currentFileIn(project)
-	def filePath = (file == null ? "" : file.path)
+	def filePath = (file == null ? "" : file.path.replace(project.basePath, ""))
 	new LogEvent(now, project.name, filePath, fullNameOf(currentElement))
 }
 
@@ -104,7 +105,7 @@ private static String fullNameOf(PsiElement psiElement) {
 	}
 }
 
-private def <T > T findParent(PsiElement element, Closure matches) {
+private def <T> T findParent(PsiElement element, Closure matches) {
 	if (element == null) null
 	else if (matches(element)) element as T
 	else findParent(element.parent, matches)
