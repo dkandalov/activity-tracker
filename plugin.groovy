@@ -67,18 +67,6 @@ void startTrackingWhatIsGoingOn(StatsWriter statsWriter, String isTrackingVarNam
 	} as Runnable).start()
 }
 
-class StatsWriter {
-	private final String statsFilePath
-
-	StatsWriter(String path) {
-		this.statsFilePath = path + "/stats.csv"
-	}
-
-	def append(String csvLine) {
-		new File(statsFilePath).append(csvLine + "\n")
-	}
-}
-
 LogEvent createLogEvent(Date now) {
 	IdeFrame activeFrame = WindowManager.instance.allProjectFrames.find{it.active}
 	// this tracks project frame as inactive during refactoring
@@ -120,6 +108,23 @@ private def <T> T findParent(PsiElement element, Closure matches) {
 	else findParent(element.parent, matches)
 }
 
+
+class StatsWriter {
+	private final String statsFilePath
+
+	StatsWriter(String path) {
+		this.statsFilePath = path + "/stats.csv"
+	}
+
+	def append(String csvLine) {
+		new File(statsFilePath).append(csvLine + "\n")
+	}
+}
+
+class StatsReader {
+	// TODO
+}
+
 @groovy.transform.Immutable
 final class LogEvent {
 	private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("kk:mm:ss dd/MM/yyyy")
@@ -127,6 +132,11 @@ final class LogEvent {
 	String projectName
 	String file
 	String element
+
+	static LogEvent fromCsv(String csvLine) {
+		def (date, projectName, file, element) = csvLine.split(",")
+		new LogEvent(TIME_FORMAT.parse(date), projectName, file, element)
+	}
 
 	String toCsv() {
 		"${TIME_FORMAT.format(time)},$projectName,$file,$element"
