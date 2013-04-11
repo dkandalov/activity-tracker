@@ -13,29 +13,23 @@ import java.util.concurrent.atomic.AtomicReference
 import static intellijeval.PluginUtil.*
 
 def statsWriter = new StatsWriter(pluginPath)
+def isTrackingVarName = "WhatIWorkOnStats.isTracking"
+
+if (isIdeStartup && !getGlobalVar(isTrackingVarName)) {
+	setGlobalVar(isTrackingVarName, true)
+	startTrackingWhatIsGoingOn(statsWriter, isTrackingVarName)
+	show("Tracking current file: ON")
+}
 
 registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEvent ->
-	def isTrackingVarName = "WhatIWorkOnStats.isTracking"
-
 	JBPopupFactory.instance.createActionGroupPopup(
 			"Current file statistics",
 			new DefaultActionGroup().with{
 				add(new AnAction() {
 					@Override void actionPerformed(AnActionEvent event) {
 						def trackingIsOn = changeGlobalVar(isTrackingVarName, false){ !it }
+						if (trackingIsOn) startTrackingWhatIsGoingOn(statsWriter, isTrackingVarName)
 						show("Tracking current file: " + (trackingIsOn ? "ON" : "OFF"))
-						if (trackingIsOn) startTracking()
-					}
-
-					private void startTracking() {
-						new Thread({
-							while (getGlobalVar(isTrackingVarName)) {
-								AtomicReference logEvent = new AtomicReference<LogEvent>()
-								SwingUtilities.invokeAndWait { logEvent.set(createLogEvent(new Date())) }
-								if (logEvent != null) statsWriter.append(logEvent.get().toCsv())
-								Thread.sleep(1000)
-							}
-						} as Runnable).start()
 					}
 
 					@Override void update(AnActionEvent event) {
@@ -48,6 +42,11 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 						show("Analyze history") // TODO
 					}
 				})
+				add(new AnAction("Reset history") {
+					@Override void actionPerformed(AnActionEvent event) {
+						show("Reset history") // TODO
+					}
+				})
 				it
 			},
 			actionEvent.dataContext,
@@ -56,6 +55,17 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 	).showCenteredInCurrentWindow(actionEvent.project)
 }
 show("reloaded")
+
+void startTrackingWhatIsGoingOn(StatsWriter statsWriter, String isTrackingVarName) {
+	new Thread({
+		while (getGlobalVar(isTrackingVarName)) {
+			AtomicReference logEvent = new AtomicReference<LogEvent>()
+			SwingUtilities.invokeAndWait { logEvent.set(createLogEvent(new Date())) }
+			if (logEvent != null) statsWriter.append(logEvent.get().toCsv())
+			Thread.sleep(1000)
+		}
+	} as Runnable).start()
+}
 
 class StatsWriter {
 	private final String statsFilePath
