@@ -37,14 +37,15 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 						event.presentation.text = (isTracking ? "Stop tracking current file" : "Start tracking current file")
 					}
 				})
-				add(new AnAction("Analyze history") {
+				add(new AnAction("Analyze last 30 min history") {
 					@Override void actionPerformed(AnActionEvent event) {
-						show("Analyze history") // TODO
+						show("Analyze last 30 min history") // TODO
 					}
 				})
-				add(new AnAction("Reset history") {
+				add(new AnAction("Delete all history") {
 					@Override void actionPerformed(AnActionEvent event) {
-						show("Reset history") // TODO
+						statsWriter.resetHistory()
+						show("All history was deleted")
 					}
 				})
 				it
@@ -118,6 +119,10 @@ class StatsWriter {
 
 	def append(String csvLine) {
 		new File(statsFilePath).append(csvLine + "\n")
+	}
+
+	def resetHistory() {
+		new File(statsFilePath).delete()
 	}
 }
 
