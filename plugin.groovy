@@ -5,6 +5,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.*
+import groovy.time.TimeCategory
 
 import javax.swing.*
 import java.text.SimpleDateFormat
@@ -12,12 +13,12 @@ import java.util.concurrent.atomic.AtomicReference
 
 import static intellijeval.PluginUtil.*
 
-def statsWriter = new StatsWriter(pluginPath)
+def logEventsIO = new LogEventsIO(pluginPath + "/stats")
 def isTrackingVarName = "WhatIWorkOnStats.isTracking"
 
 if (isIdeStartup && !getGlobalVar(isTrackingVarName)) {
 	setGlobalVar(isTrackingVarName, true)
-	startTrackingWhatIsGoingOn(statsWriter, isTrackingVarName)
+	startTrackingWhatIsGoingOn(logEventsIO, isTrackingVarName)
 	show("Tracking current file: ON")
 }
 
@@ -28,7 +29,7 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 				add(new AnAction() {
 					@Override void actionPerformed(AnActionEvent event) {
 						def trackingIsOn = changeGlobalVar(isTrackingVarName, false){ !it }
-						if (trackingIsOn) startTrackingWhatIsGoingOn(statsWriter, isTrackingVarName)
+						if (trackingIsOn) startTrackingWhatIsGoingOn(logEventsIO, isTrackingVarName)
 						show("Tracking current file: " + (trackingIsOn ? "ON" : "OFF"))
 					}
 
@@ -39,12 +40,13 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 				})
 				add(new AnAction("Analyze last 30 min history") {
 					@Override void actionPerformed(AnActionEvent event) {
-						show("Analyze last 30 min history") // TODO
+						show(logEventsIO.readHistory(minus30minutesFrom(now()), now()))
+						show("Analyze last 30 min of history") // TODO
 					}
 				})
 				add(new AnAction("Delete all history") {
 					@Override void actionPerformed(AnActionEvent event) {
-						statsWriter.resetHistory()
+						logEventsIO.resetHistory()
 						show("All history was deleted")
 					}
 				})
@@ -57,15 +59,20 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 }
 show("reloaded")
 
-void startTrackingWhatIsGoingOn(StatsWriter statsWriter, String isTrackingVarName) {
+void startTrackingWhatIsGoingOn(LogEventsIO statsWriter, String isTrackingVarName) {
 	new Thread({
 		while (getGlobalVar(isTrackingVarName)) {
 			AtomicReference logEvent = new AtomicReference<LogEvent>()
-			SwingUtilities.invokeAndWait { logEvent.set(createLogEvent(new Date())) }
+			SwingUtilities.invokeAndWait { logEvent.set(createLogEvent(now())) }
 			if (logEvent != null) statsWriter.append(logEvent.get().toCsv())
 			Thread.sleep(1000)
 		}
 	} as Runnable).start()
+}
+
+Date now() { new Date() }
+Date minus30minutesFrom(Date time) {
+	use(TimeCategory) { time - 30.minutes }
 }
 
 LogEvent createLogEvent(Date now) {
@@ -110,10 +117,10 @@ private def <T> T findParent(PsiElement element, Closure matches) {
 }
 
 
-class StatsWriter {
+class LogEventsIO {
 	private final String statsFilePath
 
-	StatsWriter(String path) {
+	LogEventsIO(String path) {
 		this.statsFilePath = path + "/stats.csv"
 	}
 
@@ -124,10 +131,20 @@ class StatsWriter {
 	def resetHistory() {
 		new File(statsFilePath).delete()
 	}
-}
 
-class StatsReader {
-	// TODO
+	List<LogEvent> readHistory(Date fromTime, Date toTime) {
+		new File(statsFilePath).withReader { reader ->
+			def result = []
+			String line
+			while ((line = reader.readLine()) != null) {
+				def event = LogEvent.fromCsv(line)
+				if (event.time.after(fromTime) && event.time.before(toTime))
+					result << event
+				if (event.time.after(toTime)) break
+			}
+			result
+		}
+	}
 }
 
 @groovy.transform.Immutable
@@ -139,7 +156,7 @@ final class LogEvent {
 	String element
 
 	static LogEvent fromCsv(String csvLine) {
-		def (date, projectName, file, element) = csvLine.split(",")
+		def (date, projectName, file, element) = csvLine.split(",").toList()
 		new LogEvent(TIME_FORMAT.parse(date), projectName, file, element)
 	}
 
