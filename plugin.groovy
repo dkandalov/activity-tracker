@@ -11,6 +11,7 @@ import javax.swing.*
 import java.text.SimpleDateFormat
 import java.util.concurrent.atomic.AtomicReference
 
+import static EventsAnalyzer.*
 import static intellijeval.PluginUtil.*
 
 def logEventsIO = new LogEventsIO(pluginPath + "/stats")
@@ -40,8 +41,9 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 				})
 				add(new AnAction("Analyze last 30 min history") {
 					@Override void actionPerformed(AnActionEvent event) {
-						show(logEventsIO.readHistory(minus30minutesFrom(now()), now()))
-						show("Analyze last 30 min of history") // TODO
+						def history = logEventsIO.readHistory(minus30minutesFrom(now()), now())
+						show(EventsAnalyzer.asString(aggregateByFile(history)))
+						show(EventsAnalyzer.asString(aggregateByElement(history)))
 					}
 				})
 				add(new AnAction("Delete all history") {
@@ -116,6 +118,24 @@ private def <T> T findParent(PsiElement element, Closure matches) {
 	else findParent(element.parent, matches)
 }
 
+
+class EventsAnalyzer {
+	static Map<String, Integer> aggregateByFile(List<LogEvent> events) {
+		events.groupBy{it.file}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
+	}
+
+	static Map<String, Integer> aggregateByElement(List<LogEvent> events) {
+		events.groupBy{it.element}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
+	}
+
+	static asString(Map<String, Integer> map) {
+		def durationAsString = { Integer seconds ->
+			seconds.intdiv(60) + ":" + String.format("%02d", seconds % 60)
+		}
+		def keyAsString = { it == null ? "[not in editor]" : it }
+		map.collectEntries{ [keyAsString(it.key), durationAsString(it.value)] }.entrySet().join("\n")
+	}
+}
 
 class LogEventsIO {
 	private final String statsFilePath
