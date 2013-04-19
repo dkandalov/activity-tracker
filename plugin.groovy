@@ -94,7 +94,8 @@ LogEvent createLogEvent(Date now) {
 	// this doesn't take into account time spent in toolwindows
 	// (when the same frame is active but editor doesn't have focus)
 	def file = currentFileIn(project)
-	def filePath = (file == null ? "" : file.path.replace(project.basePath, ""))
+	// don't try to shorten file name by excluding project because different projects might have same files
+	def filePath = (file == null ? "" : file.path)
 	new LogEvent(now, project.name, filePath, fullNameOf(currentElement))
 }
 
