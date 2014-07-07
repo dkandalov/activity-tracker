@@ -8,11 +8,11 @@ import com.intellij.psi.*
 import groovy.time.TimeCategory
 
 import javax.swing.*
-import java.text.SimpleDateFormat
 import java.util.concurrent.atomic.AtomicReference
 
-import static EventsAnalyzer.*
-import static intellijeval.PluginUtil.*
+import static EventsAnalyzer.aggregateByElement
+import static EventsAnalyzer.aggregateByFile
+import static liveplugin.PluginUtil.*
 
 def logEventsIO = new LogEventsIO(pluginPath + "/stats")
 def isTrackingVarName = "WhatIWorkOnStats.isTracking"
@@ -24,34 +24,40 @@ if (isIdeStartup && !getGlobalVar(isTrackingVarName)) {
 }
 
 registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEvent ->
-	JBPopupFactory.instance.createActionGroupPopup(
-			"Current file statistics",
-			new DefaultActionGroup().with{
-				add(new AnAction() {
-					@Override void actionPerformed(AnActionEvent event) {
-						def trackingIsOn = changeGlobalVar(isTrackingVarName, false){ !it }
-						if (trackingIsOn) startTrackingWhatIsGoingOn(logEventsIO, isTrackingVarName)
-						show("Tracking current file: " + (trackingIsOn ? "ON" : "OFF"))
-					}
+    def trackCurrentFile = new AnAction() {
+        @Override
+        void actionPerformed(AnActionEvent event) {
+            def trackingIsOn = changeGlobalVar(isTrackingVarName, false) { !it }
+            if (trackingIsOn) startTrackingWhatIsGoingOn(logEventsIO, isTrackingVarName)
+            show("Tracking current file: " + (trackingIsOn ? "ON" : "OFF"))
+        }
 
-					@Override void update(AnActionEvent event) {
-						def isTracking = getGlobalVar(isTrackingVarName, false)
-						event.presentation.text = (isTracking ? "Stop tracking current file" : "Start tracking current file")
-					}
-				})
-				add(new AnAction("Analyze last 30 min history") {
-					@Override void actionPerformed(AnActionEvent event) {
-						def history = logEventsIO.readHistory(minus30minutesFrom(now()), now())
-						show(EventsAnalyzer.asString(aggregateByFile(history)))
-						show(EventsAnalyzer.asString(aggregateByElement(history)))
-					}
-				})
-				add(new AnAction("Delete all history") {
-					@Override void actionPerformed(AnActionEvent event) {
-						logEventsIO.resetHistory()
-						show("All history was deleted")
-					}
-				})
+        @Override
+        void update(AnActionEvent event) {
+            def isTracking = getGlobalVar(isTrackingVarName, false)
+            event.presentation.text = (isTracking ? "Stop tracking current file" : "Start tracking current file")
+        }
+    }
+    def statistics = new AnAction("Last 30 min stats") {
+        @Override void actionPerformed(AnActionEvent event) {
+            def history = logEventsIO.readHistory(minus30minutesFrom(now()), now())
+            show(EventsAnalyzer.asString(aggregateByFile(history)))
+            show(EventsAnalyzer.asString(aggregateByElement(history)))
+        }
+    }
+    def deleteAllHistory = new AnAction("Delete all history") {
+        @Override void actionPerformed(AnActionEvent event) {
+            logEventsIO.resetHistory()
+            show("All history was deleted")
+        }
+    }
+
+    JBPopupFactory.instance.createActionGroupPopup(
+			"Current file statistics",
+			new DefaultActionGroup().with {
+                add(trackCurrentFile)
+                add(statistics)
+                add(deleteAllHistory)
 				it
 			},
 			actionEvent.dataContext,
@@ -120,28 +126,12 @@ private def <T> T findParent(PsiElement element, Closure matches) {
 }
 
 
-class EventsAnalyzer {
-	static Map<String, Integer> aggregateByFile(List<LogEvent> events) {
-		events.groupBy{it.file}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
-	}
-
-	static Map<String, Integer> aggregateByElement(List<LogEvent> events) {
-		events.groupBy{it.element}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
-	}
-
-	static asString(Map<String, Integer> map) {
-		def durationAsString = { Integer seconds ->
-			seconds.intdiv(60) + ":" + String.format("%02d", seconds % 60)
-		}
-		def keyAsString = { it == null ? "[not in editor]" : it }
-		map.collectEntries{ [keyAsString(it.key), durationAsString(it.value)] }.entrySet().join("\n")
-	}
-}
-
 class LogEventsIO {
 	private final String statsFilePath
 
 	LogEventsIO(String path) {
+        def pathFile = new File(path)
+        if (!pathFile.exists()) pathFile.mkdir()
 		this.statsFilePath = path + "/stats.csv"
 	}
 
@@ -168,20 +158,3 @@ class LogEventsIO {
 	}
 }
 
-@groovy.transform.Immutable
-final class LogEvent {
-	private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("kk:mm:ss dd/MM/yyyy")
-	Date time
-	String projectName
-	String file
-	String element
-
-	static LogEvent fromCsv(String csvLine) {
-		def (date, projectName, file, element) = csvLine.split(",").toList()
-		new LogEvent(TIME_FORMAT.parse(date), projectName, file, element)
-	}
-
-	String toCsv() {
-		"${TIME_FORMAT.format(time)},$projectName,$file,$element"
-	}
-}

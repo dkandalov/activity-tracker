@@ -4,7 +4,7 @@ What is this?
 This is a micro-plugin for IntelliJ that collects stats about which file is currently open
 and which class/method cursor in on.
 <br/>
-(It runs inside [intellij-eval](https://github.com/dkandalov/intellij_eval) plugin.
+(It runs inside [live-plugin](https://github.com/dkandalov/live-plugin).
 Implemented for Java but should be easy to extend for other languages supported by IntelliJ.)
 
 
