@@ -14,12 +14,12 @@ import static EventsAnalyzer.aggregateByElement
 import static EventsAnalyzer.aggregateByFile
 import static liveplugin.PluginUtil.*
 
-def logEventsIO = new LogEventsIO(pluginPath + "/stats")
+def statsLog = new StatsLog(pluginPath + "/stats")
 def isTrackingVarName = "WhatIWorkOnStats.isTracking"
 
 if (isIdeStartup && !getGlobalVar(isTrackingVarName)) {
 	setGlobalVar(isTrackingVarName, true)
-	startTrackingWhatIsGoingOn(logEventsIO, isTrackingVarName)
+	startTrackingWhatIsGoingOn(statsLog, isTrackingVarName)
 	show("Tracking current file: ON")
 }
 
@@ -28,7 +28,7 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
         @Override
         void actionPerformed(AnActionEvent event) {
             def trackingIsOn = changeGlobalVar(isTrackingVarName, false) { !it }
-            if (trackingIsOn) startTrackingWhatIsGoingOn(logEventsIO, isTrackingVarName)
+            if (trackingIsOn) startTrackingWhatIsGoingOn(statsLog, isTrackingVarName)
             show("Tracking current file: " + (trackingIsOn ? "ON" : "OFF"))
         }
 
@@ -40,14 +40,14 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
     }
     def statistics = new AnAction("Last 30 min stats") {
         @Override void actionPerformed(AnActionEvent event) {
-            def history = logEventsIO.readHistory(minus30minutesFrom(now()), now())
+            def history = statsLog.readHistory(minus30minutesFrom(now()), now())
             show(EventsAnalyzer.asString(aggregateByFile(history)))
             show(EventsAnalyzer.asString(aggregateByElement(history)))
         }
     }
     def deleteAllHistory = new AnAction("Delete all history") {
         @Override void actionPerformed(AnActionEvent event) {
-            logEventsIO.resetHistory()
+            statsLog.resetHistory()
             show("All history was deleted")
         }
     }
@@ -67,12 +67,14 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 }
 show("reloaded")
 
-void startTrackingWhatIsGoingOn(LogEventsIO statsWriter, String isTrackingVarName) {
+void startTrackingWhatIsGoingOn(StatsLog statsLog, String isTrackingVarName) {
 	new Thread({
 		while (getGlobalVar(isTrackingVarName)) {
 			AtomicReference logEvent = new AtomicReference<LogEvent>()
-			SwingUtilities.invokeAndWait { logEvent.set(createLogEvent(now())) }
-			if (logEvent != null) statsWriter.append(logEvent.get().toCsv())
+			SwingUtilities.invokeAndWait {
+				logEvent.set(createLogEvent(now()))
+			}
+			if (logEvent != null) statsLog.append(logEvent.get().toCsv())
 			Thread.sleep(1000)
 		}
 	} as Runnable).start()
@@ -126,10 +128,10 @@ private def <T> T findParent(PsiElement element, Closure matches) {
 }
 
 
-class LogEventsIO {
+class StatsLog {
 	private final String statsFilePath
 
-	LogEventsIO(String path) {
+	StatsLog(String path) {
         def pathFile = new File(path)
         if (!pathFile.exists()) pathFile.mkdir()
 		this.statsFilePath = path + "/stats.csv"
