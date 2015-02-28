@@ -3,7 +3,7 @@ import groovy.transform.Immutable
 import java.text.SimpleDateFormat
 
 @Immutable
-final class TrackingEvent {
+final class TrackerEvent {
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("kk:mm:ss dd/MM/yyyy")
     Date time
     String projectName
@@ -11,9 +11,9 @@ final class TrackingEvent {
     String methodOrClass
     String actionId
 
-    static TrackingEvent fromCsv(String csvLine) {
+    static TrackerEvent fromCsv(String csvLine) {
         def (date, projectName, file, element, actionId) = csvLine.split(",").toList()
-        new TrackingEvent(TIME_FORMAT.parse(date), projectName, file, element, actionId)
+        new TrackerEvent(TIME_FORMAT.parse(date), projectName, file, element, actionId)
     }
 
     String toCsv() {

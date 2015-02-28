@@ -1,9 +1,9 @@
 class EventsAnalyzer {
-    static Map<String, Integer> aggregateByFile(List<TrackingEvent> events) {
+    static Map<String, Integer> aggregateByFile(List<TrackerEvent> events) {
         events.groupBy{it.file}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
     }
 
-    static Map<String, Integer> aggregateByElement(List<TrackingEvent> events) {
+    static Map<String, Integer> aggregateByElement(List<TrackerEvent> events) {
         events.groupBy{it.methodOrClass}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
     }
 

@@ -1,6 +1,5 @@
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.WindowManager
@@ -14,7 +13,7 @@ import static EventsAnalyzer.aggregateByElement
 import static EventsAnalyzer.aggregateByFile
 import static liveplugin.PluginUtil.*
 
-def statsLog = new StatsLog(pluginPath + "/stats")
+def statsLog = new TrackerLog(pluginPath + "/stats")
 def isTrackingVarName = "WhatIWorkOnStats.isTracking"
 
 if (isIdeStartup && !getGlobalVar(isTrackingVarName)) {
@@ -71,22 +70,29 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 	).showCenteredInCurrentWindow(actionEvent.project)
 }
 
-void startTracking(StatsLog statsLog, String isTrackingVarName) {
-//	ActionManager.instance.addAnActionListener(new AnActionListener() {
-//		@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
-//			def actionId = ActionManager.instance.getId(anAction)
-//			statsLog.append(createLogEvent(actionId).toCsv())
-//		}
-//		@Override void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
-//		@Override void beforeEditorTyping(char c, DataContext dataContext) {}
-//	})
+void startTracking(TrackerLog statsLog, String isTrackingVarName) {
+	if (false) {
+		ActionManager.instance.addAnActionListener(new AnActionListener() {
+			@Override
+			void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
+				def actionId = ActionManager.instance.getId(anAction)
+				statsLog.append(createLogEvent(actionId))
+			}
+
+			@Override
+			void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
+
+			@Override
+			void beforeEditorTyping(char c, DataContext dataContext) {}
+		})
+	}
 	new Thread({
 		while (getGlobalVar(isTrackingVarName)) {
-			AtomicReference logEvent = new AtomicReference<TrackingEvent>()
+			AtomicReference logEvent = new AtomicReference<TrackerEvent>()
 			SwingUtilities.invokeAndWait {
 				logEvent.set(createLogEvent())
 			}
-			if (logEvent != null) statsLog.append(logEvent.get().toCsv())
+			if (logEvent != null) statsLog.append(logEvent.get())
 			Thread.sleep(1000)
 		}
 	} as Runnable).start()
@@ -97,14 +103,14 @@ Date minus30minutesFrom(Date time) {
 	use(TimeCategory) { time - 30.minutes }
 }
 
-TrackingEvent createLogEvent(String actionId = "", Date time = now()) {
+TrackerEvent createLogEvent(String actionId = "", Date time = now()) {
 	IdeFrame activeFrame = WindowManager.instance.allProjectFrames.find{it.active}
 	// this tracks project frame as inactive during refactoring
 	// (e.g. when "Rename class" frame is active)
-	if (activeFrame == null) return new TrackingEvent(time, "", "", "", actionId)
+	if (activeFrame == null) return new TrackerEvent(time, "", "", "", actionId)
 	def project = activeFrame.project
 	def editor = currentEditorIn(project)
-	if (editor == null) return new TrackingEvent(time, project.name, "", "", actionId)
+	if (editor == null) return new TrackerEvent(time, project.name, "", "", actionId)
 
 	def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
 	PsiMethod psiMethod = findParent(elementAtOffset, {it instanceof PsiMethod})
@@ -116,7 +122,7 @@ TrackingEvent createLogEvent(String actionId = "", Date time = now()) {
 	def file = currentFileIn(project)
 	// don't try to shorten file name by excluding project because different projects might have same files
 	def filePath = (file == null ? "" : file.path)
-	new TrackingEvent(time, project.name, filePath, fullNameOf(currentElement), actionId)
+	new TrackerEvent(time, project.name, filePath, fullNameOf(currentElement), actionId)
 }
 
 private static String fullNameOf(PsiElement psiElement) {
@@ -137,38 +143,5 @@ private def <T> T findParent(PsiElement element, Closure matches) {
 	if (element == null) null
 	else if (matches(element)) element as T
 	else findParent(element.parent, matches)
-}
-
-
-class StatsLog {
-	private final String statsFilePath
-
-	StatsLog(String path) {
-        def pathFile = new File(path)
-        if (!pathFile.exists()) pathFile.mkdir()
-		this.statsFilePath = path + "/stats.csv"
-	}
-
-	def append(String csvLine) {
-		new File(statsFilePath).append(csvLine + "\n")
-	}
-
-	def resetHistory() {
-		new File(statsFilePath).delete()
-	}
-
-	List<TrackingEvent> readHistory(Date fromTime, Date toTime) {
-		new File(statsFilePath).withReader { reader ->
-			def result = []
-			String line
-			while ((line = reader.readLine()) != null) {
-				def event = TrackingEvent.fromCsv(line)
-				if (event.time.after(fromTime) && event.time.before(toTime))
-					result << event
-				if (event.time.after(toTime)) break
-			}
-			result
-		}
-	}
 }
 
