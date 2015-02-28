@@ -1,10 +1,10 @@
 class EventsAnalyzer {
-    static Map<String, Integer> aggregateByFile(List<LogEvent> events) {
+    static Map<String, Integer> aggregateByFile(List<TrackingEvent> events) {
         events.groupBy{it.file}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
     }
 
-    static Map<String, Integer> aggregateByElement(List<LogEvent> events) {
-        events.groupBy{it.element}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
+    static Map<String, Integer> aggregateByElement(List<TrackingEvent> events) {
+        events.groupBy{it.methodOrClass}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
     }
 
     static asString(Map<String, Integer> map) {

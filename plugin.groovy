@@ -19,30 +19,35 @@ def isTrackingVarName = "WhatIWorkOnStats.isTracking"
 
 if (isIdeStartup && !getGlobalVar(isTrackingVarName)) {
 	setGlobalVar(isTrackingVarName, true)
-	startTrackingWhatIsGoingOn(statsLog, isTrackingVarName)
-	show("Tracking current file: ON")
+	startTracking(statsLog, isTrackingVarName)
+	show("Action tracking: ON")
 }
+if (!isIdeStartup) show("Reloaded action tracker 2")
+
 
 registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEvent ->
     def trackCurrentFile = new AnAction() {
-        @Override
-        void actionPerformed(AnActionEvent event) {
+        @Override void actionPerformed(AnActionEvent event) {
             def trackingIsOn = changeGlobalVar(isTrackingVarName, false) { !it }
-            if (trackingIsOn) startTrackingWhatIsGoingOn(statsLog, isTrackingVarName)
-            show("Tracking current file: " + (trackingIsOn ? "ON" : "OFF"))
+            if (trackingIsOn) {
+	            startTracking(statsLog, isTrackingVarName)
+            }
+            show("Action tracking: " + (trackingIsOn ? "ON" : "OFF"))
         }
 
-        @Override
-        void update(AnActionEvent event) {
+        @Override void update(AnActionEvent event) {
             def isTracking = getGlobalVar(isTrackingVarName, false)
-            event.presentation.text = (isTracking ? "Stop tracking current file" : "Start tracking current file")
+            event.presentation.text = (isTracking ? "Stop tracking" : "Start tracking")
         }
     }
     def statistics = new AnAction("Last 30 min stats") {
         @Override void actionPerformed(AnActionEvent event) {
             def history = statsLog.readHistory(minus30minutesFrom(now()), now())
-            show(EventsAnalyzer.asString(aggregateByFile(history)))
-            show(EventsAnalyzer.asString(aggregateByElement(history)))
+	        if (history.empty) show("There is no recorded history to analyze")
+	        else {
+		        show(EventsAnalyzer.asString(aggregateByFile(history)))
+		        show(EventsAnalyzer.asString(aggregateByElement(history)))
+	        }
         }
     }
     def deleteAllHistory = new AnAction("Delete all history") {
@@ -65,14 +70,21 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 			true
 	).showCenteredInCurrentWindow(actionEvent.project)
 }
-show("reloaded")
 
-void startTrackingWhatIsGoingOn(StatsLog statsLog, String isTrackingVarName) {
+void startTracking(StatsLog statsLog, String isTrackingVarName) {
+//	ActionManager.instance.addAnActionListener(new AnActionListener() {
+//		@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
+//			def actionId = ActionManager.instance.getId(anAction)
+//			statsLog.append(createLogEvent(actionId).toCsv())
+//		}
+//		@Override void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
+//		@Override void beforeEditorTyping(char c, DataContext dataContext) {}
+//	})
 	new Thread({
 		while (getGlobalVar(isTrackingVarName)) {
-			AtomicReference logEvent = new AtomicReference<LogEvent>()
+			AtomicReference logEvent = new AtomicReference<TrackingEvent>()
 			SwingUtilities.invokeAndWait {
-				logEvent.set(createLogEvent(now()))
+				logEvent.set(createLogEvent())
 			}
 			if (logEvent != null) statsLog.append(logEvent.get().toCsv())
 			Thread.sleep(1000)
@@ -85,14 +97,14 @@ Date minus30minutesFrom(Date time) {
 	use(TimeCategory) { time - 30.minutes }
 }
 
-LogEvent createLogEvent(Date now) {
+TrackingEvent createLogEvent(String actionId = "", Date time = now()) {
 	IdeFrame activeFrame = WindowManager.instance.allProjectFrames.find{it.active}
 	// this tracks project frame as inactive during refactoring
 	// (e.g. when "Rename class" frame is active)
-	if (activeFrame == null) return new LogEvent(now, "", "", "")
+	if (activeFrame == null) return new TrackingEvent(time, "", "", "", actionId)
 	def project = activeFrame.project
 	def editor = currentEditorIn(project)
-	if (editor == null) return new LogEvent(now, project.name, "", "")
+	if (editor == null) return new TrackingEvent(time, project.name, "", "", actionId)
 
 	def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
 	PsiMethod psiMethod = findParent(elementAtOffset, {it instanceof PsiMethod})
@@ -104,7 +116,7 @@ LogEvent createLogEvent(Date now) {
 	def file = currentFileIn(project)
 	// don't try to shorten file name by excluding project because different projects might have same files
 	def filePath = (file == null ? "" : file.path)
-	new LogEvent(now, project.name, filePath, fullNameOf(currentElement))
+	new TrackingEvent(time, project.name, filePath, fullNameOf(currentElement), actionId)
 }
 
 private static String fullNameOf(PsiElement psiElement) {
@@ -145,12 +157,12 @@ class StatsLog {
 		new File(statsFilePath).delete()
 	}
 
-	List<LogEvent> readHistory(Date fromTime, Date toTime) {
+	List<TrackingEvent> readHistory(Date fromTime, Date toTime) {
 		new File(statsFilePath).withReader { reader ->
 			def result = []
 			String line
 			while ((line = reader.readLine()) != null) {
-				def event = LogEvent.fromCsv(line)
+				def event = TrackingEvent.fromCsv(line)
 				if (event.time.after(fromTime) && event.time.before(toTime))
 					result << event
 				if (event.time.after(toTime)) break
