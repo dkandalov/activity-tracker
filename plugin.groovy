@@ -1,47 +1,66 @@
+import com.intellij.ide.IdeEventQueue
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.*
 import groovy.time.TimeCategory
 
 import javax.swing.*
+import java.awt.*
+import java.awt.event.KeyEvent
+import java.awt.event.MouseEvent
 import java.util.concurrent.atomic.AtomicReference
 
 import static EventsAnalyzer.aggregateByElement
 import static EventsAnalyzer.aggregateByFile
 import static liveplugin.PluginUtil.*
 
-def statsLog = new TrackerLog(pluginPath + "/stats")
-def isTrackingVarName = "WhatIWorkOnStats.isTracking"
+def trackerLog = new TrackerLog(pluginPath + "/stats")
+def isTracking = "ActionTrackerII.isTracking"
+def trackingDisposable = "ActionTrackerII.disposable"
 
-if (isIdeStartup && !getGlobalVar(isTrackingVarName)) {
-	setGlobalVar(isTrackingVarName, true)
-	startTracking(statsLog, isTrackingVarName)
-	show("Action tracking: ON")
-}
-if (!isIdeStartup) show("Reloaded action tracker 2")
+//if (isIdeStartup && !getGlobalVar(isTracking)) {
+//	setGlobalVar(isTracking, true)
+//	startTracking(trackerLog, isTracking, pluginDisposable)
+//	show("Action tracking: ON")
+//}
+if (!isIdeStartup) show("Reloaded ActionTracker II")
 
 
-registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEvent ->
+registerAction("ActionTrackerIIPopup", "ctrl shift alt O", "", "Action Tracker II Popup") { AnActionEvent actionEvent ->
     def trackCurrentFile = new AnAction() {
         @Override void actionPerformed(AnActionEvent event) {
-            def trackingIsOn = changeGlobalVar(isTrackingVarName, false) { !it }
+            def trackingIsOn = changeGlobalVar(isTracking, false) { !it }
             if (trackingIsOn) {
-	            startTracking(statsLog, isTrackingVarName)
+	            def disposable = new Disposable() {
+		            @Override void dispose() {
+			            setGlobalVar(isTracking, false)
+		            }
+	            }
+	            Disposer.register(pluginDisposable, disposable)
+	            setGlobalVar(trackingDisposable, disposable)
+
+	            startTracking(trackerLog, isTracking, disposable)
+            } else {
+	            def disposable = getGlobalVar(trackingDisposable) as Disposable
+	            if (disposable != null) {
+		            Disposer.dispose(disposable)
+	            }
             }
             show("Action tracking: " + (trackingIsOn ? "ON" : "OFF"))
         }
 
         @Override void update(AnActionEvent event) {
-            def isTracking = getGlobalVar(isTrackingVarName, false)
-            event.presentation.text = (isTracking ? "Stop tracking" : "Start tracking")
+	        event.presentation.text = (getGlobalVar(isTracking, false) ? "Stop tracking" : "Start tracking")
         }
     }
     def statistics = new AnAction("Last 30 min stats") {
         @Override void actionPerformed(AnActionEvent event) {
-            def history = statsLog.readHistory(minus30minutesFrom(now()), now())
+            def history = trackerLog.readHistory(minus30minutesFrom(now()), now())
 	        if (history.empty) show("There is no recorded history to analyze")
 	        else {
 		        show(EventsAnalyzer.asString(aggregateByFile(history)))
@@ -51,7 +70,7 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
     }
     def deleteAllHistory = new AnAction("Delete all history") {
         @Override void actionPerformed(AnActionEvent event) {
-            statsLog.resetHistory()
+            trackerLog.resetHistory()
             show("All history was deleted")
         }
     }
@@ -70,32 +89,45 @@ registerAction("WhatIWorkOnStats", "ctrl shift alt O") { AnActionEvent actionEve
 	).showCenteredInCurrentWindow(actionEvent.project)
 }
 
-void startTracking(TrackerLog statsLog, String isTrackingVarName) {
-	if (false) {
-		ActionManager.instance.addAnActionListener(new AnActionListener() {
-			@Override
-			void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
-				def actionId = ActionManager.instance.getId(anAction)
-				statsLog.append(createLogEvent(actionId))
+void startTracking(TrackerLog trackerLog, String isTrackingVarName, Disposable parentDisposable) {
+	ActionManager.instance.addAnActionListener(new AnActionListener() {
+		@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
+			def actionId = ActionManager.instance.getId(anAction)
+			trackerLog.append(createLogEvent(actionId))
+		}
+
+		@Override void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
+		@Override void beforeEditorTyping(char c, DataContext dataContext) {}
+	}, parentDisposable)
+
+	IdeEventQueue.instance.addPostprocessor(new IdeEventQueue.EventDispatcher() {
+		@Override boolean dispatch(AWTEvent awtEvent) {
+			if (awtEvent instanceof MouseEvent && awtEvent.getID() == MouseEvent.MOUSE_CLICKED) {
+				// TODO
+			} else if (awtEvent instanceof KeyEvent && awtEvent.getID() == KeyEvent.KEY_PRESSED) {
+				// TODO
 			}
+			false
+		}
+	}, parentDisposable)
 
-			@Override
-			void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
-
-			@Override
-			void beforeEditorTyping(char c, DataContext dataContext) {}
-		})
-	}
+	// consider using com.intellij.openapi.actionSystem.impl.ActionManagerImpl#addTimerListener
+	def isDisposed = new AtomicReference<Boolean>(false)
 	new Thread({
-		while (getGlobalVar(isTrackingVarName)) {
+		while (!isDisposed.get() && getGlobalVar(isTrackingVarName)) {
 			AtomicReference logEvent = new AtomicReference<TrackerEvent>()
 			SwingUtilities.invokeAndWait {
 				logEvent.set(createLogEvent())
 			}
-			if (logEvent != null) statsLog.append(logEvent.get())
+			if (logEvent != null) trackerLog.append(logEvent.get())
 			Thread.sleep(1000)
 		}
 	} as Runnable).start()
+	Disposer.register(parentDisposable, new Disposable() {
+		@Override void dispose() {
+			isDisposed.set(true)
+		}
+	})
 }
 
 Date now() { new Date() }
