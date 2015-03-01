@@ -1,3 +1,7 @@
+import com.intellij.openapi.util.io.FileUtil
+
+import java.text.SimpleDateFormat
+
 class TrackerLog {
 	private final String statsFilePath
 
@@ -27,5 +31,11 @@ class TrackerLog {
 			}
 			result
 		}
+	}
+
+	void rollFile() {
+		def postfix = new SimpleDateFormat("_yyyyMMdd_HHmmss").format(new Date())
+		def statsFile = new File(statsFilePath)
+		FileUtil.rename(statsFile, new File(statsFilePath + postfix))
 	}
 }

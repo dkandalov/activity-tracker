@@ -150,6 +150,11 @@ registerAction("ActionTrackerIIPopup", "ctrl shift alt O", "", "Action Tracker I
 	        event.presentation.text = (getGlobalVar(isTracking, false) ? "Stop tracking" : "Start tracking")
         }
     }
+	def rollTrackingLog = new AnAction("Roll tracking log") {
+		@Override void actionPerformed(AnActionEvent event) {
+			trackerLog.rollFile()
+		}
+	}
     def statistics = new AnAction("Last 30 min stats") {
         @Override void actionPerformed(AnActionEvent event) {
             def history = trackerLog.readHistory(minus30minutesFrom(now()), now())
@@ -172,6 +177,7 @@ registerAction("ActionTrackerIIPopup", "ctrl shift alt O", "", "Action Tracker I
 			new DefaultActionGroup().with {
                 add(trackCurrentFile)
 				addSeparator()
+                add(rollTrackingLog)
                 add(statistics)
                 add(deleteAllHistory)
 				it
@@ -196,9 +202,10 @@ void startTracking(TrackerLog trackerLog, Disposable parentDisposable) {
 	IdeEventQueue.instance.addPostprocessor(new IdeEventQueue.EventDispatcher() {
 		@Override boolean dispatch(AWTEvent awtEvent) {
 			if (awtEvent instanceof MouseEvent && awtEvent.getID() == MouseEvent.MOUSE_CLICKED) {
-				// TODO
+				trackerLog.append(createLogEvent("MouseEvent:" + awtEvent.button + ":" + awtEvent.modifiers))
+
 			} else if (awtEvent instanceof KeyEvent && awtEvent.getID() == KeyEvent.KEY_PRESSED) {
-				// TODO
+				trackerLog.append(createLogEvent("KeyEvent:" + awtEvent.keyChar + ":" + awtEvent.modifiers))
 			}
 			false
 		}
