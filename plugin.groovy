@@ -2,12 +2,19 @@ import com.intellij.ide.IdeEventQueue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.AnActionListener
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.project.ProjectManagerAdapter
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.IdeFrame
+import com.intellij.openapi.wm.StatusBar
+import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.*
+import com.intellij.util.Consumer
 import groovy.time.TimeCategory
+import org.jetbrains.annotations.NotNull
 
 import javax.swing.*
 import java.awt.*
@@ -30,6 +37,88 @@ def trackingDisposable = "ActionTrackerII.disposable"
 //}
 if (!isIdeStartup) show("Reloaded ActionTracker II")
 
+def registerStatusBarWidget(Project project, StatusBarWidget widget, String anchor = "", Disposable disposable = null) {
+	invokeOnEDT {
+		def statusBar = WindowManager.instance.getStatusBar(project)
+		if (statusBar.getWidget(widget.ID()) != null) {
+			statusBar.removeWidget(widget.ID())
+		}
+		if (disposable != null) {
+			statusBar.addWidget(widget, anchor, disposable)
+		} else {
+			statusBar.addWidget(widget, anchor)
+		}
+		statusBar.updateWidget(widget.ID())
+	}
+}
+
+def widget = new StatusBarWidget() {
+	@Override String ID() {
+		"ActionTrackerIIWidget"
+	}
+
+	@Override StatusBarWidget.WidgetPresentation getPresentation(@NotNull StatusBarWidget.PlatformType platformType) {
+		new StatusBarWidget.TextPresentation() {
+			@NotNull @Override String getText() {
+				def trackingIsOn = getGlobalVar(isTracking, false)
+				"Action tracker: " + (trackingIsOn ? "on" : "off")
+			}
+
+			@NotNull @Override String getMaxPossibleText() {
+				"Action tracker: ___"
+			}
+
+			@Override String getTooltipText() {
+				"Click to start/stop tracking actions."
+			}
+
+			@Override Consumer<MouseEvent> getClickConsumer() {
+				new Consumer<MouseEvent>() {
+					@Override void consume(MouseEvent mouseEvent) {
+						// TODO same as code in action below
+						def trackingIsOn = changeGlobalVar(isTracking, false) { !it }
+						if (trackingIsOn) {
+							def disposable = new Disposable() {
+								@Override void dispose() {
+									setGlobalVar(isTracking, false)
+								}
+							}
+							Disposer.register(pluginDisposable, disposable)
+							setGlobalVar(trackingDisposable, disposable)
+
+							startTracking(trackerLog, disposable)
+						} else {
+							def disposable = getGlobalVar(trackingDisposable) as Disposable
+							if (disposable != null) {
+								Disposer.dispose(disposable)
+							}
+						}
+						ProjectManager.instance.openProjects.each {
+							WindowManager.instance.getStatusBar(it).updateWidget(ID())
+						}
+					}
+				}
+			}
+
+			@Override float getAlignment() {
+				Component.CENTER_ALIGNMENT
+			}
+		}
+	}
+
+	@Override void install(@NotNull StatusBar statusBar) {}
+
+	@Override void dispose() {}
+}
+ProjectManager.instance.openProjects.each {
+	registerStatusBarWidget(it, widget, "before Position", pluginDisposable)
+}
+ProjectManager.instance.addProjectManagerListener(new ProjectManagerAdapter() {
+	@Override void projectOpened(Project project) {
+		registerStatusBarWidget(project, widget, "before Position", pluginDisposable)
+	}
+})
+
 
 registerAction("ActionTrackerIIPopup", "ctrl shift alt O", "", "Action Tracker II Popup") { AnActionEvent actionEvent ->
     def trackCurrentFile = new AnAction() {
@@ -44,13 +133,16 @@ registerAction("ActionTrackerIIPopup", "ctrl shift alt O", "", "Action Tracker I
 	            Disposer.register(pluginDisposable, disposable)
 	            setGlobalVar(trackingDisposable, disposable)
 
-	            startTracking(trackerLog, isTracking, disposable)
+	            startTracking(trackerLog, disposable)
             } else {
 	            def disposable = getGlobalVar(trackingDisposable) as Disposable
 	            if (disposable != null) {
 		            Disposer.dispose(disposable)
 	            }
             }
+	        ProjectManager.instance.openProjects.each {
+		        WindowManager.instance.getStatusBar(it).updateWidget(widget.ID())
+	        }
             show("Action tracking: " + (trackingIsOn ? "ON" : "OFF"))
         }
 
@@ -76,9 +168,10 @@ registerAction("ActionTrackerIIPopup", "ctrl shift alt O", "", "Action Tracker I
     }
 
     JBPopupFactory.instance.createActionGroupPopup(
-			"Current file statistics",
+			"Action Tracker II",
 			new DefaultActionGroup().with {
                 add(trackCurrentFile)
+				addSeparator()
                 add(statistics)
                 add(deleteAllHistory)
 				it
@@ -89,7 +182,7 @@ registerAction("ActionTrackerIIPopup", "ctrl shift alt O", "", "Action Tracker I
 	).showCenteredInCurrentWindow(actionEvent.project)
 }
 
-void startTracking(TrackerLog trackerLog, String isTrackingVarName, Disposable parentDisposable) {
+void startTracking(TrackerLog trackerLog, Disposable parentDisposable) {
 	ActionManager.instance.addAnActionListener(new AnActionListener() {
 		@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
 			def actionId = ActionManager.instance.getId(anAction)
@@ -114,7 +207,7 @@ void startTracking(TrackerLog trackerLog, String isTrackingVarName, Disposable p
 	// consider using com.intellij.openapi.actionSystem.impl.ActionManagerImpl#addTimerListener
 	def isDisposed = new AtomicReference<Boolean>(false)
 	new Thread({
-		while (!isDisposed.get() && getGlobalVar(isTrackingVarName)) {
+		while (!isDisposed.get()) {
 			AtomicReference logEvent = new AtomicReference<TrackerEvent>()
 			SwingUtilities.invokeAndWait {
 				logEvent.set(createLogEvent())
