@@ -30,11 +30,11 @@ def trackerLog = new TrackerLog(pluginPath + "/stats")
 def isTracking = "ActionTrackerII.isTracking"
 def trackingDisposable = "ActionTrackerII.disposable"
 
-//if (isIdeStartup && !getGlobalVar(isTracking)) {
-//	setGlobalVar(isTracking, true)
-//	startTracking(trackerLog, isTracking, pluginDisposable)
-//	show("Action tracking: ON")
-//}
+if (isIdeStartup) {
+	setGlobalVar(isTracking, true)
+	startTracking(trackerLog, pluginDisposable)
+	show("Action tracking: ON")
+}
 if (!isIdeStartup) show("Reloaded ActionTracker II")
 
 def registerStatusBarWidget(Project project, StatusBarWidget widget, String anchor = "", Disposable disposable = null) {
@@ -204,9 +204,14 @@ void startTracking(TrackerLog trackerLog, Disposable parentDisposable) {
 			if (awtEvent instanceof MouseEvent && awtEvent.getID() == MouseEvent.MOUSE_CLICKED) {
 				trackerLog.append(createLogEvent("MouseEvent:" + awtEvent.button + ":" + awtEvent.modifiers))
 
+//			} else if (awtEvent instanceof MouseWheelEvent && awtEvent.getID() == MouseEvent.MOUSE_WHEEL) {
+//				trackerLog.append(createLogEvent("MouseWheelEvent:" + awtEvent.scrollAmount + ":" + awtEvent.wheelRotation))
+
 			} else if (awtEvent instanceof KeyEvent && awtEvent.getID() == KeyEvent.KEY_PRESSED) {
-				trackerLog.append(createLogEvent("KeyEvent:" + awtEvent.keyChar + ":" + awtEvent.modifiers))
+				//show("KeyEvent:" + (awtEvent.keyChar as int) + ":" + awtEvent.modifiers)
+				trackerLog.append(createLogEvent("KeyEvent:" + (awtEvent.keyChar as int) + ":" + awtEvent.modifiers))
 			}
+//			show(awtEvent)
 			false
 		}
 	}, parentDisposable)
@@ -239,8 +244,8 @@ TrackerEvent createLogEvent(String actionId = "", Date time = now()) {
 	IdeFrame activeFrame = WindowManager.instance.allProjectFrames.find{it.active}
 	// this tracks project frame as inactive during refactoring
 	// (e.g. when "Rename class" frame is active)
-	if (activeFrame == null) return new TrackerEvent(time, "", "", "", actionId)
-	def project = activeFrame.project
+	def project = activeFrame?.project
+	if (project == null) return new TrackerEvent(time, "", "", "", actionId)
 	def editor = currentEditorIn(project)
 	if (editor == null) return new TrackerEvent(time, project.name, "", "", actionId)
 
