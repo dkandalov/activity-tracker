@@ -1,3 +1,4 @@
+import actiontracker2.TrackerEvent
 import liveplugin.testrunner.IntegrationTestsRunner
 import org.junit.Test
 

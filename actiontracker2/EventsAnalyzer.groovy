@@ -1,3 +1,5 @@
+package actiontracker2
+
 class EventsAnalyzer {
     static Map<String, Integer> aggregateByFile(List<TrackerEvent> events) {
         events.groupBy{it.file}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
