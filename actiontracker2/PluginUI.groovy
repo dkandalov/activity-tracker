@@ -12,8 +12,6 @@ import org.jetbrains.annotations.NotNull
 import java.awt.*
 import java.awt.event.MouseEvent
 
-import static EventsAnalyzer.aggregateByElement
-import static EventsAnalyzer.aggregateByFile
 import static liveplugin.PluginUtil.*
 
 class PluginUI {
