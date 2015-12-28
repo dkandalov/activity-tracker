@@ -8,7 +8,7 @@ import static liveplugin.PluginUtil.show
 
 def trackerLog = new TrackerLog(pluginPath + "/stats")
 def tracker = new ActionTracker(trackerLog)
-def plugin = new ActionTrackerPlugin(tracker, pluginDisposable)
+def plugin = new ActionTrackerPlugin(tracker, trackerLog, pluginDisposable)
 new PluginUI(plugin).init(pluginDisposable)
 
 //if (isIdeStartup) {

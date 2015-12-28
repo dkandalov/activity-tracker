@@ -40,4 +40,8 @@ class TrackerLog {
 		def statsFile = new File(statsFilePath)
 		FileUtil.rename(statsFile, new File(statsFilePath + postfix))
 	}
+
+	File currentLogFile() {
+		new File(statsFilePath)
+	}
 }

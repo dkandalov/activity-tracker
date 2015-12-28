@@ -40,12 +40,22 @@ class PluginUI {
 
 	private registerPopup(Disposable parentDisposable) {
 		registerAction("ActionTrackerII-Popup", "ctrl shift alt O", "", "Action Tracker II Popup", parentDisposable) { AnActionEvent actionEvent ->
-			def trackCurrentFile = new AnAction() {
+			def toggleTracking = new AnAction() {
 				@Override void actionPerformed(AnActionEvent event) {
 					plugin.toggleTracking()
 				}
 				@Override void update(AnActionEvent event) {
 					event.presentation.text = trackingIsOn ? "Stop tracking" : "Start tracking"
+				}
+			}
+			def openCurrentLog = new AnAction("Open tracking log file") {
+				@Override void actionPerformed(AnActionEvent event) {
+					plugin.openTrackingLogFile(event.project)
+				}
+			}
+			def openLogFolder = new AnAction("Open log in file manager") {
+				@Override void actionPerformed(AnActionEvent event) {
+					plugin.openTrackingLogFolder()
 				}
 			}
 			def rollTrackingLog = new AnAction("Roll tracking log") {
@@ -77,8 +87,10 @@ class PluginUI {
 			JBPopupFactory.instance.createActionGroupPopup(
 					"Action Tracker II",
 					new DefaultActionGroup().with {
-						add(trackCurrentFile)
+						add(toggleTracking)
 						addSeparator()
+						add(openLogFolder)
+						add(openCurrentLog)
 						add(rollTrackingLog)
 						add(statistics)
 						add(deleteAllHistory)
