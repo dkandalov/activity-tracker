@@ -2,11 +2,11 @@ package actiontracker2
 
 class EventsAnalyzer {
     static Map<String, Integer> aggregateByFile(List<TrackerEvent> events) {
-        events.groupBy{it.file}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
+        events.groupBy{it.openFilePath}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
     }
 
     static Map<String, Integer> aggregateByElement(List<TrackerEvent> events) {
-        events.groupBy{it.methodOrClass}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
+        events.groupBy{it.locationInFile}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
     }
 
     static asString(Map<String, Integer> map) {

@@ -10,11 +10,11 @@ import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.*
 import com.intellij.util.Alarm
-import groovy.time.TimeCategory
 
 import java.awt.*
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
+import java.time.LocalDateTime
 
 import static liveplugin.PluginUtil.*
 import static liveplugin.implementation.Misc.scheduleTask
@@ -31,7 +31,7 @@ class ActionTracker {
 
 		if (trackIdeStateFrequencyMs > 0) {
 			scheduleTask(new Alarm(Alarm.ThreadToUse.SWING_THREAD, parentDisposable), trackIdeStateFrequencyMs) {
-				trackerLog.append(captureIdeState())
+				trackerLog.append(captureIdeState("IdeState"))
 			}
 		}
 	}
@@ -49,27 +49,27 @@ class ActionTracker {
 		IdeEventQueue.instance.addPostprocessor(new IdeEventQueue.EventDispatcher() {
 			@Override boolean dispatch(AWTEvent awtEvent) {
 				if (awtEvent instanceof MouseEvent && awtEvent.ID == MouseEvent.MOUSE_CLICKED) {
-					trackerLog.append(captureIdeState("MouseEvent:" + awtEvent.button + ":" + awtEvent.modifiers))
+					trackerLog.append(captureIdeState("MouseEvent", "" + awtEvent.button + ":" + awtEvent.modifiers))
 
 //				} else if (awtEvent instanceof MouseWheelEvent && awtEvent.getID() == MouseEvent.MOUSE_WHEEL) {
 //					trackerLog.append(createLogEvent("MouseWheelEvent:" + awtEvent.scrollAmount + ":" + awtEvent.wheelRotation))
 
 				} else if (awtEvent instanceof KeyEvent && awtEvent.ID == KeyEvent.KEY_PRESSED) {
-					trackerLog.append(captureIdeState("KeyEvent:" + (awtEvent.keyChar as int) + ":" + (awtEvent.keyCode as int) + ":" + awtEvent.modifiers))
+					trackerLog.append(captureIdeState("KeyEvent", "" + (awtEvent.keyChar as int) + ":" + (awtEvent.keyCode as int) + ":" + awtEvent.modifiers))
 				}
 				false
 			}
 		}, parentDisposable)
 	}
 
-	private static TrackerEvent captureIdeState(String actionId = "", Date time = now()) {
+	private static TrackerEvent captureIdeState(String eventType, String eventData = "", LocalDateTime time = LocalDateTime.now()) {
 		IdeFrame activeFrame = WindowManager.instance.allProjectFrames.find { it.active }
 		// this tracks project frame as inactive during refactoring
 		// (e.g. when "Rename class" frame is active)
 		def project = activeFrame?.project
-		if (project == null) return new TrackerEvent(time, "", "", "", actionId)
+		if (project == null) return new TrackerEvent(time, eventType, "", "", "", -1, -1, eventData)
 		def editor = currentEditorIn(project)
-		if (editor == null) return new TrackerEvent(time, project.name, "", "", actionId)
+		if (editor == null) return new TrackerEvent(time, eventType, project.name, "", "", -1, -1, eventData)
 
 		def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
 		PsiMethod psiMethod = findParent(elementAtOffset, { it instanceof PsiMethod })
@@ -81,13 +81,9 @@ class ActionTracker {
 		def file = currentFileIn(project)
 		// don't try to shorten file name by excluding project because different projects might have same files
 		def filePath = (file == null ? "" : file.path)
-		new TrackerEvent(time, project.name, filePath, fullNameOf(currentElement), actionId)
-	}
-
-	static Date now() { new Date() }
-
-	static Date minus30minutesFrom(Date time) {
-		use(TimeCategory) { time - 30.minutes }
+		def line = editor.caretModel.logicalPosition.line
+		def column = editor.caretModel.logicalPosition.column
+		new TrackerEvent(time, eventType, project.name, filePath, fullNameOf(currentElement), line, column, eventData)
 	}
 
 	private static String fullNameOf(PsiElement psiElement) {
