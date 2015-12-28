@@ -1,13 +1,14 @@
 package actiontracker2
 import com.intellij.ide.IdeEventQueue
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.AnActionListener
-import com.intellij.openapi.wm.IdeFrame
-import com.intellij.openapi.wm.WindowManager
+import com.intellij.openapi.wm.IdeFocusManager
+import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.psi.*
 import com.intellij.util.Alarm
 
@@ -30,8 +31,12 @@ class ActionTracker {
 		startIdeEventListeners(parentDisposable)
 
 		if (trackIdeStateFrequencyMs > 0) {
-			scheduleTask(new Alarm(Alarm.ThreadToUse.SWING_THREAD, parentDisposable), trackIdeStateFrequencyMs) {
-				trackerLog.append(captureIdeState("IdeState"))
+			// note that in order to triggered when IDE dialog window is opened (e.g. override or project settings),
+			// alarm must be invoked on pooled thread and with invokeOnEDT() method
+			scheduleTask(new Alarm(Alarm.ThreadToUse.POOLED_THREAD, parentDisposable), trackIdeStateFrequencyMs) {
+				invokeOnEDT {
+					trackerLog.append(captureIdeState("IdeState"))
+				}
 			}
 		}
 	}
@@ -40,7 +45,9 @@ class ActionTracker {
 		ActionManager.instance.addAnActionListener(new AnActionListener() {
 			@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
 				def actionId = ActionManager.instance.getId(anAction)
-				trackerLog.append(captureIdeState(actionId))
+				if (actionId != null) { // can be null on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction)
+					trackerLog.append(captureIdeState(actionId))
+				}
 			}
 			@Override void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
 			@Override void beforeEditorTyping(char c, DataContext dataContext) {}
@@ -63,27 +70,35 @@ class ActionTracker {
 	}
 
 	private static TrackerEvent captureIdeState(String eventType, String eventData = "", LocalDateTime time = LocalDateTime.now()) {
-		IdeFrame activeFrame = WindowManager.instance.allProjectFrames.find { it.active }
-		// this tracks project frame as inactive during refactoring
-		// (e.g. when "Rename class" frame is active)
-		def project = activeFrame?.project
-		if (project == null) return new TrackerEvent(time, eventType, "", "", "", -1, -1, eventData)
-		def editor = currentEditorIn(project)
-		if (editor == null) return new TrackerEvent(time, eventType, project.name, "", "", -1, -1, eventData)
+		try {
+			def window = WindowManagerEx.instanceEx.mostRecentFocusedWindow
+			def ideHasFocus = window != null && window.active
+			if (!ideHasFocus) return new TrackerEvent(time, eventType, "", "", "", -1, -1, eventData)
 
-		def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
-		PsiMethod psiMethod = findParent(elementAtOffset, { it instanceof PsiMethod })
-		PsiFile psiFile = findParent(elementAtOffset, { it instanceof PsiFile })
-		def currentElement = (psiMethod == null ? psiFile : psiMethod)
+			// use "lastFocusedFrame" to determine project when some dialog is open (e.g. "override" or "project settings")
+			def project = IdeFocusManager.findInstance().lastFocusedFrame?.project
+			if (project == null) return new TrackerEvent(time, eventType, "", "", "", -1, -1, eventData)
+			def editor = currentEditorIn(project)
+			if (editor == null) return new TrackerEvent(time, eventType, project.name, "", "", -1, -1, eventData)
 
-		// this doesn't take into account time spent in toolwindows
-		// (when the same frame is active but editor doesn't have focus)
-		def file = currentFileIn(project)
-		// don't try to shorten file name by excluding project because different projects might have same files
-		def filePath = (file == null ? "" : file.path)
-		def line = editor.caretModel.logicalPosition.line
-		def column = editor.caretModel.logicalPosition.column
-		new TrackerEvent(time, eventType, project.name, filePath, fullNameOf(currentElement), line, column, eventData)
+			def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
+			PsiMethod psiMethod = findParent(elementAtOffset, { it instanceof PsiMethod })
+			PsiFile psiFile = findParent(elementAtOffset, { it instanceof PsiFile })
+			def currentElement = (psiMethod == null ? psiFile : psiMethod)
+
+			// TODO com.intellij.openapi.wm.ToolWindowManager.getActiveToolWindowId
+			// this doesn't take into account time spent in toolwindows
+			// (when the same frame is active but editor doesn't have focus)
+			def file = currentFileIn(project)
+			// don't try to shorten file name by excluding project because different projects might have same files
+			def filePath = (file == null ? "" : file.path)
+			def line = editor.caretModel.logicalPosition.line
+			def column = editor.caretModel.logicalPosition.column
+			new TrackerEvent(time, eventType, project.name, filePath, fullNameOf(currentElement), line, column, eventData)
+		} catch (Exception e) {
+			log(e, NotificationType.ERROR) // TODO
+			null
+		}
 	}
 
 	private static String fullNameOf(PsiElement psiElement) {

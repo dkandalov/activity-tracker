@@ -34,7 +34,7 @@ class ActionTrackerPlugin {
 		isTracking.set{ !it }
 		if (isTracking.get()) {
 			trackingDisposable = newDisposable([pluginDisposable])
-			tracker.startTracking(trackingDisposable, 0)
+			tracker.startTracking(trackingDisposable)
 		} else {
 			if (trackingDisposable != null) {
 				Disposer.dispose(trackingDisposable)

@@ -1,6 +1,7 @@
 package actiontracker2
 
 import com.intellij.openapi.util.io.FileUtil
+import org.jetbrains.annotations.Nullable
 
 import java.text.SimpleDateFormat
 
@@ -13,7 +14,8 @@ class TrackerLog {
 		this.statsFilePath = path + "/stats.csv"
 	}
 
-	def append(TrackerEvent event) {
+	def append(@Nullable TrackerEvent event) {
+		if (event == null) return
 		new File(statsFilePath).append(event.toCsv() + "\n")
 	}
 
