@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 
 @Immutable
 final class TrackerEvent {
-    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("kk:mm:ss dd/MM/yyyy")
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss SSS")
     Date time
     String projectName
     String file

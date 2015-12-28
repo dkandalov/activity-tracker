@@ -28,8 +28,11 @@ class ActionTracker {
 
 	void startTracking(Disposable parentDisposable, int trackIdeStateFrequencyMs = 1000) {
 		startIdeEventListeners(parentDisposable)
-		scheduleTask(new Alarm(Alarm.ThreadToUse.SWING_THREAD, parentDisposable), trackIdeStateFrequencyMs) {
-			trackerLog.append(captureIdeState())
+
+		if (trackIdeStateFrequencyMs > 0) {
+			scheduleTask(new Alarm(Alarm.ThreadToUse.SWING_THREAD, parentDisposable), trackIdeStateFrequencyMs) {
+				trackerLog.append(captureIdeState())
+			}
 		}
 	}
 
@@ -45,17 +48,15 @@ class ActionTracker {
 
 		IdeEventQueue.instance.addPostprocessor(new IdeEventQueue.EventDispatcher() {
 			@Override boolean dispatch(AWTEvent awtEvent) {
-				if (awtEvent instanceof MouseEvent && awtEvent.getID() == MouseEvent.MOUSE_CLICKED) {
+				if (awtEvent instanceof MouseEvent && awtEvent.ID == MouseEvent.MOUSE_CLICKED) {
 					trackerLog.append(captureIdeState("MouseEvent:" + awtEvent.button + ":" + awtEvent.modifiers))
 
-					//			} else if (awtEvent instanceof MouseWheelEvent && awtEvent.getID() == MouseEvent.MOUSE_WHEEL) {
-					//				trackerLog.append(createLogEvent("MouseWheelEvent:" + awtEvent.scrollAmount + ":" + awtEvent.wheelRotation))
+//				} else if (awtEvent instanceof MouseWheelEvent && awtEvent.getID() == MouseEvent.MOUSE_WHEEL) {
+//					trackerLog.append(createLogEvent("MouseWheelEvent:" + awtEvent.scrollAmount + ":" + awtEvent.wheelRotation))
 
-				} else if (awtEvent instanceof KeyEvent && awtEvent.getID() == KeyEvent.KEY_PRESSED) {
-					//show("KeyEvent:" + (awtEvent.keyChar as int) + ":" + awtEvent.modifiers)
-					trackerLog.append(captureIdeState("KeyEvent:" + (awtEvent.keyChar as int) + ":" + awtEvent.modifiers))
+				} else if (awtEvent instanceof KeyEvent && awtEvent.ID == KeyEvent.KEY_PRESSED) {
+					trackerLog.append(captureIdeState("KeyEvent:" + (awtEvent.keyChar as int) + ":" + (awtEvent.keyCode as int) + ":" + awtEvent.modifiers))
 				}
-				//			show(awtEvent)
 				false
 			}
 		}, parentDisposable)
