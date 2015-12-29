@@ -144,7 +144,7 @@ class ActionTracker {
 				// keep full file name because projects and libraries might have files with the same names/partial paths
 				def file = currentFileIn(project)
 				filePath = (file == null ? "" : file.path)
-				psiPath = pasPathOf(currentElement)
+				psiPath = psiPathOf(currentElement)
 				line = editor.caretModel.logicalPosition.line
 				column = editor.caretModel.logicalPosition.column
 			}
@@ -157,17 +157,17 @@ class ActionTracker {
 		}
 	}
 
-	private static String pasPathOf(PsiElement psiElement) {
+	private static String psiPathOf(PsiElement psiElement) {
 		if (psiElement == null || psiElement instanceof PsiFile) ""
 		else if (psiElement in PsiAnonymousClass) {
-			def parentName = pasPathOf(psiElement.parent)
+			def parentName = psiPathOf(psiElement.parent)
 			def name = "[" + psiElement.baseClassType.className + "]"
 			parentName.empty ? name : (parentName + "::" + name)
 		} else if (psiElement instanceof PsiMethod || psiElement instanceof PsiClass) {
-			def parentName = pasPathOf(psiElement.parent)
+			def parentName = psiPathOf(psiElement.parent)
 			parentName.empty ? psiElement.name : (parentName + "::" + psiElement.name)
 		} else {
-			pasPathOf(psiElement.parent)
+			psiPathOf(psiElement.parent)
 		}
 	}
 
