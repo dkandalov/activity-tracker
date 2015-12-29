@@ -1,4 +1,5 @@
 package actiontracker2
+import com.intellij.concurrency.JobScheduler
 import com.intellij.ide.IdeEventQueue
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
@@ -13,7 +14,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
-import com.intellij.util.Alarm
+import liveplugin.implementation.Misc
 
 import javax.swing.*
 import java.awt.*
@@ -21,8 +22,8 @@ import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 import java.time.LocalDateTime
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS
 import static liveplugin.PluginUtil.*
-import static liveplugin.implementation.Misc.scheduleTask
 
 class ActionTracker {
 	private final TrackerLog trackerLog
@@ -31,17 +32,19 @@ class ActionTracker {
 		this.trackerLog = trackerLog
 	}
 
-	void startTracking(Disposable parentDisposable, int trackIdeStateFrequencyMs = 1000) {
+	void startTracking(Disposable parentDisposable, long trackIdeStateFrequencyMs = 1000) {
 		startIdeEventListeners(parentDisposable)
 
 		if (trackIdeStateFrequencyMs > 0) {
-			// TODO need better scheduling implementation then below because it slowly drifts into the future
-			// note that in order to triggered when IDE dialog window is opened (e.g. override or project settings),
-			// alarm must be invoked on pooled thread and with invokeOnEDT() method
-			scheduleTask(new Alarm(Alarm.ThreadToUse.POOLED_THREAD, parentDisposable), trackIdeStateFrequencyMs) {
+			def runnable = {
+				// it has to be invokeOnEDT() method so that it's triggered when IDE dialog window is opened (e.g. override or project settings),
 				invokeOnEDT {
 					trackerLog.append(captureIdeState("IdeState", ""))
 				}
+			} as Runnable
+			def future = JobScheduler.scheduler.scheduleAtFixedRate(runnable, trackIdeStateFrequencyMs, trackIdeStateFrequencyMs, MILLISECONDS)
+			Misc.newDisposable(parentDisposable) {
+				future.cancel(true)
 			}
 		}
 	}
