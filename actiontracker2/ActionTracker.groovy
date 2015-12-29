@@ -7,11 +7,15 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.AnActionListener
+import com.intellij.openapi.editor.impl.EditorComponentImpl
 import com.intellij.openapi.wm.IdeFocusManager
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
+import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
 import com.intellij.util.Alarm
 
+import javax.swing.*
 import java.awt.*
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
@@ -31,25 +35,28 @@ class ActionTracker {
 		startIdeEventListeners(parentDisposable)
 
 		if (trackIdeStateFrequencyMs > 0) {
+			// TODO need better scheduling implementation then below because it slowly drifts into the future
 			// note that in order to triggered when IDE dialog window is opened (e.g. override or project settings),
 			// alarm must be invoked on pooled thread and with invokeOnEDT() method
 			scheduleTask(new Alarm(Alarm.ThreadToUse.POOLED_THREAD, parentDisposable), trackIdeStateFrequencyMs) {
 				invokeOnEDT {
-					trackerLog.append(captureIdeState("IdeState"))
+					trackerLog.append(captureIdeState("IdeState", ""))
 				}
 			}
 		}
 	}
 
 	private void startIdeEventListeners(Disposable parentDisposable) {
-		ActionManager.instance.addAnActionListener(new AnActionListener() {
-			@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
-				def actionId = ActionManager.instance.getId(anAction)
-				if (actionId != null) { // can be null on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction)
-					trackerLog.append(captureIdeState(actionId))
-				}
+		def actionManager = ActionManager.instance
+		actionManager.addAnActionListener(new AnActionListener() {
+			@Override void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
+				// track action in "before" callback because otherwise timing of action can be wrong
+				// (e.g. commit action shows dialog and finishes only after the dialog is closed)
+				def actionId = actionManager.getId(anAction)
+				if (actionId == null) return // can be null on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction)
+				trackerLog.append(captureIdeState("Action", actionId))
 			}
-			@Override void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
+			@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
 			@Override void beforeEditorTyping(char c, DataContext dataContext) {}
 		}, parentDisposable)
 
@@ -69,55 +76,88 @@ class ActionTracker {
 		}, parentDisposable)
 	}
 
-	private static TrackerEvent captureIdeState(String eventType, String eventData = "", LocalDateTime time = LocalDateTime.now()) {
+	private static TrackerEvent captureIdeState(String eventType, String eventData, LocalDateTime time = LocalDateTime.now()) {
 		try {
+			def ideFocusManager = IdeFocusManager.globalInstance
+			def focusOwner = ideFocusManager.focusOwner
+
 			def window = WindowManagerEx.instanceEx.mostRecentFocusedWindow
-			def ideHasFocus = window != null && window.active
-			if (!ideHasFocus) return new TrackerEvent(time, eventType, "", "", "", -1, -1, eventData)
+			if (window == null) return TrackerEvent.ideNotInFocus(time, eventType, eventData)
 
-			// use "lastFocusedFrame" to determine project when some dialog is open (e.g. "override" or "project settings")
-			def project = IdeFocusManager.findInstance().lastFocusedFrame?.project
-			if (project == null) return new TrackerEvent(time, eventType, "", "", "", -1, -1, eventData)
+			def ideHasFocus = window.active
+			if (!ideHasFocus) {
+				IdeFrameImpl ideFrame = findParentComponent(focusOwner){ it instanceof IdeFrameImpl }
+				ideHasFocus = ideFrame != null && ideFrame.active
+			}
+			if (!ideHasFocus) return TrackerEvent.ideNotInFocus(time, eventType, eventData)
+
+			// use "lastFocusedFrame" to be able to obtain project in cases when some dialog is open (e.g. "override" or "project settings")
+			def project = ideFocusManager.lastFocusedFrame?.project
+			if (project == null) return TrackerEvent.ideNotInFocus(time, eventType, eventData)
+
+			def focusOwnerId
+			// check for JDialog before EditorComponentImpl because dialog can belong to editor
+			if (findParentComponent(focusOwner){ it instanceof JDialog } != null) {
+				focusOwnerId = "Dialog"
+			} else if (findParentComponent(focusOwner){ it instanceof EditorComponentImpl } != null) {
+				focusOwnerId = "Editor"
+			} else {
+				focusOwnerId = ToolWindowManager.getInstance(project).activeToolWindowId
+				if (focusOwnerId == null) {
+					focusOwnerId = "Popup"
+				}
+			}
+
+			def filePath = ""
+			def psiPath = ""
+			def line = -1
+			def column = -1
 			def editor = currentEditorIn(project)
-			if (editor == null) return new TrackerEvent(time, eventType, project.name, "", "", -1, -1, eventData)
+			if (editor != null) {
+				def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
+				PsiMethod psiMethod = findPsiParent(elementAtOffset, { it instanceof PsiMethod })
+				PsiFile psiFile = findPsiParent(elementAtOffset, { it instanceof PsiFile })
+				def currentElement = (psiMethod == null ? psiFile : psiMethod)
 
-			def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
-			PsiMethod psiMethod = findParent(elementAtOffset, { it instanceof PsiMethod })
-			PsiFile psiFile = findParent(elementAtOffset, { it instanceof PsiFile })
-			def currentElement = (psiMethod == null ? psiFile : psiMethod)
+				// keep full file name because projects and libraries might have files with the same names/partial paths
+				def file = currentFileIn(project)
+				filePath = (file == null ? "" : file.path)
+				psiPath = pasPathOf(currentElement)
+				line = editor.caretModel.logicalPosition.line
+				column = editor.caretModel.logicalPosition.column
+			}
 
-			// TODO com.intellij.openapi.wm.ToolWindowManager.getActiveToolWindowId
-			// this doesn't take into account time spent in toolwindows
-			// (when the same frame is active but editor doesn't have focus)
-			def file = currentFileIn(project)
-			// don't try to shorten file name by excluding project because different projects might have same files
-			def filePath = (file == null ? "" : file.path)
-			def line = editor.caretModel.logicalPosition.line
-			def column = editor.caretModel.logicalPosition.column
-			new TrackerEvent(time, eventType, project.name, filePath, fullNameOf(currentElement), line, column, eventData)
+			new TrackerEvent(time, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column)
+
 		} catch (Exception e) {
-			log(e, NotificationType.ERROR) // TODO
+			log(e, NotificationType.ERROR)
 			null
 		}
 	}
 
-	private static String fullNameOf(PsiElement psiElement) {
+	private static String pasPathOf(PsiElement psiElement) {
 		if (psiElement == null || psiElement instanceof PsiFile) ""
 		else if (psiElement in PsiAnonymousClass) {
-			def parentName = fullNameOf(psiElement.parent)
+			def parentName = pasPathOf(psiElement.parent)
 			def name = "[" + psiElement.baseClassType.className + "]"
 			parentName.empty ? name : (parentName + "::" + name)
 		} else if (psiElement instanceof PsiMethod || psiElement instanceof PsiClass) {
-			def parentName = fullNameOf(psiElement.parent)
+			def parentName = pasPathOf(psiElement.parent)
 			parentName.empty ? psiElement.name : (parentName + "::" + psiElement.name)
 		} else {
-			fullNameOf(psiElement.parent)
+			pasPathOf(psiElement.parent)
 		}
 	}
 
-	private static <T> T findParent(PsiElement element, Closure matches) {
+	private static <T> T findPsiParent(PsiElement element, Closure matches) {
 		if (element == null) null
 		else if (matches(element)) element as T
-		else findParent(element.parent, matches)
+		else findPsiParent(element.parent, matches)
+	}
+
+	private static <T> T findParentComponent(Component component, Closure matches) {
+		if (component == null) null
+		else if (matches(component)) component as T
+		else findParentComponent(component.parent, matches)
 	}
 }

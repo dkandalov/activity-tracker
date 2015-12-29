@@ -6,7 +6,7 @@ class EventsAnalyzer {
     }
 
     static Map<String, Integer> aggregateByElement(List<TrackerEvent> events) {
-        events.groupBy{it.locationInFile}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
+        events.groupBy{it.psiPath}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
     }
 
     static asString(Map<String, Integer> map) {
