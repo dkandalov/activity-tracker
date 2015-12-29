@@ -15,6 +15,7 @@ import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
 import liveplugin.implementation.Misc
+import liveplugin.implementation.VcsActions
 
 import javax.swing.*
 import java.awt.*
@@ -62,6 +63,24 @@ class ActionTracker {
 			@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
 			@Override void beforeEditorTyping(char c, DataContext dataContext) {}
 		}, parentDisposable)
+
+		VcsActions.registerVcsListener(parentDisposable, new VcsActions.Listener() {
+			@Override void onVcsCommit() {
+				invokeOnEDT {
+					trackerLog.append(captureIdeState("VcsAction", "Commit"))
+				}
+			}
+			@Override void onVcsUpdate() {
+				invokeOnEDT {
+					trackerLog.append(captureIdeState("VcsAction", "Update"))
+				}
+			}
+			@Override void onVcsPush() {
+				invokeOnEDT {
+					trackerLog.append(captureIdeState("VcsAction", "Push"))
+				}
+			}
+		})
 
 		IdeEventQueue.instance.addPostprocessor(new IdeEventQueue.EventDispatcher() {
 			@Override boolean dispatch(AWTEvent awtEvent) {
