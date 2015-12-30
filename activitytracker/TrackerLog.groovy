@@ -44,8 +44,8 @@ class TrackerLog {
 		eventQueue.add(event)
 	}
 
-	def resetHistory() {
-		new File(statsFilePath).delete()
+	boolean clearLog() {
+		FileUtil.delete(new File(statsFilePath))
 	}
 
 	List<TrackerEvent> readHistory(Date fromTime, Date toTime) {
@@ -62,7 +62,7 @@ class TrackerLog {
 		}
 	}
 
-	File rollFile(Date now = new Date()) {
+	File rollLog(Date now = new Date()) {
 		def postfix = new SimpleDateFormat("_yyyy-MM-dd").format(now)
 		def rolledStatsFile = new File(statsFilePath + postfix)
 		def i = 1

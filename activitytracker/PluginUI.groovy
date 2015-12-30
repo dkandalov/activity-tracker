@@ -104,16 +104,21 @@ class PluginUI {
 				)
 				if (userAnswer != Messages.OK) return
 
-				def rolledFile = trackerLog.rollFile()
+				def rolledFile = trackerLog.rollLog()
 				show("Rolled tracking log into '${rolledFile.name}'")
 			}
 		}
 		def clearCurrentLog = new AnAction("Clear Tracking Log") {
 			@Override void actionPerformed(AnActionEvent event) {
-				// TODO
-				return
-				trackerLog.resetHistory()
-				show("All history was deleted")
+				def userAnswer = showOkCancelDialog(event.project,
+						"Clear current tracking log file?\n(This operation cannot be undone.)",
+						"Activity Tracker",
+						Messages.questionIcon
+				)
+				if (userAnswer != Messages.OK) return
+
+				def wasCleared = trackerLog.clearLog()
+				if (wasCleared) show("Tracking log was cleared")
 			}
 		}
 		def openHelp = new AnAction("Help (GitHub)") {
@@ -124,6 +129,7 @@ class PluginUI {
 
 		registerAction("Start/Stop Activity Tracking", toggleTracking)
 		registerAction("Roll Tracking Log", rollCurrentLog)
+		registerAction("Clear Tracking Log", clearCurrentLog)
 		// TODO register other actions
 
 		def actionGroup = new DefaultActionGroup().with {
