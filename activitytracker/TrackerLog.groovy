@@ -62,10 +62,17 @@ class TrackerLog {
 		}
 	}
 
-	void rollFile() {
-		def postfix = new SimpleDateFormat("_yyyyMMdd_HHmmss").format(new Date())
-		def statsFile = new File(statsFilePath)
-		FileUtil.rename(statsFile, new File(statsFilePath + postfix))
+	File rollFile(Date now = new Date()) {
+		def postfix = new SimpleDateFormat("_yyyy-MM-dd").format(now)
+		def rolledStatsFile = new File(statsFilePath + postfix)
+		def i = 1
+		while (rolledStatsFile.exists()) {
+			rolledStatsFile = new File(statsFilePath + postfix + "_" + i)
+			i++
+		}
+
+		FileUtil.rename(new File(statsFilePath), rolledStatsFile)
+		rolledStatsFile
 	}
 
 	File currentLogFile() {

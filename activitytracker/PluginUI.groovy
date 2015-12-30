@@ -2,12 +2,9 @@ package activitytracker
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.openapi.wm.StatusBarWidget
@@ -19,15 +16,18 @@ import java.awt.*
 import java.awt.event.MouseEvent
 
 import static ActivityTrackerPlugin.pluginId
+import static com.intellij.openapi.ui.Messages.showOkCancelDialog
 import static liveplugin.PluginUtil.*
 
 class PluginUI {
 	private static final widgetId = "${pluginId}-Widget"
 	private final ActivityTrackerPlugin plugin
 	private ActivityTrackerPlugin.State state
+	private final TrackerLog trackerLog
 
-	PluginUI(ActivityTrackerPlugin plugin) {
+	PluginUI(ActivityTrackerPlugin plugin, TrackerLog trackerLog) {
 		this.plugin = plugin
+		this.trackerLog = trackerLog
 	}
 
 	def init(Disposable parentDisposable) {
@@ -49,7 +49,6 @@ class PluginUI {
 	}
 
 	private ListPopup createListPopup(DataContext dataContext) {
-		// TODO register actions below so that they can be assigned shortcuts
 		def toggleTracking = new AnAction() {
 			@Override void actionPerformed(AnActionEvent event) {
 				plugin.toggleTracking()
@@ -74,12 +73,12 @@ class PluginUI {
 			@Override boolean isSelected(AnActionEvent event) { state.trackMouse }
 			@Override void setSelected(AnActionEvent event, boolean value) { plugin.enableTrackMouse(value) }
 		}
-		def openLogInIde = new AnAction("Open Log in IDE") {
+		def openLogInIde = new AnAction("Open in IDE") {
 			@Override void actionPerformed(AnActionEvent event) {
 				plugin.openTrackingLogFile(event.project)
 			}
 		}
-		def openLogFolder = new AnAction("Open Log in File Manager") {
+		def openLogFolder = new AnAction("Open in File Manager") {
 			@Override void actionPerformed(AnActionEvent event) {
 				plugin.openTrackingLogFolder()
 			}
@@ -96,12 +95,20 @@ class PluginUI {
 				}
 			}
 		}
-		def rollCurrentLog = new AnAction("Roll Current Log") {
+		def rollCurrentLog = new AnAction("Roll Tracking Log") {
 			@Override void actionPerformed(AnActionEvent event) {
-				// TODO trackerLog.rollFile()
+				def userAnswer = showOkCancelDialog(event.project,
+						"Roll current tracking log file?",
+						"Activity Tracker",
+						Messages.questionIcon
+				)
+				if (userAnswer != Messages.OK) return
+
+				def rolledFile = trackerLog.rollFile()
+				show("Rolled tracking log into '${rolledFile.name}'")
 			}
 		}
-		def clearCurrentLog = new AnAction("Clear Current Log") {
+		def clearCurrentLog = new AnAction("Clear Tracking Log") {
 			@Override void actionPerformed(AnActionEvent event) {
 				// TODO
 				return
@@ -115,6 +122,10 @@ class PluginUI {
 			}
 		}
 
+		registerAction("Start/Stop Activity Tracking", toggleTracking)
+		registerAction("Roll Tracking Log", rollCurrentLog)
+		// TODO register other actions
+
 		def actionGroup = new DefaultActionGroup().with {
 			add(toggleTracking)
 			add(statistics)
@@ -122,6 +133,7 @@ class PluginUI {
 			add(new DefaultActionGroup("Current Log", true).with {
 				add(openLogInIde)
 				add(openLogFolder)
+				addSeparator()
 				add(rollCurrentLog)
 				add(clearCurrentLog)
 				it
