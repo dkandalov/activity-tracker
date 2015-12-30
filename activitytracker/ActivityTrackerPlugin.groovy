@@ -4,7 +4,6 @@ import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import groovy.transform.Immutable
-import liveplugin.PluginUtil
 import liveplugin.implementation.GlobalVar
 
 import static liveplugin.PluginUtil.newGlobalVar
@@ -116,7 +115,6 @@ class ActivityTrackerPlugin {
 				setValue("${id}-trackKeyboard", trackKeyboard)
 				setValue("${id}-trackMouse", trackMouse)
 			}
-			PluginUtil.show("saved")
 		}
 
 		static State load(PropertiesComponent propertiesComponent, String id) {

@@ -38,9 +38,6 @@ class PluginUI {
 	}
 
 	def update(ActivityTrackerPlugin.State state) {
-		if (this.state?.isTracking != state.isTracking) {
-			show("Activity tracking: " + (state.isTracking ? "ON" : "OFF"))
-		}
 		this.state = state
 		updateWidget(widgetId)
 	}
