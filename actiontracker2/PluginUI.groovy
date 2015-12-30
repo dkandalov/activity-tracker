@@ -52,7 +52,7 @@ class PluginUI {
 	}
 
 	private ListPopup createListPopup(DataContext dataContext) {
-		// TODO register actions below so that they can be assigned shortcuts
+		// TODO register actions below so that they can be assigned shortcutsa
 		def toggleTracking = new AnAction() {
 			@Override void actionPerformed(AnActionEvent event) {
 				plugin.toggleTracking()
