@@ -91,6 +91,7 @@ class ActivityTrackerPlugin {
 	private static ActivityTracker.Config asTrackerConfig(State state) {
 		new ActivityTracker.Config(
 				state.pollIdeState,
+				state.pollIdeStateMs,
 				state.trackIdeActions,
 				state.trackKeyboard,
 				state.trackMouse
@@ -100,9 +101,10 @@ class ActivityTrackerPlugin {
 
 	@Immutable(copyWith = true)
 	static final class State {
-		static final State defaultValue = new State(true, true, true, false, false)
+		static final State defaultValue = new State(true, true, 1000, true, false, false)
 		boolean isTracking
 		boolean pollIdeState
+		int pollIdeStateMs
 		boolean trackIdeActions
 		boolean trackKeyboard
 		boolean trackMouse
@@ -111,6 +113,7 @@ class ActivityTrackerPlugin {
 			propertiesComponent.with {
 				setValue("${id}-isTracking", isTracking)
 				setValue("${id}-pollIdeState", pollIdeState)
+				setValue("${id}-pollIdeStateMs", pollIdeStateMs, Integer.MIN_VALUE)
 				setValue("${id}-trackIdeActions", trackIdeActions)
 				setValue("${id}-trackKeyboard", trackKeyboard)
 				setValue("${id}-trackMouse", trackMouse)
@@ -122,6 +125,7 @@ class ActivityTrackerPlugin {
 				new State(
 					getBoolean("${id}-isTracking", defaultValue.isTracking),
 					getBoolean("${id}-pollIdeState", defaultValue.pollIdeState),
+					getInt("${id}-pollIdeStateMs", defaultValue.pollIdeStateMs),
 					getBoolean("${id}-trackIdeActions", defaultValue.trackIdeActions),
 					getBoolean("${id}-trackKeyboard", defaultValue.trackKeyboard),
 					getBoolean("${id}-trackMouse", defaultValue.trackMouse)

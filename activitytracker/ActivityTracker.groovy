@@ -30,8 +30,6 @@ import static liveplugin.PluginUtil.*
 import static liveplugin.implementation.Misc.newDisposable
 
 class ActivityTracker {
-	private static final long trackIdeStateFrequencyMs = 1000 // TODO make configurable
-
 	private final TrackerLog trackerLog
 	private final Disposable parentDisposable
 	private Disposable trackingDisposable
@@ -47,7 +45,7 @@ class ActivityTracker {
 		trackingDisposable = newDisposable([parentDisposable])
 
 		if (config.pollIdeState) {
-			startPollingIdeState(trackerLog, trackingDisposable)
+			startPollingIdeState(trackerLog, trackingDisposable, config.pollIdeStateMs)
 		}
 		if (config.trackIdeActions) {
 			startActionListener(trackerLog, trackingDisposable)
@@ -64,14 +62,14 @@ class ActivityTracker {
 		}
 	}
 
-	private static startPollingIdeState(TrackerLog trackerLog, Disposable trackingDisposable) {
+	private static startPollingIdeState(TrackerLog trackerLog, Disposable trackingDisposable, long frequencyMs) {
 		def runnable = {
 			// it has to be invokeOnEDT() method so that it's triggered when IDE dialog window is opened (e.g. override or project settings),
 			invokeOnEDT {
 				trackerLog.append(captureIdeState("IdeState", ""))
 			}
 		} as Runnable
-		def future = JobScheduler.scheduler.scheduleAtFixedRate(runnable, trackIdeStateFrequencyMs, trackIdeStateFrequencyMs, MILLISECONDS)
+		def future = JobScheduler.scheduler.scheduleAtFixedRate(runnable, frequencyMs, frequencyMs, MILLISECONDS)
 		newDisposable(trackingDisposable) {
 			future.cancel(true)
 		}
@@ -97,8 +95,7 @@ class ActivityTracker {
 	private static void startActionListener(TrackerLog trackerLog, Disposable parentDisposable) {
 		def actionManager = ActionManager.instance
 		actionManager.addAnActionListener(new AnActionListener() {
-			@Override
-			void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
+			@Override void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
 				// track action in "before" callback because otherwise timing of action can be wrong
 				// (e.g. commit action shows dialog and finishes only after the dialog is closed)
 				def actionId = actionManager.getId(anAction)
@@ -222,6 +219,7 @@ class ActivityTracker {
 	@Immutable
 	static final class Config {
 		boolean pollIdeState
+		long pollIdeStateMs
 		boolean trackIdeActions
 		boolean trackKeyboard
 		boolean trackMouse
