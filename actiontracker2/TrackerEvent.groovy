@@ -9,6 +9,7 @@ final class TrackerEvent {
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd kk:mm:ss.SSS")
 
 	LocalDateTime time
+	// TODO String userName
 	String eventType
 	String eventData
     String projectName

@@ -9,12 +9,13 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.editor.impl.EditorComponentImpl
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
-import liveplugin.implementation.Misc
+import groovy.transform.Immutable
 import liveplugin.implementation.VcsActions
 
 import javax.swing.*
@@ -25,45 +26,91 @@ import java.time.LocalDateTime
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS
 import static liveplugin.PluginUtil.*
+import static liveplugin.implementation.Misc.newDisposable
 
 class ActionTracker {
-	private final TrackerLog trackerLog
+	private static final long trackIdeStateFrequencyMs = 1000 // TODO make configurable
 
-	ActionTracker(TrackerLog trackerLog) {
+	private final TrackerLog trackerLog
+	private final Disposable parentDisposable
+	private Disposable trackingDisposable
+
+
+	ActionTracker(TrackerLog trackerLog, Disposable parentDisposable) {
+		this.parentDisposable = parentDisposable
 		this.trackerLog = trackerLog
 	}
 
-	void startTracking(Disposable parentDisposable, long trackIdeStateFrequencyMs = 1000) {
-		startIdeEventListeners(parentDisposable)
+	void startTracking(Config config) {
+		if (trackingDisposable != null) return
+		trackingDisposable = newDisposable([parentDisposable])
 
-		if (trackIdeStateFrequencyMs > 0) {
-			def runnable = {
-				// it has to be invokeOnEDT() method so that it's triggered when IDE dialog window is opened (e.g. override or project settings),
-				invokeOnEDT {
-					trackerLog.append(captureIdeState("IdeState", ""))
-				}
-			} as Runnable
-			def future = JobScheduler.scheduler.scheduleAtFixedRate(runnable, trackIdeStateFrequencyMs, trackIdeStateFrequencyMs, MILLISECONDS)
-			Misc.newDisposable(parentDisposable) {
-				future.cancel(true)
-			}
+		if (config.pollIdeState) {
+			startPollingIdeState(trackerLog, trackingDisposable)
+		}
+		if (config.trackIdeActions) {
+			startActionListener(trackerLog, trackingDisposable)
+		}
+		if (config.trackKeyboard || config.trackMouse) {
+			startAWTEventListener(trackerLog, trackingDisposable, config.trackKeyboard, config.trackMouse)
 		}
 	}
 
-	private void startIdeEventListeners(Disposable parentDisposable) {
+	void stopTracking() {
+		if (trackingDisposable != null) {
+			Disposer.dispose(trackingDisposable)
+			trackingDisposable = null
+		}
+	}
+
+	private static startPollingIdeState(TrackerLog trackerLog, Disposable trackingDisposable) {
+		def runnable = {
+			// it has to be invokeOnEDT() method so that it's triggered when IDE dialog window is opened (e.g. override or project settings),
+			invokeOnEDT {
+				trackerLog.append(captureIdeState("IdeState", ""))
+			}
+		} as Runnable
+		def future = JobScheduler.scheduler.scheduleAtFixedRate(runnable, trackIdeStateFrequencyMs, trackIdeStateFrequencyMs, MILLISECONDS)
+		newDisposable(trackingDisposable) {
+			future.cancel(true)
+		}
+	}
+
+	private static startAWTEventListener(TrackerLog trackerLog, Disposable parentDisposable, boolean trackKeyboard, boolean trackMouse) {
+		IdeEventQueue.instance.addPostprocessor(new IdeEventQueue.EventDispatcher() {
+			@Override boolean dispatch(AWTEvent awtEvent) {
+				if (trackMouse && awtEvent instanceof MouseEvent && awtEvent.ID == MouseEvent.MOUSE_CLICKED) {
+					trackerLog.append(captureIdeState("MouseEvent", "" + awtEvent.button + ":" + awtEvent.modifiers))
+				}
+//				if (awtEvent instanceof MouseWheelEvent && awtEvent.getID() == MouseEvent.MOUSE_WHEEL) {
+//					trackerLog.append(createLogEvent("MouseWheelEvent:" + awtEvent.scrollAmount + ":" + awtEvent.wheelRotation))
+//				}
+				if (trackKeyboard && awtEvent instanceof KeyEvent && awtEvent.ID == KeyEvent.KEY_PRESSED) {
+					trackerLog.append(captureIdeState("KeyEvent", "" + (awtEvent.keyChar as int) + ":" + (awtEvent.keyCode as int) + ":" + awtEvent.modifiers))
+				}
+				false
+			}
+		}, parentDisposable)
+	}
+
+	private static void startActionListener(TrackerLog trackerLog, Disposable parentDisposable) {
 		def actionManager = ActionManager.instance
 		actionManager.addAnActionListener(new AnActionListener() {
-			@Override void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
+			@Override
+			void beforeActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {
 				// track action in "before" callback because otherwise timing of action can be wrong
 				// (e.g. commit action shows dialog and finishes only after the dialog is closed)
 				def actionId = actionManager.getId(anAction)
-				if (actionId == null) return // can be null on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction)
+				if (actionId == null) return
+				// can be null on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction)
 				trackerLog.append(captureIdeState("Action", actionId))
 			}
 			@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
 			@Override void beforeEditorTyping(char c, DataContext dataContext) {}
 		}, parentDisposable)
 
+		// use custom listener for VCS because listening to normal IDE actions
+		// doesn't allow to know about actual commits opposed to just opening commit dialog
 		VcsActions.registerVcsListener(parentDisposable, new VcsActions.Listener() {
 			@Override void onVcsCommit() {
 				invokeOnEDT {
@@ -81,21 +128,6 @@ class ActionTracker {
 				}
 			}
 		})
-
-		IdeEventQueue.instance.addPostprocessor(new IdeEventQueue.EventDispatcher() {
-			@Override boolean dispatch(AWTEvent awtEvent) {
-				if (awtEvent instanceof MouseEvent && awtEvent.ID == MouseEvent.MOUSE_CLICKED) {
-					trackerLog.append(captureIdeState("MouseEvent", "" + awtEvent.button + ":" + awtEvent.modifiers))
-
-//				} else if (awtEvent instanceof MouseWheelEvent && awtEvent.getID() == MouseEvent.MOUSE_WHEEL) {
-//					trackerLog.append(createLogEvent("MouseWheelEvent:" + awtEvent.scrollAmount + ":" + awtEvent.wheelRotation))
-
-				} else if (awtEvent instanceof KeyEvent && awtEvent.ID == KeyEvent.KEY_PRESSED) {
-					trackerLog.append(captureIdeState("KeyEvent", "" + (awtEvent.keyChar as int) + ":" + (awtEvent.keyCode as int) + ":" + awtEvent.modifiers))
-				}
-				false
-			}
-		}, parentDisposable)
 	}
 
 	private static TrackerEvent captureIdeState(String eventType, String eventData, LocalDateTime time = LocalDateTime.now()) {
@@ -181,5 +213,13 @@ class ActionTracker {
 		if (component == null) null
 		else if (matches(component)) component as T
 		else findParentComponent(component.parent, matches)
+	}
+
+	@Immutable
+	static final class Config {
+		boolean pollIdeState
+		boolean trackIdeActions
+		boolean trackKeyboard
+		boolean trackMouse
 	}
 }
