@@ -14,18 +14,39 @@ final class TrackerEvent {
 	String eventData
     String projectName
 	String focusedComponent
-	String openFilePath
+	String file
     String psiPath
 	int editorLine
 	int editorColumn
 
     static TrackerEvent fromCsv(String csvLine) {
-        def (date, userName, eventType, eventData, projectName, focusedComponent, file, element, editorLine, editorColumn) = csvLine.split(",").toList()
-        new TrackerEvent(LocalDateTime.parse(date, TIME_FORMAT), userName, eventType, eventData, projectName, focusedComponent, file, element, editorLine, editorColumn)
+        def (time, userName, eventType, eventData, projectName, focusedComponent, file, psiPath, editorLine, editorColumn) = csvLine.split(",").toList()
+        new TrackerEvent(
+		        LocalDateTime.parse(time, TIME_FORMAT),
+		        userName,
+		        eventType,
+		        eventData,
+		        projectName,
+		        focusedComponent,
+		        file,
+		        psiPath,
+		        Integer.parseInt(editorLine),
+		        Integer.parseInt(editorColumn)
+        )
     }
 
     String toCsv() {
-	    [TIME_FORMAT.format(time), userName, eventType, eventData, projectName, focusedComponent, openFilePath, psiPath, editorLine, editorColumn].join(",")
+	    [TIME_FORMAT.format(time),
+	     userName,
+	     eventType,
+	     eventData,
+	     projectName,
+	     focusedComponent,
+	     file,
+	     psiPath,
+	     editorLine,
+	     editorColumn
+	    ].join(",")
     }
 
 	static TrackerEvent ideNotInFocus(LocalDateTime time, String userName, String eventType, String eventData) {

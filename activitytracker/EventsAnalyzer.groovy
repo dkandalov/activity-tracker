@@ -1,19 +1,22 @@
 package activitytracker
 
 class EventsAnalyzer {
-    static Map<String, Integer> aggregateByFile(List<TrackerEvent> events) {
-        events.groupBy{it.openFilePath}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
+    static Map<String, String> timeInEditorByFile(List<TrackerEvent> events) {
+	    (Map<String, String>) events
+			  .findAll{ it.eventType == "IdeState" && it.focusedComponent == "Editor" && it.file != "" }
+		      .groupBy{ it.file }
+	          .collectEntries{ [it.key, it.value.size()] }
+		      .sort{ -it.value }
+	          .collectEntries{ [fileName(it.key), secondsToString(it.value)] }
     }
 
-    static Map<String, Integer> aggregateByElement(List<TrackerEvent> events) {
-        events.groupBy{it.psiPath}.collectEntries{[it.key, it.value.size()]}.sort{-it.value} as Map<String, Integer>
-    }
+	private static String secondsToString(Integer seconds) {
+		seconds.intdiv(60) + ":" + String.format("%02d", seconds % 60)
+	}
 
-    static asString(Map<String, Integer> map) {
-        def durationAsString = { Integer seconds ->
-            seconds.intdiv(60) + ":" + String.format("%02d", seconds % 60)
-        }
-        def keyAsString = { it == null ? "[not in editor]" : it }
-        map.collectEntries{ [keyAsString(it.key), durationAsString(it.value)] }.entrySet().join("\n")
-    }
+	private static String fileName(String filePath) {
+		def i = filePath.lastIndexOf(File.separator)
+		if (i == -1) return filePath
+		else filePath.substring(i + 1)
+	}
 }

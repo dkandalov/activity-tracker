@@ -48,15 +48,12 @@ class TrackerLog {
 		FileUtil.delete(new File(statsFilePath))
 	}
 
-	List<TrackerEvent> readHistory(Date fromTime, Date toTime) {
+	List<TrackerEvent> readEvents() {
 		new File(statsFilePath).withReader { reader ->
 			def result = []
 			String line
 			while ((line = reader.readLine()) != null) {
-				def event = TrackerEvent.fromCsv(line)
-				if (event.time.after(fromTime) && event.time.before(toTime))
-					result << event
-				if (event.time.after(toTime)) break
+				result << TrackerEvent.fromCsv(line)
 			}
 			result
 		}

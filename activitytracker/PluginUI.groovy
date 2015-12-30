@@ -83,15 +83,12 @@ class PluginUI {
 				plugin.openTrackingLogFolder()
 			}
 		}
-		def statistics = new AnAction("Last 30 min Stats") {
+		def showStatistics = new AnAction("Show Stats") {
 			@Override void actionPerformed(AnActionEvent event) {
-				// TODO
-				return
-				def history = trackerLog.readHistory(minus30minutesFrom(now()), now())
-				if (history.empty) show("There is no recorded history to analyze")
+				def events = trackerLog.readEvents()
+				if (events.empty) show("There are no recorded events to analyze")
 				else {
-					show(EventsAnalyzer.asString(EventsAnalyzer.aggregateByFile(history)))
-					show(EventsAnalyzer.asString(EventsAnalyzer.aggregateByElement(history)))
+					show(EventsAnalyzer.timeInEditorByFile(events))
 				}
 			}
 		}
@@ -134,9 +131,8 @@ class PluginUI {
 
 		def actionGroup = new DefaultActionGroup().with {
 			add(toggleTracking)
-			add(statistics)
-			addSeparator()
 			add(new DefaultActionGroup("Current Log", true).with {
+				add(showStatistics)
 				add(openLogInIde)
 				add(openLogFolder)
 				addSeparator()
@@ -144,6 +140,7 @@ class PluginUI {
 				add(clearCurrentLog)
 				it
 			})
+			addSeparator()
 			add(new DefaultActionGroup("Settings", true).with {
 				add(toggleTrackActions)
 				add(togglePollIdeState)
@@ -151,7 +148,6 @@ class PluginUI {
 				add(toggleTrackMouse)
 				it
 			})
-			addSeparator()
 			add(openHelp)
 			it
 		}
