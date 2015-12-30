@@ -15,6 +15,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
+import com.intellij.util.SystemProperties
 import groovy.transform.Immutable
 import liveplugin.implementation.VcsActions
 
@@ -130,24 +131,27 @@ class ActionTracker {
 		})
 	}
 
-	private static TrackerEvent captureIdeState(String eventType, String eventData, LocalDateTime time = LocalDateTime.now()) {
+	private static TrackerEvent captureIdeState(String eventType, String eventData) {
 		try {
+			def time = LocalDateTime.now()
+			def userName = SystemProperties.userName
+
 			def ideFocusManager = IdeFocusManager.globalInstance
 			def focusOwner = ideFocusManager.focusOwner
 
 			def window = WindowManagerEx.instanceEx.mostRecentFocusedWindow
-			if (window == null) return TrackerEvent.ideNotInFocus(time, eventType, eventData)
+			if (window == null) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
 
 			def ideHasFocus = window.active
 			if (!ideHasFocus) {
 				IdeFrameImpl ideFrame = findParentComponent(focusOwner){ it instanceof IdeFrameImpl }
 				ideHasFocus = ideFrame != null && ideFrame.active
 			}
-			if (!ideHasFocus) return TrackerEvent.ideNotInFocus(time, eventType, eventData)
+			if (!ideHasFocus) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
 
 			// use "lastFocusedFrame" to be able to obtain project in cases when some dialog is open (e.g. "override" or "project settings")
 			def project = ideFocusManager.lastFocusedFrame?.project
-			if (project == null) return TrackerEvent.ideNotInFocus(time, eventType, eventData)
+			if (project == null) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
 
 			def focusOwnerId
 			// check for JDialog before EditorComponentImpl because dialog can belong to editor
@@ -181,7 +185,7 @@ class ActionTracker {
 				column = editor.caretModel.logicalPosition.column
 			}
 
-			new TrackerEvent(time, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column)
+			new TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column)
 
 		} catch (Exception e) {
 			log(e, NotificationType.ERROR)
