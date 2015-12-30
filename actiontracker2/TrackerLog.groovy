@@ -15,6 +15,7 @@ class TrackerLog {
 	}
 
 	def append(@Nullable TrackerEvent event) {
+		// TODO use queue
 		if (event == null) return
 		new File(statsFilePath).append(event.toCsv() + "\n")
 	}
