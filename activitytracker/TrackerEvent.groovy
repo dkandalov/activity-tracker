@@ -1,4 +1,4 @@
-package actiontracker2
+package activitytracker
 import groovy.transform.Immutable
 
 import java.time.LocalDateTime

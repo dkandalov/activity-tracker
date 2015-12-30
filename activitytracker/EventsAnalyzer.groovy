@@ -1,4 +1,4 @@
-package actiontracker2
+package activitytracker
 
 class EventsAnalyzer {
     static Map<String, Integer> aggregateByFile(List<TrackerEvent> events) {

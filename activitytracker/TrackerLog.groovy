@@ -1,4 +1,4 @@
-package actiontracker2
+package activitytracker
 
 import com.intellij.openapi.util.io.FileUtil
 import org.jetbrains.annotations.Nullable

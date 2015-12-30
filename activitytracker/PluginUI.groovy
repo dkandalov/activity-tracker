@@ -1,4 +1,4 @@
-package actiontracker2
+package activitytracker
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
@@ -18,15 +18,15 @@ import org.jetbrains.annotations.NotNull
 import java.awt.*
 import java.awt.event.MouseEvent
 
-import static actiontracker2.ActionTrackerPlugin.pluginId
+import static ActivityTrackerPlugin.pluginId
 import static liveplugin.PluginUtil.*
 
 class PluginUI {
 	private static final widgetId = "${pluginId}-Widget"
-	private final ActionTrackerPlugin plugin
-	private ActionTrackerPlugin.State state
+	private final ActivityTrackerPlugin plugin
+	private ActivityTrackerPlugin.State state
 
-	PluginUI(ActionTrackerPlugin plugin) {
+	PluginUI(ActivityTrackerPlugin plugin) {
 		this.plugin = plugin
 	}
 
@@ -37,22 +37,22 @@ class PluginUI {
 		this
 	}
 
-	def update(ActionTrackerPlugin.State state) {
+	def update(ActivityTrackerPlugin.State state) {
 		if (this.state?.isTracking != state.isTracking) {
-			show("Action tracking: " + (state.isTracking ? "ON" : "OFF"))
+			show("Activity tracking: " + (state.isTracking ? "ON" : "OFF"))
 		}
 		this.state = state
 		updateWidget(widgetId)
 	}
 
 	private registerPopup(Disposable parentDisposable) {
-		registerAction("${pluginId}-Popup", "ctrl shift alt O", "", "Action Tracker II Popup", parentDisposable) { AnActionEvent actionEvent ->
+		registerAction("${pluginId}-Popup", "ctrl shift alt O", "", "Activity Tracker Popup", parentDisposable) { AnActionEvent actionEvent ->
 			createListPopup(actionEvent.dataContext).showCenteredInCurrentWindow(actionEvent.project)
 		}
 	}
 
 	private ListPopup createListPopup(DataContext dataContext) {
-		// TODO register actions below so that they can be assigned shortcutsa
+		// TODO register actions below so that they can be assigned shortcuts
 		def toggleTracking = new AnAction() {
 			@Override void actionPerformed(AnActionEvent event) {
 				plugin.toggleTracking()
@@ -114,7 +114,7 @@ class PluginUI {
 		}
 		def openHelp = new AnAction("Help (GitHub)") {
 			@Override void actionPerformed(AnActionEvent event) {
-				BrowserUtil.open("https://github.com/dkandalov/action-tracker-2")
+				BrowserUtil.open("https://github.com/dkandalov/activity-tracker")
 			}
 		}
 
@@ -141,7 +141,7 @@ class PluginUI {
 			it
 		}
 		JBPopupFactory.instance.createActionGroupPopup(
-				"Action Tracker II",
+				"Activity Tracker",
 				actionGroup,
 				dataContext,
 				JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
@@ -152,11 +152,11 @@ class PluginUI {
 	private registerWidget(Disposable parentDisposable) {
 		def presentation = new StatusBarWidget.TextPresentation() {
 			@NotNull @Override String getText() {
-				"Action tracker: " + (PluginUI.this.state.isTracking ? "on" : "off")
+				"Activity tracker: " + (PluginUI.this.state.isTracking ? "on" : "off")
 			}
 
 			@Override String getTooltipText() {
-				"Click to start/stop tracking actions."
+				"Click to open menu"
 			}
 
 			@Override Consumer<MouseEvent> getClickConsumer() {
