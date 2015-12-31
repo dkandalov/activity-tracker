@@ -9,6 +9,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.editor.impl.EditorComponentImpl
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindowManager
@@ -139,7 +140,7 @@ class ActivityTracker {
 			def window = WindowManagerEx.instanceEx.mostRecentFocusedWindow
 			if (window == null) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
 
-			def ideHasFocus = window.active
+			def ideHasFocus = window.active // TODO try ApplicationManager.application.isActive()
 			if (!ideHasFocus) {
 				IdeFrameImpl ideFrame = findParentComponent(focusOwner){ it instanceof IdeFrameImpl }
 				ideHasFocus = ideFrame != null && ideFrame.active
@@ -169,17 +170,19 @@ class ActivityTracker {
 			def column = -1
 			def editor = currentEditorIn(project)
 			if (editor != null) {
-				def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
-				PsiMethod psiMethod = findPsiParent(elementAtOffset, { it instanceof PsiMethod })
-				PsiFile psiFile = findPsiParent(elementAtOffset, { it instanceof PsiFile })
-				def currentElement = (psiMethod == null ? psiFile : psiMethod)
-
 				// keep full file name because projects and libraries might have files with the same names/partial paths
 				def file = currentFileIn(project)
 				filePath = (file == null ? "" : file.path)
-				psiPath = psiPathOf(currentElement)
 				line = editor.caretModel.logicalPosition.line
 				column = editor.caretModel.logicalPosition.column
+
+				if (!DumbService.getInstance(project).dumb) {
+					def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
+					PsiMethod psiMethod = findPsiParent(elementAtOffset, { it instanceof PsiMethod })
+					PsiFile psiFile = findPsiParent(elementAtOffset, { it instanceof PsiFile })
+					def currentElement = (psiMethod == null ? psiFile : psiMethod)
+					psiPath = psiPathOf(currentElement)
+				}
 			}
 
 			new TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column)
