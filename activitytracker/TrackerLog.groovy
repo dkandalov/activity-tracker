@@ -19,7 +19,7 @@ class TrackerLog {
 	TrackerLog(String path, Disposable parentDisposable) {
 		def pathFile = new File(path)
 		if (!pathFile.exists()) pathFile.mkdir()
-		this.statsFilePath = path + "/stats.csv"
+		this.statsFilePath = path + "/ide-events.csv"
 		this.parentDisposable = parentDisposable
 	}
 
