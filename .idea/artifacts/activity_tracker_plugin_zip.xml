@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="activity-tracker-plugin.zip">
+    <output-path>$PROJECT_DIR$/bin</output-path>
+    <root id="archive" name="activity-tracker-plugin.zip">
+      <element id="directory" name="activity-tracker-plugin">
+        <element id="directory" name="lib">
+          <element id="file-copy" path="$PROJECT_DIR$/../live-plugin/LivePlugin.jar" />
+          <element id="artifact" artifact-name="activity-tracker.jar" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

@@ -1,0 +1,24 @@
+<idea-plugin version="2">
+    <id>Activity Tracker</id>
+    <name>Activity Tracker</name>
+    <version>0.1 beta</version>
+    <vendor email="dmitry.kandalov [at] gmail.com" url="https://github.com/dkandalov/activity-tracker">Dmitry Kandalov</vendor>
+
+    <description><![CDATA[
+        This is proof-of-concept plugin for tracking IDE events.<br/>
+        TODO
+    ]]></description>
+
+    <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
+    <!-- since IJ 15 -->
+    <idea-version since-build="143.0"/>
+
+    <!-- http://confluence.jetbrains.net/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products -->
+    <depends>com.intellij.modules.lang</depends>
+
+    <application-components>
+        <component>
+            <implementation-class>activitytracker.AppComponent</implementation-class>
+        </component>
+    </application-components>
+</idea-plugin>
