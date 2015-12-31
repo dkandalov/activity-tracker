@@ -123,7 +123,7 @@ class PluginUI {
 		}
 		def openHelp = new AnAction("Help") {
 			@Override void actionPerformed(AnActionEvent event) {
-				BrowserUtil.open("https://github.com/dkandalov/activity-tracker")
+				BrowserUtil.open("https://github.com/dkandalov/activity-tracker#help")
 			}
 		}
 
