@@ -1,6 +1,7 @@
 import activitytracker.ActivityTracker
 import activitytracker.ActivityTrackerPlugin
 import activitytracker.PluginUI
+import activitytracker.StatsToolWindow
 import activitytracker.TrackerLog
 import com.intellij.ide.util.PropertiesComponent
 
@@ -12,7 +13,7 @@ invokeOnEDT {
 	def tracker = new ActivityTracker(trackerLog, pluginDisposable)
 	def propertiesComponent = PropertiesComponent.instance
 	def plugin = new ActivityTrackerPlugin(tracker, trackerLog, propertiesComponent, pluginDisposable).init()
-	new PluginUI(plugin, trackerLog).init(pluginDisposable)
+	new PluginUI(plugin, trackerLog, pluginDisposable).init()
 
 	if (!isIdeStartup) show("Reloaded ActivityTracker")
 }

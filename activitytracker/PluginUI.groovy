@@ -24,13 +24,15 @@ class PluginUI {
 	private final ActivityTrackerPlugin plugin
 	private ActivityTrackerPlugin.State state
 	private final TrackerLog trackerLog
+	private final Disposable parentDisposable
 
-	PluginUI(ActivityTrackerPlugin plugin, TrackerLog trackerLog) {
+	PluginUI(ActivityTrackerPlugin plugin, TrackerLog trackerLog, Disposable parentDisposable) {
 		this.plugin = plugin
 		this.trackerLog = trackerLog
+		this.parentDisposable = parentDisposable
 	}
 
-	def init(Disposable parentDisposable) {
+	def init() {
 		plugin.pluginUI = this
 		registerWidget(parentDisposable)
 		registerPopup(parentDisposable)
@@ -88,7 +90,8 @@ class PluginUI {
 				def events = trackerLog.readEvents()
 				if (events.empty) show("There are no recorded events to analyze")
 				else {
-					show(EventsAnalyzer.timeInEditorByFile(events))
+					def data = EventsAnalyzer.timeInEditorByFile(events)
+					new StatsToolWindow().showIn(event.project, data, parentDisposable)
 				}
 			}
 		}
@@ -118,7 +121,7 @@ class PluginUI {
 				if (wasCleared) show("Tracking log was cleared")
 			}
 		}
-		def openHelp = new AnAction("Help (GitHub)") {
+		def openHelp = new AnAction("Help") {
 			@Override void actionPerformed(AnActionEvent event) {
 				BrowserUtil.open("https://github.com/dkandalov/activity-tracker")
 			}
