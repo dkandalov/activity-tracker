@@ -1,16 +1,17 @@
-What is this?
-=============
-
-This is a micro-plugin for IntelliJ that collects stats about which file is currently open
-and which class/method cursor in on.
-<br/>
-(It runs inside [live-plugin](https://github.com/dkandalov/live-plugin).
-Implemented for Java but should be easy to extend for other languages supported by IntelliJ.)
-
+Activity Tracker
+================
+This is proof-of-concept plugin for IntelliJ IDEs to track and record user activity.
+Currently the main feature is recording user activity into csv files.
+To use the plugin see "Activity tracker" widget in IDE statusbar.
 
 Why?
 ====
- - To get an idea about how much time you spend on different parts of code.
- You might already "know" it but having actual data should not hurt.
- - Measure how often source code is read vs how often it's modified.
- (This is not implemented. The idea is to get data from commits and subtract from real-time measurement.)
+The main idea is to mine recorded data for interesting user or project-specific insights,
+e.g. time spent in each part of project or editing/browsing ratio.
+If you happen to use the plugin and find interesting way to analyze data, get in touch on
+<a href="https://twitter.com/dmitrykandalov">twitter</a> or
+<a href="https://github.com/dkandalov/activity-tracker/issues">GitHub</a>.
+
+Help
+====
+TODO
