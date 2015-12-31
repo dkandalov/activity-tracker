@@ -17,11 +17,11 @@ If you happen to use the plugin and find interesting way to analyze data, get in
 
 
 ### Help
-To open plugin popup menu:
+#### To open plugin popup menu:
  - click on "Activity tracker" widget in IDE statusbar or
  - invoke "Activity Tracker Popup" action (``ctrl+alt+shift+O`` shortcut)
 
-Popup menu actions:
+#### Popup menu actions:
  - **Start/stop Tracking** - activate/deactivate recording of IDE events.
  Events are written into ``ide-events.csv`` file located in predefined path.
  This file is referred to as "current log".
@@ -40,11 +40,10 @@ Popup menu actions:
     - **Poll IDE State** - enable polling IDE state every 1 second even if there is activity.
         Enable this to get more accurate data about time spent in/outside of IDE.
     - **Track Keyboard** - enable tracking UI keyboard events. **Beware!**
-        If you enter sensitive information like passwords, they might be captured and stored in current log file.
+        If you enter sensitive information (like passwords), it might be captured and stored in current log file.
     - **Track Mouse** - enable tracking UI mouse click events.
 
-
-Log file columns:
+#### Log file columns:
  - **timestamp** - time of event in ``yyyy/MM/dd kk:mm:ss.SSS`` format.
  - **user name** - current user name. The intention is to be able to merge logs from several users.
  - **event type**, **event data** - depends on type of captured event.
@@ -65,7 +64,7 @@ Log file columns:
  - **editor column** - caret column number in Editor.
 
 
-Example of log file:
+#### Example of log file
 ```
 2015/12/31 01:07:53.300,dima,MouseEvent,1:16,activity-tracker,Plugins,/path/to/activity-tracker/plugin.groovy,,20,0
 2015/12/31 01:07:53.419,dima,KeyEvent,65535:16:1,activity-tracker,Plugins,/path/to/activity-tracker/plugin.groovy,,20,0
@@ -77,3 +76,10 @@ Example of log file:
 2015/12/31 01:07:56.296,dima,IdeState,,,,,,-1,-1
 2015/12/31 01:07:57.291,dima,IdeState,,,,,,-1,-1
 ```
+
+### Contributing
+The best way to run plugin from source code is to use [LivePlugin](https://github.com/dkandalov/live-plugin).
+
+The most interesting thing to look into at the moment is analysis of recorded data.
+All suggestions and code (even if it's not JVM language) are welcome.
+If you have a question, feel free to create an issue.
