@@ -131,6 +131,9 @@ class ActivityTracker {
 
 	private static TrackerEvent captureIdeState(String eventType, String eventData) {
 		try {
+			if (eventType == "IdeState") {
+				eventData = "Inactive"
+			}
 			def time = LocalDateTime.now()
 			def userName = SystemProperties.userName
 
@@ -142,23 +145,30 @@ class ActivityTracker {
 
 			def ideHasFocus = window.active // TODO try ApplicationManager.application.isActive()
 			if (!ideHasFocus) {
-				IdeFrameImpl ideFrame = findParentComponent(focusOwner){ it instanceof IdeFrameImpl }
+				IdeFrameImpl ideFrame = findParentComponent(focusOwner) { it instanceof IdeFrameImpl }
 				ideHasFocus = ideFrame != null && ideFrame.active
 			}
 			if (!ideHasFocus) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
 
 			// use "lastFocusedFrame" to be able to obtain project in cases when some dialog is open (e.g. "override" or "project settings")
 			def project = ideFocusManager.lastFocusedFrame?.project
-			if (project == null) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
+			if (eventType == "IdeState" && project?.default) {
+				eventData = "NoProject"
+			}
+			if (project == null || project.default) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
+
+			if (eventType == "IdeState") {
+				eventData = "Active"
+			}
 
 			def focusOwnerId
 			// check for JDialog before EditorComponentImpl because dialog can belong to editor
-			if (findParentComponent(focusOwner){ it instanceof JDialog } != null) {
+			if (findParentComponent(focusOwner) { it instanceof JDialog } != null) {
 				focusOwnerId = "Dialog"
-			} else if (findParentComponent(focusOwner){ it instanceof EditorComponentImpl } != null) {
+			} else if (findParentComponent(focusOwner) { it instanceof EditorComponentImpl } != null) {
 				focusOwnerId = "Editor"
 			} else {
-				focusOwnerId = ToolWindowManager.getInstance(project).activeToolWindowId
+				focusOwnerId = ToolWindowManager.getInstance(project)?.activeToolWindowId
 				if (focusOwnerId == null) {
 					focusOwnerId = "Popup"
 				}
