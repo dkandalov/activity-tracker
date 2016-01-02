@@ -186,7 +186,8 @@ class ActivityTracker {
 				line = editor.caretModel.logicalPosition.line
 				column = editor.caretModel.logicalPosition.column
 
-				if (!DumbService.getInstance(project).dumb) {
+				// non-java based IDEs might not have PsiMethod class
+				if (!DumbService.getInstance(project).dumb && isOnClasspath("com.intellij.psi.PsiMethod")) {
 					def elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
 					PsiMethod psiMethod = findPsiParent(elementAtOffset, { it instanceof PsiMethod })
 					PsiFile psiFile = findPsiParent(elementAtOffset, { it instanceof PsiFile })
@@ -227,6 +228,10 @@ class ActivityTracker {
 		if (component == null) null
 		else if (matches(component)) component as T
 		else findParentComponent(component.parent, matches)
+	}
+
+	private static boolean isOnClasspath(String className) {
+		ActivityTracker.class.classLoader.getResource(className.replace(".", "/") + ".class") != null
 	}
 
 	@Immutable
