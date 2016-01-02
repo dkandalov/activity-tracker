@@ -1,21 +1,29 @@
 package activitytracker
-
 import com.intellij.ide.BrowserUtil
+import com.intellij.ide.actions.ShowFilePathAction
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationListener
+import com.intellij.notification.Notifications
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
+import liveplugin.implementation.Misc
 import org.jetbrains.annotations.NotNull
+import org.jetbrains.annotations.Nullable
 
+import javax.swing.event.HyperlinkEvent
 import java.awt.*
 import java.awt.event.MouseEvent
 
 import static ActivityTrackerPlugin.pluginId
+import static com.intellij.notification.NotificationType.INFORMATION
 import static com.intellij.openapi.ui.Messages.showOkCancelDialog
 import static liveplugin.PluginUtil.*
 
@@ -88,7 +96,7 @@ class PluginUI {
 		def showStatistics = new AnAction("Show Stats") {
 			@Override void actionPerformed(AnActionEvent event) {
 				def events = trackerLog.readEvents()
-				if (events.empty) show("There are no recorded events to analyze")
+				if (events.empty) showNotification("There are no recorded events to analyze")
 				else {
 					def data = EventsAnalyzer.timeInEditorByFile(events)
 					new StatsToolWindow().showIn(event.project, data, parentDisposable)
@@ -98,14 +106,16 @@ class PluginUI {
 		def rollCurrentLog = new AnAction("Roll Tracking Log") {
 			@Override void actionPerformed(AnActionEvent event) {
 				def userAnswer = showOkCancelDialog(event.project,
-						"Roll current tracking log file?",
+						"Roll current tracking log file?\n(Current data will copied into new file.)",
 						"Activity Tracker",
 						Messages.questionIcon
 				)
 				if (userAnswer != Messages.OK) return
 
 				def rolledFile = trackerLog.rollLog()
-				show("Rolled tracking log into '${rolledFile.name}'")
+				showNotification("Rolled tracking log into <a href=''>${rolledFile.name}</a>") {
+					ShowFilePathAction.openFile(rolledFile)
+				}
 			}
 		}
 		def clearCurrentLog = new AnAction("Clear Tracking Log") {
@@ -118,7 +128,7 @@ class PluginUI {
 				if (userAnswer != Messages.OK) return
 
 				def wasCleared = trackerLog.clearLog()
-				if (wasCleared) show("Tracking log was cleared")
+				if (wasCleared) showNotification("Tracking log was cleared")
 			}
 		}
 		def openHelp = new AnAction("Help") {
@@ -194,5 +204,20 @@ class PluginUI {
 			}
 		}
 		registerWidget(widgetId, parentDisposable, "before Position", presentation)
+	}
+
+	private static showNotification(@Nullable message, Closure<?> onLinkClick = {}) {
+		invokeLaterOnEDT {
+			message = Misc.asString(message)
+			def title = ""
+			def notificationType = INFORMATION
+			def groupDisplayId = pluginId
+			def notification = new Notification(groupDisplayId, title, message, notificationType, new NotificationListener() {
+				@Override void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
+					onLinkClick(event)
+				}
+			})
+			ApplicationManager.application.messageBus.syncPublisher(Notifications.TOPIC).notify(notification)
+		}
 	}
 }
