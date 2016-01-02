@@ -95,11 +95,16 @@ class PluginUI {
 		}
 		def showStatistics = new AnAction("Show Stats") {
 			@Override void actionPerformed(AnActionEvent event) {
-				def events = trackerLog.readEvents()
-				if (events.empty) showNotification("There are no recorded events to analyze")
-				else {
-					def data = EventsAnalyzer.timeInEditorByFile(events)
-					new StatsToolWindow().showIn(event.project, data, parentDisposable)
+				doInBackground("Analysing activity log") {
+					def events = trackerLog.readEvents()
+					if (events.empty) showNotification("There are no recorded events to analyze")
+					else {
+						def editorTimeByFile = EventsAnalyzer.timeInEditorByFile(events)
+						def timeByProject = EventsAnalyzer.timeByProject(events)
+						invokeOnEDT {
+							new StatsToolWindow().showIn(event.project, editorTimeByFile, timeByProject, parentDisposable)
+						}
+					}
 				}
 			}
 		}

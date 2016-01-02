@@ -10,6 +10,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.table.JBTable
@@ -24,13 +25,16 @@ import java.awt.datatransfer.StringSelection
 import java.awt.event.ActionEvent
 
 import static com.intellij.openapi.wm.ToolWindowAnchor.RIGHT
+import static java.awt.GridBagConstraints.BOTH
+import static java.awt.GridBagConstraints.CENTER
+import static java.awt.GridBagConstraints.NORTH
+import static java.awt.GridBagConstraints.SOUTH
 import static liveplugin.implementation.Misc.newDisposable
 
 class StatsToolWindow {
 	private static final toolWindowId = "Tracking Log Stats"
 
-	static showIn(Project project, Map timeInEditorByFile, Disposable parentDisposable) {
-
+	static showIn(Project project, Map timeInEditorByFile, Map timeByProject, Disposable parentDisposable) {
 		def disposable = newDisposable([parentDisposable])
 		def actionGroup = new DefaultActionGroup().with{
 			add(new AnAction(AllIcons.Actions.Cancel) {
@@ -44,15 +48,20 @@ class StatsToolWindow {
 		def createToolWindowPanel = {
 			JPanel rootPanel = new JPanel().with{
 				layout = new GridBagLayout()
-				GridBag bag = new GridBag().setDefaultWeightX(1).setDefaultWeightY(1).setDefaultFill(GridBagConstraints.BOTH)
+				GridBag bag = new GridBag().setDefaultWeightX(1).setDefaultWeightY(1).setDefaultFill(BOTH)
 
-				JBTable table = createTable(timeInEditorByFile)
-				add(new JBScrollPane(table), bag.nextLine().next().anchor(GridBagConstraints.NORTH))
+				add(new JBLabel("Time spent in editor"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
+				JBTable table1 = createTable(["File name", "Time"], timeInEditorByFile)
+				add(new JBScrollPane(table1), bag.nextLine().next().weighty(3).anchor(NORTH))
+
+				add(new JBLabel("Time spent in project"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
+				JBTable table2 = createTable(["Project", "Time"], timeByProject)
+				add(new JBScrollPane(table2), bag.nextLine().next().anchor(SOUTH))
 
 				add(new JPanel().with {
 					layout = new GridBagLayout()
-					def message = "(The above data only includes time spent in IDE editor, " +
-							"i.e. time spent in IDE toolwindows, dialogs or other applications is not counted.)"
+					def message = "(Note that time spent in project includes time in IDE toolwindows and dialogs. " +
+							"Therefore, it's will be greater than time spent in IDE editor.)"
 					add(new JTextArea(message).with{
 						editable = false
 						lineWrap = true
@@ -61,9 +70,9 @@ class StatsToolWindow {
                         font = UIUtil.labelFont
 						UIUtil.applyStyle(UIUtil.ComponentStyle.REGULAR, it)
 						it
-					}, new GridBag().setDefaultWeightX(1).setDefaultWeightY(1).nextLine().next().fillCellHorizontally().anchor(GridBagConstraints.NORTH))
+					}, new GridBag().setDefaultWeightX(1).setDefaultWeightY(1).nextLine().next().fillCellHorizontally().anchor(NORTH))
 					it
-				}, bag.nextLine().next().anchor(GridBagConstraints.SOUTH))
+				}, bag.nextLine().next().anchor(SOUTH))
 
 				it
 			}
@@ -79,17 +88,16 @@ class StatsToolWindow {
 		toolWindow.show(doNothing)
 	}
 
-	private static JBTable createTable(timeInEditorByFile) {
-		def totalTime = timeInEditorByFile.entrySet().sum(0){ it.value }
+	private static JBTable createTable(Collection header, Map timeInEditorByFile) {
 		def tableModel = new DefaultTableModel() {
 			@Override boolean isCellEditable(int row, int column) { false }
 		}
-		tableModel.addColumn("File name")
-		tableModel.addColumn("Time spent")
+		header.each {
+			tableModel.addColumn(it)
+		}
 		timeInEditorByFile.entrySet().each{
 			tableModel.addRow([it.key, secondsToString(it.value)].toArray())
 		}
-		tableModel.addRow(["Total", secondsToString(totalTime)].toArray())
 		def table = new JBTable(tableModel).with{
 			striped = true
 			showGrid = false
