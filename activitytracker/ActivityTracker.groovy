@@ -70,7 +70,8 @@ class ActivityTracker {
 				trackerLog.append(captureIdeState("IdeState", ""))
 			}
 		} as Runnable
-		def future = JobScheduler.scheduler.scheduleAtFixedRate(runnable, frequencyMs, frequencyMs, MILLISECONDS)
+		def nextSecondStartMs = 1000 - (System.currentTimeMillis() % 1000)
+		def future = JobScheduler.scheduler.scheduleAtFixedRate(runnable, nextSecondStartMs, frequencyMs, MILLISECONDS)
 		newDisposable(trackingDisposable) {
 			future.cancel(true)
 		}
