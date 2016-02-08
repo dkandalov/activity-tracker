@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <id>Activity Tracker</id>
     <name>Activity Tracker</name>
-    <version>0.1.2 beta</version>
+    <version>0.1.3 beta</version>
     <vendor email="dmitry.kandalov [at] gmail.com" url="https://github.com/dkandalov/activity-tracker">Dmitry Kandalov</vendor>
 
     <description><![CDATA[
@@ -23,8 +23,8 @@
     <!-- since IJ 15 -->
     <idea-version since-build="143.0"/>
 
-    <!-- http://confluence.jetbrains.net/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products -->
-    <depends>com.intellij.modules.lang</depends>
+    <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
 
     <application-components>
         <component>
