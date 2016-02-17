@@ -48,12 +48,16 @@ class TrackerLog {
 		FileUtil.delete(new File(statsFilePath))
 	}
 
-	List<TrackerEvent> readEvents() {
+	List<TrackerEvent> readEvents(Closure onParseError) {
 		new File(statsFilePath).withReader { reader ->
 			def result = []
 			String line
 			while ((line = reader.readLine()) != null) {
-				result << TrackerEvent.fromCsv(line)
+				try {
+					result << TrackerEvent.fromCsv(line)
+				} catch (Exception e) {
+					onParseError.call(line, e)
+				}
 			}
 			result
 		}

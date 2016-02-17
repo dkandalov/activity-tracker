@@ -8,6 +8,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.ListPopup
@@ -28,6 +29,8 @@ import static com.intellij.openapi.ui.Messages.showOkCancelDialog
 import static liveplugin.PluginUtil.*
 
 class PluginUI {
+	private final log = Logger.getInstance(PluginUI)
+
 	private static final widgetId = "${pluginId}-Widget"
 	private final ActivityTrackerPlugin plugin
 	private ActivityTrackerPlugin.State state
@@ -96,14 +99,22 @@ class PluginUI {
 		def showStatistics = new AnAction("Show Stats") {
 			@Override void actionPerformed(AnActionEvent event) {
 				doInBackground("Analysing activity log") {
-					def events = trackerLog.readEvents()
-					if (events.empty) showNotification("There are no recorded events to analyze")
-					else {
+					def errors = []
+					def onParseError = { line, e -> errors << [line: line, e: e] }
+					def events = trackerLog.readEvents(onParseError)
+
+					if (events.empty) {
+						showNotification("There are no recorded events to analyze")
+					} else {
 						def editorTimeByFile = EventsAnalyzer.timeInEditorByFile(events)
 						def timeByProject = EventsAnalyzer.timeByProject(events)
 						invokeOnEDT {
 							new StatsToolWindow().showIn(event.project, editorTimeByFile, timeByProject, parentDisposable)
 						}
+					}
+					if (!errors.empty) {
+						showNotification("There were ${errors.size()} errors parsing log file. See IDE log for details.")
+						errors.take(20).each { log.warn(it.line, it.e) }
 					}
 				}
 			}
