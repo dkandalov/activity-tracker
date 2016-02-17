@@ -1,14 +1,14 @@
 package activitytracker
 import groovy.transform.Immutable
 
-import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-@Immutable(knownImmutableClasses = [LocalDateTime])
+@Immutable(knownImmutableClasses = [ZonedDateTime])
 final class TrackerEvent {
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd kk:mm:ss.SSS")
+    private static final DateTimeFormatter dateTimeFormat = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
-	LocalDateTime time
+	ZonedDateTime time
 	String userName
 	String eventType
 	String eventData
@@ -22,7 +22,7 @@ final class TrackerEvent {
     static TrackerEvent fromCsv(String csvLine) {
         def (time, userName, eventType, eventData, projectName, focusedComponent, file, psiPath, editorLine, editorColumn) = csvLine.split(",").toList()
         new TrackerEvent(
-		        LocalDateTime.parse(time, TIME_FORMAT),
+		        ZonedDateTime.parse(time, dateTimeFormat),
 		        userName,
 		        eventType,
 		        eventData,
@@ -36,7 +36,7 @@ final class TrackerEvent {
     }
 
     String toCsv() {
-	    [TIME_FORMAT.format(time),
+	    [dateTimeFormat.format(time),
 	     userName,
 	     eventType,
 	     eventData,
@@ -49,7 +49,7 @@ final class TrackerEvent {
 	    ].join(",")
     }
 
-	static TrackerEvent ideNotInFocus(LocalDateTime time, String userName, String eventType, String eventData) {
+	static TrackerEvent ideNotInFocus(ZonedDateTime time, String userName, String eventType, String eventData) {
 		new TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1)
 	}
 }

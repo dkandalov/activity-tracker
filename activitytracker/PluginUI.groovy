@@ -122,7 +122,7 @@ class PluginUI {
 		def rollCurrentLog = new AnAction("Roll Tracking Log") {
 			@Override void actionPerformed(AnActionEvent event) {
 				def userAnswer = showOkCancelDialog(event.project,
-						"Roll current tracking log file?\n(Current data will copied into new file.)",
+						"Roll tracking log file?\nCurrent log will be moved into new file.",
 						"Activity Tracker",
 						Messages.questionIcon
 				)

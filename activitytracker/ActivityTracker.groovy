@@ -24,7 +24,7 @@ import javax.swing.*
 import java.awt.*
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
-import java.time.LocalDateTime
+import java.time.ZonedDateTime
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS
 import static liveplugin.PluginUtil.*
@@ -83,6 +83,7 @@ class ActivityTracker {
 				if (trackMouse && awtEvent instanceof MouseEvent && awtEvent.ID == MouseEvent.MOUSE_CLICKED) {
 					trackerLog.append(captureIdeState("MouseEvent", "" + awtEvent.button + ":" + awtEvent.modifiers))
 				}
+				// TODO mouse navigation events
 //				if (awtEvent instanceof MouseWheelEvent && awtEvent.getID() == MouseEvent.MOUSE_WHEEL) {
 //					trackerLog.append(createLogEvent("MouseWheelEvent:" + awtEvent.scrollAmount + ":" + awtEvent.wheelRotation))
 //				}
@@ -110,7 +111,7 @@ class ActivityTracker {
 		}, parentDisposable)
 
 		// use custom listener for VCS because listening to normal IDE actions
-		// doesn't allow to know about actual commits opposed to just opening commit dialog
+		// doesn't notify about actual commits but only about opening commit dialog
 		VcsActions.registerVcsListener(parentDisposable, new VcsActions.Listener() {
 			@Override void onVcsCommit() {
 				invokeOnEDT {
@@ -135,7 +136,7 @@ class ActivityTracker {
 			if (eventType == "IdeState") {
 				eventData = "Inactive"
 			}
-			def time = LocalDateTime.now()
+			def time = ZonedDateTime.now()
 			def userName = SystemProperties.userName
 
 			def ideFocusManager = IdeFocusManager.globalInstance

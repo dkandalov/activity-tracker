@@ -1,6 +1,7 @@
 package activitytracker
 import com.intellij.concurrency.JobScheduler
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.io.FileUtil
 import org.jetbrains.annotations.Nullable
 
@@ -11,6 +12,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS
 import static liveplugin.implementation.Misc.newDisposable
 
 class TrackerLog {
+	private final log = Logger.getInstance(TrackerLog)
+
 	private final static long writeFrequencyMs = 1000
 	private final String statsFilePath
 	private final Disposable parentDisposable
@@ -25,13 +28,18 @@ class TrackerLog {
 
 	def init() {
 		def runnable = {
-			def file = new File(statsFilePath)
-			def event = eventQueue.poll()
-			while (event != null) {
-				file.append(event.toCsv() + "\n")
-				event = eventQueue.poll()
+			try {
+				def file = new File(statsFilePath)
+				def event = eventQueue.poll()
+				while (event != null) {
+					file.append(event.toCsv() + "\n")
+					event = eventQueue.poll()
+				}
+			} catch (Exception e) {
+				log.error(e)
 			}
 		} as Runnable
+
 		def future = JobScheduler.scheduler.scheduleAtFixedRate(runnable, writeFrequencyMs, writeFrequencyMs, MILLISECONDS)
 		newDisposable(parentDisposable) {
 			future.cancel(true)
