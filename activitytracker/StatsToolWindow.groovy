@@ -34,7 +34,8 @@ import static liveplugin.implementation.Misc.newDisposable
 class StatsToolWindow {
 	private static final toolWindowId = "Tracking Log Stats"
 
-	static showIn(Project project, Map secondsInEditorByFile, Map secondsByProject, Disposable parentDisposable) {
+	static showIn(Project project, Map secondsInEditorByFile, Map secondsByProject, Map countByActionId,
+	              Disposable parentDisposable) {
 		def disposable = newDisposable([parentDisposable])
 		def actionGroup = new DefaultActionGroup().with{
 			add(new AnAction(AllIcons.Actions.Cancel) {
@@ -44,6 +45,9 @@ class StatsToolWindow {
 			})
 			it
 		}
+
+		secondsInEditorByFile = secondsInEditorByFile.collectEntries{[it.key, secondsToString(it.value)]}
+		secondsByProject = secondsByProject.collectEntries{[it.key, secondsToString(it.value)]}
 
 		def createToolWindowPanel = {
 			JPanel rootPanel = new JPanel().with{
@@ -58,10 +62,14 @@ class StatsToolWindow {
 				JBTable table2 = createTable(["Project", "Time"], secondsByProject)
 				add(new JBScrollPane(table2), bag.nextLine().next().anchor(SOUTH))
 
+				add(new JBLabel("IDE action count"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
+				JBTable table3 = createTable(["IDE Action", "Count"], countByActionId)
+				add(new JBScrollPane(table3), bag.nextLine().next().anchor(SOUTH))
+
 				add(new JPanel().with {
 					layout = new GridBagLayout()
 					def message = "(Note that time spent in project includes time in IDE toolwindows and dialogs. " +
-							"Therefore, it's will be greater than time spent in IDE editor.)"
+							"Therefore, it will be greater than time spent in IDE editor.)"
 					add(new JTextArea(message).with{
 						editable = false
 						lineWrap = true
@@ -72,7 +80,7 @@ class StatsToolWindow {
 						it
 					}, new GridBag().setDefaultWeightX(1).setDefaultWeightY(1).nextLine().next().fillCellHorizontally().anchor(NORTH))
 					it
-				}, bag.nextLine().next().anchor(SOUTH))
+				}, bag.nextLine().next().weighty(0.5).anchor(SOUTH))
 
 				it
 			}
@@ -96,7 +104,7 @@ class StatsToolWindow {
 			tableModel.addColumn(it)
 		}
 		timeInEditorByFile.entrySet().each{
-			tableModel.addRow([it.key, secondsToString(it.value)].toArray())
+			tableModel.addRow([it.key, it.value].toArray())
 		}
 		def table = new JBTable(tableModel).with{
 			striped = true

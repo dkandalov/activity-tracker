@@ -21,6 +21,14 @@ class EventsAnalyzer {
 	    withTotal(result)
     }
 
+    static Map<String, Integer> countByActionId(List<TrackerEvent> events) {
+	    (Map<String, Integer>) events
+			  .findAll{ it.eventType == "Action" }
+		      .groupBy{ it.eventData }
+	          .collectEntries{ [it.key, it.value.size()] }
+		      .sort{ -it.value }
+    }
+
 	private static withTotal(Map<String, Integer> data) {
 		data.put("Total", data.entrySet().sum(0){ it.value } as int)
 		data
