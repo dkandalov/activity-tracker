@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter
 
 @Immutable(knownImmutableClasses = [ZonedDateTime])
 final class TrackerEvent {
+	private static final DateTimeFormatter oldDateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd kk:mm:ss.SSS")
     private static final DateTimeFormatter dateTimeFormat = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
 	ZonedDateTime time
@@ -35,7 +36,7 @@ final class TrackerEvent {
         ) = csvRecord.toList()
 
         new TrackerEvent(
-		        ZonedDateTime.parse(time, dateTimeFormat),
+		        parseDateTime(time),
 		        userName,
 		        eventType,
 		        eventData,
@@ -48,7 +49,7 @@ final class TrackerEvent {
         )
     }
 
-    void toCsv(CSVPrinter csvPrinter) {
+	void toCsv(CSVPrinter csvPrinter) {
 	    csvPrinter.printRecord(
 		    dateTimeFormat.format(time),
 		    userName,
@@ -65,5 +66,13 @@ final class TrackerEvent {
 
 	static TrackerEvent ideNotInFocus(ZonedDateTime time, String userName, String eventType, String eventData) {
 		new TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1)
+	}
+
+	private static ZonedDateTime parseDateTime(String time) {
+		try {
+			ZonedDateTime.parse(time, oldDateTimeFormat)
+		} catch (Exception ignored) {
+			ZonedDateTime.parse(time, dateTimeFormat)
+		}
 	}
 }
