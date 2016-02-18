@@ -39,6 +39,7 @@ class TrackerLog {
 						event.toCsv(csvPrinter)
 						event = eventQueue.poll()
 					}
+					csvPrinter.close()
 				}
 			} catch (Exception e) {
 				log.error(e)
@@ -65,12 +66,16 @@ class TrackerLog {
 		new File(statsFilePath).withReader("UTF-8") { reader ->
 			def result = []
 			def csvParser = new CSVParser(reader, CSVFormat.RFC4180)
-			csvParser.collect{
-				try {
-					result << TrackerEvent.fromCsv(it)
-				} catch (Exception e) {
-					onParseError.call(it.toString(), e)
+			try {
+				csvParser.each{
+					try {
+						result << TrackerEvent.fromCsv(it)
+					} catch (Exception e) {
+						onParseError.call(it.toString(), e)
+					}
 				}
+			} finally {
+				csvParser.close()
 			}
 			result
 		}

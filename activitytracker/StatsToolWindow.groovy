@@ -34,7 +34,7 @@ import static liveplugin.implementation.Misc.newDisposable
 class StatsToolWindow {
 	private static final toolWindowId = "Tracking Log Stats"
 
-	static showIn(Project project, Map timeInEditorByFile, Map timeByProject, Disposable parentDisposable) {
+	static showIn(Project project, Map secondsInEditorByFile, Map secondsByProject, Disposable parentDisposable) {
 		def disposable = newDisposable([parentDisposable])
 		def actionGroup = new DefaultActionGroup().with{
 			add(new AnAction(AllIcons.Actions.Cancel) {
@@ -51,11 +51,11 @@ class StatsToolWindow {
 				GridBag bag = new GridBag().setDefaultWeightX(1).setDefaultWeightY(1).setDefaultFill(BOTH)
 
 				add(new JBLabel("Time spent in editor"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-				JBTable table1 = createTable(["File name", "Time"], timeInEditorByFile)
+				JBTable table1 = createTable(["File name", "Time"], secondsInEditorByFile)
 				add(new JBScrollPane(table1), bag.nextLine().next().weighty(3).anchor(NORTH))
 
 				add(new JBLabel("Time spent in project"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-				JBTable table2 = createTable(["Project", "Time"], timeByProject)
+				JBTable table2 = createTable(["Project", "Time"], secondsByProject)
 				add(new JBScrollPane(table2), bag.nextLine().next().anchor(SOUTH))
 
 				add(new JPanel().with {

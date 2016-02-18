@@ -106,10 +106,15 @@ class PluginUI {
 					if (events.empty) {
 						showNotification("There are no recorded events to analyze")
 					} else {
-						def editorTimeByFile = EventsAnalyzer.timeInEditorByFile(events)
-						def timeByProject = EventsAnalyzer.timeByProject(events)
+						def secondsInEditorByFile = EventsAnalyzer.secondsInEditorByFile(events)
+						def secondsByProject = EventsAnalyzer.secondsByProject(events)
 						invokeOnEDT {
-							new StatsToolWindow().showIn(event.project, editorTimeByFile, timeByProject, parentDisposable)
+							new StatsToolWindow().showIn(
+									event.project,
+									secondsInEditorByFile,
+									secondsByProject,
+									parentDisposable
+							)
 						}
 					}
 					if (!errors.empty) {

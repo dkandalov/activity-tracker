@@ -1,7 +1,7 @@
 package activitytracker
 
 class EventsAnalyzer {
-    static Map<String, Integer> timeInEditorByFile(List<TrackerEvent> events) {
+    static Map<String, Integer> secondsInEditorByFile(List<TrackerEvent> events) {
 	    def result = (Map<String, Integer>) events
 			  .findAll{ it.eventType == "IdeState" && it.focusedComponent == "Editor" && it.file != "" }
 		      .groupBy{ it.file }
@@ -11,7 +11,7 @@ class EventsAnalyzer {
 	    withTotal(result)
     }
 
-    static Map<String, Integer> timeByProject(List<TrackerEvent> events) {
+    static Map<String, Integer> secondsByProject(List<TrackerEvent> events) {
 	    def result = (Map<String, Integer>) events
 			  .findAll{ it.eventType == "IdeState" && it.eventData == "Active" }
 		      .groupBy{ it.projectName }
