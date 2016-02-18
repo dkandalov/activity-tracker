@@ -6,6 +6,7 @@
         <element id="directory" name="lib">
           <element id="file-copy" path="$PROJECT_DIR$/../live-plugin/LivePlugin.jar" />
           <element id="artifact" artifact-name="activity-tracker.jar" />
+          <element id="file-copy" path="$PROJECT_DIR$/lib/commons-csv-1.0.jar" />
         </element>
       </element>
     </root>
