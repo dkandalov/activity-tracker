@@ -3,6 +3,9 @@ import com.intellij.concurrency.JobScheduler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.io.FileUtil
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVPrinter
 import org.jetbrains.annotations.Nullable
 
 import java.text.SimpleDateFormat
@@ -29,11 +32,13 @@ class TrackerLog {
 	def init() {
 		def runnable = {
 			try {
-				def file = new File(statsFilePath)
-				def event = eventQueue.poll()
-				while (event != null) {
-					file.append(event.toCsv() + "\n")
-					event = eventQueue.poll()
+				new File(statsFilePath).withWriterAppend("UTF-8") { writer ->
+					def csvPrinter = new CSVPrinter(writer, CSVFormat.RFC4180)
+					def event = eventQueue.poll()
+					while (event != null) {
+						event.toCsv(csvPrinter)
+						event = eventQueue.poll()
+					}
 				}
 			} catch (Exception e) {
 				log.error(e)
@@ -57,14 +62,14 @@ class TrackerLog {
 	}
 
 	List<TrackerEvent> readEvents(Closure onParseError) {
-		new File(statsFilePath).withReader { reader ->
+		new File(statsFilePath).withReader("UTF-8") { reader ->
 			def result = []
-			String line
-			while ((line = reader.readLine()) != null) {
+			def csvParser = new CSVParser(reader, CSVFormat.RFC4180)
+			csvParser.collect{
 				try {
-					result << TrackerEvent.fromCsv(line)
+					result << TrackerEvent.fromCsv(it)
 				} catch (Exception e) {
-					onParseError.call(line, e)
+					onParseError.call(it.toString(), e)
 				}
 			}
 			result

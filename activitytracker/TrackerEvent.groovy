@@ -1,5 +1,7 @@
 package activitytracker
 import groovy.transform.Immutable
+import org.apache.commons.csv.CSVPrinter
+import org.apache.commons.csv.CSVRecord
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -19,8 +21,19 @@ final class TrackerEvent {
 	int editorLine
 	int editorColumn
 
-    static TrackerEvent fromCsv(String csvLine) {
-        def (time, userName, eventType, eventData, projectName, focusedComponent, file, psiPath, editorLine, editorColumn) = csvLine.split(",").toList()
+    static TrackerEvent fromCsv(CSVRecord csvRecord) {
+        def (time,
+	         userName,
+	         eventType,
+		     eventData,
+		     projectName,
+		     focusedComponent,
+		     file,
+		     psiPath,
+		     editorLine,
+		     editorColumn
+        ) = csvRecord.toList()
+
         new TrackerEvent(
 		        ZonedDateTime.parse(time, dateTimeFormat),
 		        userName,
@@ -35,18 +48,19 @@ final class TrackerEvent {
         )
     }
 
-    String toCsv() {
-	    [dateTimeFormat.format(time),
-	     userName,
-	     eventType,
-	     eventData,
-	     projectName,
-	     focusedComponent,
-	     file,
-	     psiPath,
-	     editorLine,
-	     editorColumn
-	    ].join(",")
+    void toCsv(CSVPrinter csvPrinter) {
+	    csvPrinter.printRecord(
+		    dateTimeFormat.format(time),
+		    userName,
+		    eventType,
+		    eventData,
+		    projectName,
+		    focusedComponent,
+		    file,
+		    psiPath,
+		    editorLine,
+		    editorColumn
+	    )
     }
 
 	static TrackerEvent ideNotInFocus(ZonedDateTime time, String userName, String eventType, String eventData) {

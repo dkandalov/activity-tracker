@@ -8,6 +8,8 @@ import com.intellij.openapi.application.PathManager
 import static liveplugin.PluginUtil.invokeOnEDT
 import static liveplugin.PluginUtil.show
 
+// add-to-classpath $PLUGIN_PATH/lib/commons-csv-1.0.jar
+
 invokeOnEDT {
 	def pathToTrackingLogFiles = "${PathManager.pluginsPath}/activity-tracker"
 	def trackerLog = new TrackerLog(pathToTrackingLogFiles, pluginDisposable).init()
