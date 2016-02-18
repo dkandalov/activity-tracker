@@ -46,8 +46,11 @@ If you happen to use the plugin and find interesting ways to analyze data, feel 
         If you enter sensitive information (like passwords), it might be captured and stored in current log file.
     - **Track Mouse** - enable tracking mouse click events.
 
-#### Log file columns
- - **timestamp** - time of event in ``yyyy/MM/dd kk:mm:ss.SSS`` format.
+#### Log file format
+The file format is [csv RFC4180](https://tools.ietf.org/html/rfc4180) with UTF-8 encoding.
+
+ - **timestamp** - time of event in [ISO-8601 extended format](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_OFFSET_DATE_TIME)
+   (in plugin version 0.1.2 it was ``yyyy/MM/dd kk:mm:ss.SSS`` format).
  - **user name** - current user name. The intention is to be able to merge logs from several users.
  - **event type**, **event data** - content depends on type of captured event.
     - **IDE actions**: event type = ``Action``, event data = ``[action id]`` (e.g. ``Action,EditorUp``);
@@ -70,15 +73,15 @@ If you happen to use the plugin and find interesting ways to analyze data, feel 
 
 #### Example of log file
 ```
-2015/12/31 17:42:30.171,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015/12/31 17:42:30.350,dima,Action,EditorLineEnd,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015/12/31 17:42:30.351,dima,KeyEvent,97:79:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24
-2015/12/31 17:42:30.566,dima,Action,EditorLineStart,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24
-2015/12/31 17:42:30.568,dima,KeyEvent,97:85:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015/12/31 17:42:30.998,dima,KeyEvent,65535:157:4,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015/12/31 17:42:31.170,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015/12/31 17:42:32.169,dima,IdeState,Inactive,,,,,-1,-1
-2015/12/31 17:42:33.168,dima,IdeState,Inactive,,,,,-1,-1
+2015-12-31T17:42:30.171Z,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
+2015-12-31T17:42:30.35Z,dima,Action,EditorLineEnd,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
+2015-12-31T17:42:30.351Z,dima,KeyEvent,97:79:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24
+2015-12-31T17:42:30.566Z,dima,Action,EditorLineStart,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24
+2015-12-31T17:42:30.568Z,dima,KeyEvent,97:85:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
+2015-12-31T17:42:30.998Z,dima,KeyEvent,65535:157:4,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
+2015-12-31T17:42:31.17Z,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
+2015-12-31T17:42:32.169Z,dima,IdeState,Inactive,,,,,-1,-1
+2015-12-31T17:42:33.168Z,dima,IdeState,Inactive,,,,,-1,-1
 ```
 
 
