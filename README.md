@@ -84,10 +84,15 @@ The file format is [csv RFC4180](https://tools.ietf.org/html/rfc4180) with UTF-8
 2015-12-31T17:42:33.168Z,dima,IdeState,Inactive,,,,,-1,-1
 ```
 
+#### How to use log file?
+This is up to you.
+The main purpose of this plugin is to record data.
+It's similar to collecting IDE statistics usage (which you might be sending to JetBrains) except that you own the data.
+
 
 ### Contributing
-The best way to run the plugin from source code is to use [LivePlugin](https://github.com/dkandalov/live-plugin).
-
-The most interesting thing to look into at the moment is analysis of recorded data.
+The most interesting thing is analysis of recorded data.
 All suggestions and code (even if it's not JVM language) are welcome.
 If you have a question, feel free to create an issue.
+
+The best way to compile/run the project from source code is to use [LivePlugin](https://github.com/dkandalov/live-plugin).
