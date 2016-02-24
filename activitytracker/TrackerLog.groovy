@@ -46,7 +46,7 @@ class TrackerLog {
 			}
 		} as Runnable
 
-		def future = JobScheduler.scheduler.scheduleAtFixedRate(runnable, writeFrequencyMs, writeFrequencyMs, MILLISECONDS)
+		def future = JobScheduler.scheduler.scheduleWithFixedDelay(runnable, writeFrequencyMs, writeFrequencyMs, MILLISECONDS)
 		newDisposable(parentDisposable) {
 			future.cancel(true)
 		}
