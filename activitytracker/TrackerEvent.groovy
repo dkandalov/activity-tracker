@@ -1,17 +1,18 @@
 package activitytracker
+
 import groovy.transform.Immutable
 import org.apache.commons.csv.CSVPrinter
 import org.apache.commons.csv.CSVRecord
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
+import org.joda.time.format.DateTimeFormatter
 
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-
-@Immutable(knownImmutableClasses = [ZonedDateTime])
+@Immutable(knownImmutableClasses = [DateTime])
 final class TrackerEvent {
-	private static final DateTimeFormatter oldDateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd kk:mm:ss.SSS")
-    private static final DateTimeFormatter dateTimeFormat = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+	private static final DateTimeFormatter oldDateTimeFormat = DateTimeFormat.forPattern("yyyy/MM/dd kk:mm:ss.SSS")
+    private static final DateTimeFormatter dateTimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 
-	ZonedDateTime time
+	DateTime time
 	String userName
 	String eventType
 	String eventData
@@ -51,7 +52,7 @@ final class TrackerEvent {
 
 	void toCsv(CSVPrinter csvPrinter) {
 	    csvPrinter.printRecord(
-		    dateTimeFormat.format(time),
+		    dateTimeFormat.print(time),
 		    userName,
 		    eventType,
 		    eventData,
@@ -64,15 +65,15 @@ final class TrackerEvent {
 	    )
     }
 
-	static TrackerEvent ideNotInFocus(ZonedDateTime time, String userName, String eventType, String eventData) {
+	static TrackerEvent ideNotInFocus(DateTime time, String userName, String eventType, String eventData) {
 		new TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1)
 	}
 
-	private static ZonedDateTime parseDateTime(String time) {
+	private static DateTime parseDateTime(String time) {
 		try {
-			ZonedDateTime.parse(time, oldDateTimeFormat)
+			DateTime.parse(time, oldDateTimeFormat)
 		} catch (Exception ignored) {
-			ZonedDateTime.parse(time, dateTimeFormat)
+			DateTime.parse(time, dateTimeFormat)
 		}
 	}
 }
