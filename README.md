@@ -95,4 +95,5 @@ The most interesting thing is analysis of recorded data.
 All suggestions and code (even if it's not JVM language) are welcome.
 If you have a question, feel free to create an issue.
 
-The best way to compile/run the project from source code is to use [LivePlugin](https://github.com/dkandalov/live-plugin).
+The best way to compile/run the project from source code is to use [LivePlugin](https://github.com/dkandalov/live-plugin)
+using it as an [entry point](https://github.com/dkandalov/live-plugin/wiki/Liveplugin-as-an-entry-point-for-standard-plugins).

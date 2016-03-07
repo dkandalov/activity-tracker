@@ -1,4 +1,5 @@
 package activitytracker
+
 import com.intellij.concurrency.JobScheduler
 import com.intellij.ide.IdeEventQueue
 import com.intellij.notification.NotificationType
@@ -19,12 +20,12 @@ import com.intellij.psi.*
 import com.intellij.util.SystemProperties
 import groovy.transform.Immutable
 import liveplugin.implementation.VcsActions
+import org.joda.time.DateTime
 
 import javax.swing.*
 import java.awt.*
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
-import java.time.ZonedDateTime
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS
 import static liveplugin.PluginUtil.*
@@ -103,7 +104,7 @@ class ActivityTracker {
 				// (e.g. commit action shows dialog and finishes only after the dialog is closed)
 				def actionId = actionManager.getId(anAction)
 				if (actionId == null) return
-				// can be null on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction)
+				// can be null e.g. on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction)
 				trackerLog.append(captureIdeState("Action", actionId))
 			}
 			@Override void afterActionPerformed(AnAction anAction, DataContext dataContext, AnActionEvent anActionEvent) {}
@@ -136,7 +137,7 @@ class ActivityTracker {
 			if (eventType == "IdeState") {
 				eventData = "Inactive"
 			}
-			def time = ZonedDateTime.now()
+			def time = DateTime.now()
 			def userName = SystemProperties.userName
 
 			def ideFocusManager = IdeFocusManager.globalInstance
