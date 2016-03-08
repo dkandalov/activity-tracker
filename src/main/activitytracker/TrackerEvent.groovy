@@ -4,13 +4,15 @@ import groovy.transform.Immutable
 import org.apache.commons.csv.CSVPrinter
 import org.apache.commons.csv.CSVRecord
 import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
+import org.joda.time.format.DateTimeFormatterBuilder
+
+import static org.joda.time.DateTimeFieldType.*
 
 @Immutable(knownImmutableClasses = [DateTime])
 final class TrackerEvent {
-	private static final DateTimeFormatter oldDateTimeFormat = DateTimeFormat.forPattern("yyyy/MM/dd kk:mm:ss.SSS")
-    private static final DateTimeFormatter dateTimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    private static final DateTimeFormatter dateTimeParseFormat = createDateTimeParseFormat()
+    private static final DateTimeFormatter dateTimePrintFormat = createDateTimePrintFormat()
 
 	DateTime time
 	String userName
@@ -52,7 +54,7 @@ final class TrackerEvent {
 
 	void toCsv(CSVPrinter csvPrinter) {
 	    csvPrinter.printRecord(
-		    dateTimeFormat.print(time),
+		    dateTimePrintFormat.print(time),
 		    userName,
 		    eventType,
 		    eventData,
@@ -70,10 +72,50 @@ final class TrackerEvent {
 	}
 
 	private static DateTime parseDateTime(String time) {
-		try {
-			DateTime.parse(time, oldDateTimeFormat)
-		} catch (Exception ignored) {
-			DateTime.parse(time, dateTimeFormat)
-		}
+		DateTime.parse(time, dateTimeParseFormat)
+	}
+
+	/**
+	 * This has to be separate from {@link #createDateTimePrintFormat()}
+	 * because builder with optional elements doesn't support printing.
+	 */
+	private static def createDateTimeParseFormat() {
+		// support for plugin version "0.1.3 beta" format where amount of milliseconds could vary (java8 DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+		def msParser = new DateTimeFormatterBuilder()
+				.appendLiteral('.').appendDecimal(millisOfSecond(), 1, 3)
+				.toParser()
+		// support for plugin version "0.1.2 beta" format which didn't have timezone
+		def timeZoneParser = new DateTimeFormatterBuilder()
+				.appendTimeZoneOffset("Z", true, 2, 4)
+				.toParser()
+
+		new DateTimeFormatterBuilder()
+				.appendFixedDecimal(year(), 4)
+				.appendLiteral('-').appendFixedDecimal(monthOfYear(), 2)
+				.appendLiteral('-').appendFixedDecimal(dayOfMonth(), 2)
+				.appendLiteral('T').appendFixedDecimal(hourOfDay(), 2)
+				.appendLiteral(':').appendFixedDecimal(minuteOfHour(), 2)
+				.appendLiteral(':').appendFixedDecimal(secondOfMinute(), 2)
+				.appendOptional(msParser)
+				.appendOptional(timeZoneParser)
+				.toFormatter()
+	}
+
+	/**
+	 * Similar to {@link org.joda.time.format.ISODateTimeFormat#basicDateTime()} except for "yyyy-MM-dd" part.
+	 * It's also similar java8 DateTimeFormatter.ISO_OFFSET_DATE_TIME except that this printer always prints all millisecond digits
+	 * which should be easier to read (or manually parse).
+	 */
+	private static def createDateTimePrintFormat() {
+		new DateTimeFormatterBuilder()
+				.appendFixedDecimal(year(), 4)
+				.appendLiteral('-').appendFixedDecimal(monthOfYear(), 2)
+				.appendLiteral('-').appendFixedDecimal(dayOfMonth(), 2)
+				.appendLiteral('T').appendFixedDecimal(hourOfDay(), 2)
+				.appendLiteral(':').appendFixedDecimal(minuteOfHour(), 2)
+				.appendLiteral(':').appendFixedDecimal(secondOfMinute(), 2)
+				.appendLiteral('.').appendDecimal(millisOfSecond(), 3, 3)
+				.appendTimeZoneOffset("Z", true, 2, 4)
+				.toFormatter()
 	}
 }
