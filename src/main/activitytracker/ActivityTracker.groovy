@@ -26,6 +26,7 @@ import javax.swing.*
 import java.awt.*
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
+import java.awt.event.MouseWheelEvent
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS
 import static liveplugin.PluginUtil.*
@@ -79,15 +80,29 @@ class ActivityTracker {
 	}
 
 	private static startAWTEventListener(TrackerLog trackerLog, Disposable parentDisposable, boolean trackKeyboard, boolean trackMouse) {
+		long lastMouseMoveTimestamp = 0
+		long mouseMoveLogThresholdMs = 250
+
 		IdeEventQueue.instance.addPostprocessor(new IdeEventQueue.EventDispatcher() {
 			@Override boolean dispatch(AWTEvent awtEvent) {
 				if (trackMouse && awtEvent instanceof MouseEvent && awtEvent.ID == MouseEvent.MOUSE_CLICKED) {
-					trackerLog.append(captureIdeState("MouseEvent", "" + awtEvent.button + ":" + awtEvent.modifiers))
+					def eventData = "click:" + awtEvent.button + ":" + awtEvent.clickCount + ":" + awtEvent.modifiers
+					trackerLog.append(captureIdeState("MouseEvent", eventData))
 				}
-				// TODO mouse navigation events
-//				if (awtEvent instanceof MouseWheelEvent && awtEvent.getID() == MouseEvent.MOUSE_WHEEL) {
-//					trackerLog.append(createLogEvent("MouseWheelEvent:" + awtEvent.scrollAmount + ":" + awtEvent.wheelRotation))
-//				}
+				if (trackMouse && awtEvent instanceof MouseEvent && awtEvent.ID == MouseEvent.MOUSE_MOVED) {
+					long now = System.currentTimeMillis()
+					if (now - lastMouseMoveTimestamp > mouseMoveLogThresholdMs) {
+						trackerLog.append(captureIdeState("MouseEvent", "move:" + awtEvent.x + ":" + awtEvent.y + ":" + awtEvent.modifiers))
+						lastMouseMoveTimestamp = now
+					}
+				}
+				if (trackMouse && awtEvent instanceof MouseWheelEvent && awtEvent.ID == MouseEvent.MOUSE_WHEEL) {
+					long now = System.currentTimeMillis()
+					if (now - lastMouseMoveTimestamp > mouseMoveLogThresholdMs) {
+						trackerLog.append(captureIdeState("MouseEvent", "wheel:" + awtEvent.wheelRotation + ":" + awtEvent.modifiers))
+						lastMouseMoveTimestamp = now
+					}
+				}
 				if (trackKeyboard && awtEvent instanceof KeyEvent && awtEvent.ID == KeyEvent.KEY_PRESSED) {
 					trackerLog.append(captureIdeState("KeyEvent", "" + (awtEvent.keyChar as int) + ":" + (awtEvent.keyCode as int) + ":" + awtEvent.modifiers))
 				}
