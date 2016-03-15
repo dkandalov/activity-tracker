@@ -7,6 +7,8 @@
           <element id="file-copy" path="$PROJECT_DIR$/../live-plugin/LivePlugin.jar" />
           <element id="artifact" artifact-name="activity-tracker.jar" />
           <element id="file-copy" path="$PROJECT_DIR$/lib/commons-csv-1.0.jar" />
+          <element id="file-copy" path="$PROJECT_DIR$/lib/joda-time-2.9.2.jar" />
+          <element id="file-copy" path="$PROJECT_DIR$/lib/groovy-2.3.9.jar" />
         </element>
       </element>
     </root>
