@@ -158,10 +158,11 @@ class ActivityTracker {
 			def ideFocusManager = IdeFocusManager.globalInstance
 			def focusOwner = ideFocusManager.focusOwner
 
+			// this might also work: ApplicationManager.application.isActive()
 			def window = WindowManagerEx.instanceEx.mostRecentFocusedWindow
 			if (window == null) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
 
-			def ideHasFocus = window.active // TODO try ApplicationManager.application.isActive()
+			def ideHasFocus = window.active
 			if (!ideHasFocus) {
 				IdeFrameImpl ideFrame = findParentComponent(focusOwner) { it instanceof IdeFrameImpl }
 				ideHasFocus = ideFrame != null && ideFrame.active
