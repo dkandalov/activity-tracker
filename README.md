@@ -25,7 +25,7 @@ If you happen to use the plugin and find interesting ways to analyze data, feel 
  - invoke "Activity Tracker Popup" action (``ctrl+alt+shift+O`` shortcut)
 
 #### Popup menu actions
- - **Start/stop Tracking** - activate/deactivate recording of IDE events.
+ - **Start/Stop Tracking** - activate/deactivate recording of IDE events.
  Events are written into ``ide-events.csv`` file located in predefined path.
  This file is referred to as "current log".
  - **Current Log**
@@ -45,12 +45,15 @@ If you happen to use the plugin and find interesting ways to analyze data, feel 
     - **Track Keyboard** - enable tracking keyboard events. __**Beware!**__
         If you enter sensitive information (like passwords), it might be captured and stored in current log file.
     - **Track Mouse** - enable tracking mouse click events.
+      Note that because of high volume of mouse move and wheel events, they are logged at most every 250 milliseconds.
 
 #### Log file format
 The file format is [csv RFC4180](https://tools.ietf.org/html/rfc4180) with UTF-8 encoding.
 
- - **timestamp** - time of event in [ISO-8601 extended format](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_OFFSET_DATE_TIME)
-   (in plugin version 0.1.2 it was ``yyyy/MM/dd kk:mm:ss.SSS`` format).
+ - **timestamp** - time of event in ``yyyy-MM-dd'T'HHmmss.SSSZ`` format
+   (see [createDateTimePrintFormat() method](https://github.com/dkandalov/activity-tracker/blob/6ca1342e8c71c96f5f7a1c52095c61317cc78650/src/main/activitytracker/TrackerEvent.groovy#L109-L109)).
+   In plugin version 0.1.3 it was [ISO-8601 extended format](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_OFFSET_DATE_TIME).
+   In plugin version 0.1.2 it was ``yyyy/MM/dd kk:mm:ss.SSS`` format.
  - **user name** - current user name. The intention is to be able to merge logs from several users.
  - **event type**, **event data** - content depends on type of captured event.
     - **IDE actions**: event type = ``Action``, event data = ``[action id]`` (e.g. ``Action,EditorUp``);
@@ -59,8 +62,13 @@ The file format is [csv RFC4180](https://tools.ietf.org/html/rfc4180) with UTF-8
       where ``Inactive`` means IDE doesn' have focus, ``NoProject`` mean all projects are closed.
     - **keyboard events**: event type = ``KeyEvent``, event data = ``[keyChar]:[keyCode]:[modifiers]``
       (see [AWT KeyEvent](https://docs.oracle.com/javase/7/docs/api/java/awt/event/KeyEvent.html)).
-    - **mouse events**: event type = ``MouseEvent``, event data = ``[button]:[modifiers]``
-      (see [AWT MouseEvent](https://docs.oracle.com/javase/7/docs/api/java/awt/event/MouseEvent.html)).
+    - **mouse events**: event type = ``MouseEvent``, event data can be
+        - ``click:[button]:[clickCount]:[modifiers]``
+        - ``move:[x]:[y]:[modifiers]``
+        - ``wheel:[wheelRotation]:[wheelModifiers]``
+
+      (see java [MouseEvent](https://docs.oracle.com/javase/7/docs/api/java/awt/event/MouseEvent.html)
+      and [MouseWheelEvent](https://docs.oracle.com/javase/7/docs/api/java/awt/event/MouseWheelEvent.html) for details).
  - **project name** - name of active project.
  - **focused component** - can be ``Editor``, ``Dialog``, ``Popup`` or toolwindow id (e.g. ``Version Control`` or ``Project``).
  - **current file** - absolute path to file open in editor (even when editor has no focus).
