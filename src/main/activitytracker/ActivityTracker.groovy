@@ -54,7 +54,7 @@ class ActivityTracker {
 			startActionListener(trackerLog, trackingDisposable)
 		}
 		if (config.trackKeyboard || config.trackMouse) {
-			startAWTEventListener(trackerLog, trackingDisposable, config.trackKeyboard, config.trackMouse)
+			startAWTEventListener(trackerLog, trackingDisposable, config.trackKeyboard, config.trackMouse, config.mouseMoveEventsThresholdMs)
 		}
 	}
 
@@ -79,9 +79,9 @@ class ActivityTracker {
 		}
 	}
 
-	private static startAWTEventListener(TrackerLog trackerLog, Disposable parentDisposable, boolean trackKeyboard, boolean trackMouse) {
+	private static startAWTEventListener(TrackerLog trackerLog, Disposable parentDisposable, boolean trackKeyboard,
+	                                     boolean trackMouse, long mouseMoveEventsThresholdMs) {
 		long lastMouseMoveTimestamp = 0
-		long mouseMoveLogThresholdMs = 250
 
 		IdeEventQueue.instance.addPostprocessor(new IdeEventQueue.EventDispatcher() {
 			@Override boolean dispatch(AWTEvent awtEvent) {
@@ -91,14 +91,14 @@ class ActivityTracker {
 				}
 				if (trackMouse && awtEvent instanceof MouseEvent && awtEvent.ID == MouseEvent.MOUSE_MOVED) {
 					long now = System.currentTimeMillis()
-					if (now - lastMouseMoveTimestamp > mouseMoveLogThresholdMs) {
+					if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
 						trackerLog.append(captureIdeState("MouseEvent", "move:" + awtEvent.x + ":" + awtEvent.y + ":" + awtEvent.modifiers))
 						lastMouseMoveTimestamp = now
 					}
 				}
 				if (trackMouse && awtEvent instanceof MouseWheelEvent && awtEvent.ID == MouseEvent.MOUSE_WHEEL) {
 					long now = System.currentTimeMillis()
-					if (now - lastMouseMoveTimestamp > mouseMoveLogThresholdMs) {
+					if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
 						trackerLog.append(captureIdeState("MouseEvent", "wheel:" + awtEvent.wheelRotation + ":" + awtEvent.modifiers))
 						lastMouseMoveTimestamp = now
 					}
@@ -260,5 +260,6 @@ class ActivityTracker {
 		boolean trackIdeActions
 		boolean trackKeyboard
 		boolean trackMouse
+		long mouseMoveEventsThresholdMs
 	}
 }

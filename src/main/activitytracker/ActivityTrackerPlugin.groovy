@@ -94,20 +94,22 @@ class ActivityTrackerPlugin {
 				state.pollIdeStateMs,
 				state.trackIdeActions,
 				state.trackKeyboard,
-				state.trackMouse
+				state.trackMouse,
+				state.mouseMoveEventsThresholdMs
 		)
 	}
 
 
 	@Immutable(copyWith = true)
 	static final class State {
-		static final State defaultValue = new State(true, true, 1000, true, false, false)
+		static final State defaultValue = new State(true, true, 1000, true, false, false, 250)
 		boolean isTracking
 		boolean pollIdeState
 		int pollIdeStateMs
 		boolean trackIdeActions
 		boolean trackKeyboard
 		boolean trackMouse
+		int mouseMoveEventsThresholdMs
 
 		def save(PropertiesComponent propertiesComponent, String id) {
 			propertiesComponent.with {
@@ -117,6 +119,7 @@ class ActivityTrackerPlugin {
 				setValue("${id}-trackIdeActions", trackIdeActions)
 				setValue("${id}-trackKeyboard", trackKeyboard)
 				setValue("${id}-trackMouse", trackMouse)
+				setValue("${id}-mouseMoveEventsThresholdMs", mouseMoveEventsThresholdMs, Integer.MIN_VALUE)
 			}
 		}
 
@@ -128,7 +131,8 @@ class ActivityTrackerPlugin {
 					getInt("${id}-pollIdeStateMs", defaultValue.pollIdeStateMs),
 					getBoolean("${id}-trackIdeActions", defaultValue.trackIdeActions),
 					getBoolean("${id}-trackKeyboard", defaultValue.trackKeyboard),
-					getBoolean("${id}-trackMouse", defaultValue.trackMouse)
+					getBoolean("${id}-trackMouse", defaultValue.trackMouse),
+					getInt("${id}-mouseMoveEventsThresholdMs", defaultValue.mouseMoveEventsThresholdMs)
 				)
 			}
 		}
