@@ -18,7 +18,6 @@ import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
 import com.intellij.util.SystemProperties
-import groovy.transform.Immutable
 import liveplugin.implementation.VcsActions
 import org.joda.time.DateTime
 
@@ -253,7 +252,6 @@ class ActivityTracker {
 		ActivityTracker.class.classLoader.getResource(className.replace(".", "/") + ".class") != null
 	}
 
-	@Immutable
 	static final class Config {
 		boolean pollIdeState
 		long pollIdeStateMs
@@ -261,5 +259,41 @@ class ActivityTracker {
 		boolean trackKeyboard
 		boolean trackMouse
 		long mouseMoveEventsThresholdMs
+
+		Config(boolean pollIdeState, long pollIdeStateMs, boolean trackIdeActions, boolean trackKeyboard, boolean trackMouse, long mouseMoveEventsThresholdMs) {
+			this.pollIdeState = pollIdeState
+			this.pollIdeStateMs = pollIdeStateMs
+			this.trackIdeActions = trackIdeActions
+			this.trackKeyboard = trackKeyboard
+			this.trackMouse = trackMouse
+			this.mouseMoveEventsThresholdMs = mouseMoveEventsThresholdMs
+		}
+
+		boolean equals(o) {
+			if (this.is(o)) return true
+			if (getClass() != o.class) return false
+
+			Config config = (Config) o
+
+			if (mouseMoveEventsThresholdMs != config.mouseMoveEventsThresholdMs) return false
+			if (pollIdeState != config.pollIdeState) return false
+			if (pollIdeStateMs != config.pollIdeStateMs) return false
+			if (trackIdeActions != config.trackIdeActions) return false
+			if (trackKeyboard != config.trackKeyboard) return false
+			if (trackMouse != config.trackMouse) return false
+
+			return true
+		}
+
+		int hashCode() {
+			int result
+			result = (pollIdeState ? 1 : 0)
+			result = 31 * result + (int) (pollIdeStateMs ^ (pollIdeStateMs >>> 32))
+			result = 31 * result + (trackIdeActions ? 1 : 0)
+			result = 31 * result + (trackKeyboard ? 1 : 0)
+			result = 31 * result + (trackMouse ? 1 : 0)
+			result = 31 * result + (int) (mouseMoveEventsThresholdMs ^ (mouseMoveEventsThresholdMs >>> 32))
+			return result
+		}
 	}
 }

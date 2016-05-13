@@ -1,17 +1,76 @@
 package activitytracker
 
+import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.Disposable
-import liveplugin.PluginUtil.newGlobalVar
-import liveplugin.implementation.GlobalVar
+import com.intellij.openapi.project.Project
+import liveplugin.PluginUtil
 
 class ActivityTrackerPlugin2(
-        tracker: ActivityTracker, trackerLog: TrackerLog,
-        propertiesComponent: PropertiesComponent, parentDisposable: Disposable
+        val tracker: ActivityTracker,
+        val trackerLog: TrackerLog,
+        val propertiesComponent: PropertiesComponent,
+        val parentDisposable: Disposable // TODO use it?
 ) {
-    private val stateVar: GlobalVar<State> = newGlobalVar("$pluginId.state", null)
+    private val stateVar: GlobalVar<State> = GlobalVar("$pluginId.state")
+    private var pluginUI: PluginUI2? = null
 
-    // TODO convert the rest of the class
+    fun init(): ActivityTrackerPlugin2 {
+        updateState{ State.load(propertiesComponent, pluginId) }
+        return this
+    }
+
+    fun setPluginUI(pluginUI: PluginUI2) {
+        this.pluginUI = pluginUI
+        pluginUI.update(stateVar.get()!!)
+    }
+
+    fun toggleTracking() {
+        updateState { it.copy(isTracking = !it.isTracking) }
+    }
+
+    fun enablePollIdeState(value: Boolean) {
+        updateState { it.copy(pollIdeState = value) }
+    }
+
+    fun enableTrackIdeActions(value: Boolean) {
+        updateState { it.copy(trackIdeActions = value) }
+    }
+
+    fun enableTrackKeyboard(value: Boolean) {
+        updateState { it.copy(trackKeyboard = value) }
+    }
+
+    fun enableTrackMouse(value: Boolean) {
+        updateState { it.copy(trackMouse = value) }
+    }
+
+    fun openTrackingLogFile(project: Project) {
+        PluginUtil.openInEditor(trackerLog.currentLogFile().absolutePath, project)
+    }
+
+    fun openTrackingLogFolder() {
+        ShowFilePathAction.openFile(trackerLog.currentLogFile().parentFile)
+    }
+
+    private fun updateState(closure: (State) -> State) {
+        stateVar.set { oldValue: State? ->
+            val newValue = closure(oldValue!!)
+            onUpdate(oldValue, newValue)
+            newValue
+        }
+    }
+
+    private fun onUpdate(oldState: State, newState: State) {
+        if (oldState == newState) return
+
+        tracker.stopTracking()
+        if (newState.isTracking) {
+            tracker.startTracking(asTrackerConfig(newState))
+        }
+        pluginUI?.update(newState)
+        newState.save(propertiesComponent, pluginId)
+    }
 
     data class State(
             val isTracking: Boolean,
@@ -56,5 +115,16 @@ class ActivityTrackerPlugin2(
 
     companion object {
         val pluginId = "ActivityTracker"
+
+        private fun asTrackerConfig(state: State): ActivityTracker.Config {
+            return ActivityTracker.Config(
+                state.pollIdeState,
+                state.pollIdeStateMs.toLong(),
+                state.trackIdeActions,
+                state.trackKeyboard,
+                state.trackMouse,
+                state.mouseMoveEventsThresholdMs.toLong()
+            )
+        }
     }
 }
