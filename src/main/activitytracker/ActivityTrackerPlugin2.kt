@@ -56,8 +56,9 @@ class ActivityTrackerPlugin2(
 
     private fun updateState(closure: (State) -> State) {
         stateVar.set { oldValue: State? ->
-            val newValue = closure(oldValue!!)
-            onUpdate(oldValue, newValue)
+            val value = oldValue ?: State.defaultValue
+            val newValue = closure(value)
+            onUpdate(value, newValue)
             newValue
         }
     }
