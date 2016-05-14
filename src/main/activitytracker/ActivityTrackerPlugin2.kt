@@ -45,7 +45,8 @@ class ActivityTrackerPlugin2(
         updateState { it.copy(trackMouse = value) }
     }
 
-    fun openTrackingLogFile(project: Project) {
+    fun openTrackingLogFile(project: Project?) {
+        if (project == null) return
         PluginUtil.openInEditor(trackerLog.currentLogFile().absolutePath, project)
     }
 

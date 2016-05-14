@@ -110,7 +110,7 @@ class PluginUI {
 						def secondsByProject = EventsAnalyzer.secondsByProject(events)
 						def countByActionId = EventsAnalyzer.countByActionId(events)
 						invokeOnEDT {
-							new StatsToolWindow().showIn(
+							StatsToolWindow.showIn(
 									event.project,
 									secondsInEditorByFile,
 									secondsByProject,
