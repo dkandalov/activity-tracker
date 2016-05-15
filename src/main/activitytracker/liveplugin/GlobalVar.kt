@@ -1,4 +1,4 @@
-package activitytracker
+package activitytracker.liveplugin
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -33,12 +33,12 @@ class GlobalVar<T>(val id: String, value: T? = null, disposable: Disposable? = n
         val keysByVarName = initKeysByVarName(globalVarsKey)
 
         private fun <T> getGlobalVar(varName: String, initialValue: T? = null): T? {
-            return changeGlobalVar(varName, initialValue, {it})
+            return changeGlobalVar(varName, initialValue, { it })
         }
 
         private fun <T> setGlobalVar(varName: String, varValue: T?): T? {
             // explicit null parameter to make compiler not crash
-            return changeGlobalVar(varName, null as T?){ it -> varValue }
+            return changeGlobalVar(varName, null as T?) { it -> varValue }
         }
 
         private fun <T> changeGlobalVar(varName: String, initialValue: T? = null, callback: (T?) -> T?): T? {

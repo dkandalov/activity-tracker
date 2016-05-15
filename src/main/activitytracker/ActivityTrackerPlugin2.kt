@@ -1,5 +1,6 @@
 package activitytracker
 
+import activitytracker.liveplugin.GlobalVar
 import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.Disposable
@@ -7,7 +8,7 @@ import com.intellij.openapi.project.Project
 import liveplugin.PluginUtil
 
 class ActivityTrackerPlugin2(
-        val tracker: ActivityTracker,
+        val tracker: ActivityTracker2,
         val trackerLog: TrackerLog,
         val propertiesComponent: PropertiesComponent,
         val parentDisposable: Disposable // TODO use it?
@@ -118,8 +119,8 @@ class ActivityTrackerPlugin2(
     companion object {
         val pluginId = "ActivityTracker"
 
-        private fun asTrackerConfig(state: State): ActivityTracker.Config {
-            return ActivityTracker.Config(
+        private fun asTrackerConfig(state: State): ActivityTracker2.Config {
+            return ActivityTracker2.Config(
                 state.pollIdeState,
                 state.pollIdeStateMs.toLong(),
                 state.trackIdeActions,

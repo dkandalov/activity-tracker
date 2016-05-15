@@ -1,6 +1,5 @@
 package activitytracker
 
-import groovy.transform.Immutable
 import org.apache.commons.csv.CSVPrinter
 import org.apache.commons.csv.CSVRecord
 import org.joda.time.DateTime
@@ -9,7 +8,6 @@ import org.joda.time.format.DateTimeFormatterBuilder
 
 import static org.joda.time.DateTimeFieldType.*
 
-@Immutable(knownImmutableClasses = [DateTime])
 final class TrackerEvent {
     private static final DateTimeFormatter dateTimeParseFormat = createDateTimeParseFormat()
     private static final DateTimeFormatter dateTimePrintFormat = createDateTimePrintFormat()
@@ -25,7 +23,21 @@ final class TrackerEvent {
 	int editorLine
 	int editorColumn
 
-    static TrackerEvent fromCsv(CSVRecord csvRecord) {
+	TrackerEvent(DateTime time, String userName, String eventType, String eventData, String projectName,
+	             String focusedComponent, String file, String psiPath, int editorLine, int editorColumn) {
+		this.time = time
+		this.userName = userName
+		this.eventType = eventType
+		this.eventData = eventData
+		this.projectName = projectName
+		this.focusedComponent = focusedComponent
+		this.file = file
+		this.psiPath = psiPath
+		this.editorLine = editorLine
+		this.editorColumn = editorColumn
+	}
+
+	static TrackerEvent fromCsv(CSVRecord csvRecord) {
         def (time,
 	         userName,
 	         eventType,
@@ -117,5 +129,40 @@ final class TrackerEvent {
 				.appendLiteral('.').appendDecimal(millisOfSecond(), 3, 3)
 				.appendTimeZoneOffset("Z", true, 2, 4)
 				.toFormatter()
+	}
+
+	boolean equals(o) {
+		if (this.is(o)) return true
+		if (getClass() != o.class) return false
+
+		TrackerEvent that = (TrackerEvent) o
+
+		if (editorColumn != that.editorColumn) return false
+		if (editorLine != that.editorLine) return false
+		if (eventData != that.eventData) return false
+		if (eventType != that.eventType) return false
+		if (file != that.file) return false
+		if (focusedComponent != that.focusedComponent) return false
+		if (projectName != that.projectName) return false
+		if (psiPath != that.psiPath) return false
+		if (time != that.time) return false
+		if (userName != that.userName) return false
+
+		return true
+	}
+
+	int hashCode() {
+		int result
+		result = (time != null ? time.hashCode() : 0)
+		result = 31 * result + (userName != null ? userName.hashCode() : 0)
+		result = 31 * result + (eventType != null ? eventType.hashCode() : 0)
+		result = 31 * result + (eventData != null ? eventData.hashCode() : 0)
+		result = 31 * result + (projectName != null ? projectName.hashCode() : 0)
+		result = 31 * result + (focusedComponent != null ? focusedComponent.hashCode() : 0)
+		result = 31 * result + (file != null ? file.hashCode() : 0)
+		result = 31 * result + (psiPath != null ? psiPath.hashCode() : 0)
+		result = 31 * result + editorLine
+		result = 31 * result + editorColumn
+		return result
 	}
 }

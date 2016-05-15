@@ -1,6 +1,7 @@
 package activitytracker
 
 import activitytracker.ActivityTrackerPlugin2.Companion.pluginId
+import activitytracker.liveplugin.invokeLaterOnEDT
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.notification.Notification
@@ -262,10 +263,5 @@ class PluginUI2(
                 }
             }
         }
-
-        private fun invokeLaterOnEDT(callback: () -> Unit) {
-            ApplicationManager.getApplication().invokeLater{ callback() }
-        }
-
     }
 }
