@@ -130,9 +130,9 @@ class PluginUI2(
             override fun actionPerformed(event: AnActionEvent) {
                 doInBackground("Analysing activity log", toGroovyClosure(this, {
                     val errors = arrayListOf<Error>()
-                    val events = trackerLog.readEvents(toGroovyClosure2(this, { line: String, e: Exception ->
+                    val events = trackerLog.readEvents{ line: String, e: Exception ->
                         errors.add(Error(line, e))
-                    })) // TODO use kotlin closure
+                    }
 
                     if (events.isEmpty()) {
                         showNotification("There are no recorded events to analyze")
