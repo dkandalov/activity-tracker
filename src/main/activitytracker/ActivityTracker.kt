@@ -59,12 +59,12 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
     }
 
     private fun startPollingIdeState(trackerLog: TrackerLog, trackingDisposable: Disposable?, frequencyMs: Long) {
-        val runnable = {
+        val runnable = Runnable() {
             // it has to be invokeOnEDT() method so that it's triggered when IDE dialog window is opened (e.g. override or project settings),
             invokeOnEDT {
                 trackerLog.append(captureIdeState("IdeState", ""))
             }
-        } as Runnable
+        }
 
         val nextSecondStartMs = 1000 - (System.currentTimeMillis() % 1000)
         val future = JobScheduler.getScheduler().scheduleWithFixedDelay(runnable, nextSecondStartMs, frequencyMs, MILLISECONDS)

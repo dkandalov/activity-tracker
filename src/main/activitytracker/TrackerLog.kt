@@ -9,6 +9,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVPrinter
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,7 +33,7 @@ class TrackerLog(path: String, val parentDisposable: Disposable) {
     fun init(): TrackerLog {
         val runnable = {
             try {
-                File(statsFilePath).printWriter(utf8).use { writer ->
+                FileOutputStream(File(statsFilePath), true).buffered().writer(utf8).use { writer ->
                     val csvPrinter = CSVPrinter(writer, CSVFormat.RFC4180)
                     var event = eventQueue.poll()
                     while (event != null) {

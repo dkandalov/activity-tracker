@@ -13,6 +13,7 @@ import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -128,7 +129,7 @@ class PluginUI(
         data class Error(val line: String, val e: Exception)
         val showStatistics = object : AnAction("Show Stats") {
             override fun actionPerformed(event: AnActionEvent) {
-                doInBackground("Analysing activity log", toGroovyClosure(this, {
+                doInBackground("Analysing activity log", toGroovyClosure2(this, {
                     val errors = arrayListOf<Error>()
                     val events = trackerLog.readEvents{ line: String, e: Exception ->
                         errors.add(Error(line, e))
@@ -256,10 +257,11 @@ class PluginUI(
                 }
             }
         }
-        private fun toGroovyClosure2(owner: Any, lambda: (line: String, e: Exception) -> (Unit)): Closure<Unit> {
+
+        private fun toGroovyClosure2(owner: Any, lambda: (indicator: BackgroundableProcessIndicator) -> (Unit)): Closure<Unit> {
             return object : Closure<Unit>(owner) {
                 override fun call(vararg args: Any?): Unit? {
-                    return lambda(args[0] as String, args[1] as Exception)
+                    return lambda(args[0] as BackgroundableProcessIndicator)
                 }
             }
         }
