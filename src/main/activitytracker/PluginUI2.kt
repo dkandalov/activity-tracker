@@ -141,7 +141,7 @@ class PluginUI2(
                         val secondsByProject = EventsAnalyzer.secondsByProject(events)
                         val countByActionId = EventsAnalyzer.countByActionId(events)
                         invokeLaterOnEDT {
-                            StatsToolWindow.showIn(
+                            StatsToolWindow2.showIn(
                                     event.project,
                                     secondsInEditorByFile,
                                     secondsByProject,

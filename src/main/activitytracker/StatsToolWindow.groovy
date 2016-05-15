@@ -96,14 +96,14 @@ class StatsToolWindow {
 		toolWindow.show(doNothing)
 	}
 
-	private static JBTable createTable(Collection header, Map timeInEditorByFile) {
+	private static JBTable createTable(Collection header, Map dataMap) {
 		def tableModel = new DefaultTableModel() {
 			@Override boolean isCellEditable(int row, int column) { false }
 		}
 		header.each {
 			tableModel.addColumn(it)
 		}
-		timeInEditorByFile.entrySet().each{
+		dataMap.entrySet().each{
 			tableModel.addRow([it.key, it.value].toArray())
 		}
 		def table = new JBTable(tableModel).with{
