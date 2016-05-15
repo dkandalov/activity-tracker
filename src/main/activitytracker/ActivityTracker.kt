@@ -33,7 +33,7 @@ import java.awt.event.MouseWheelEvent
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import javax.swing.JDialog
 
-class ActivityTracker2(val trackerLog: TrackerLog, val parentDisposable: Disposable) {
+class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposable) {
     var trackingDisposable: Disposable? = null
 
     fun startTracking(config: Config) {
@@ -232,7 +232,7 @@ class ActivityTracker2(val trackerLog: TrackerLog, val parentDisposable: Disposa
     }
 
     private fun isOnClasspath(className: String): Boolean {
-        return ActivityTracker2::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
+        return ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
     }
 
     private fun psiPathOf(psiElement: PsiElement?): String {

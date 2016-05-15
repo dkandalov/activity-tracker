@@ -7,21 +7,21 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import liveplugin.PluginUtil
 
-class ActivityTrackerPlugin2(
-        val tracker: ActivityTracker2,
+class ActivityTrackerPlugin(
+        val tracker: ActivityTracker,
         val trackerLog: TrackerLog,
         val propertiesComponent: PropertiesComponent,
         val parentDisposable: Disposable // TODO use it?
 ) {
     private val stateVar: GlobalVar<State> = GlobalVar("$pluginId.state")
-    private var pluginUI: PluginUI2? = null
+    private var pluginUI: PluginUI? = null
 
-    fun init(): ActivityTrackerPlugin2 {
+    fun init(): ActivityTrackerPlugin {
         updateState{ State.load(propertiesComponent, pluginId) }
         return this
     }
 
-    fun setPluginUI(pluginUI: PluginUI2) {
+    fun setPluginUI(pluginUI: PluginUI) {
         this.pluginUI = pluginUI
         pluginUI.update(stateVar.get()!!)
     }
@@ -119,8 +119,8 @@ class ActivityTrackerPlugin2(
     companion object {
         val pluginId = "ActivityTracker"
 
-        private fun asTrackerConfig(state: State): ActivityTracker2.Config {
-            return ActivityTracker2.Config(
+        private fun asTrackerConfig(state: State): ActivityTracker.Config {
+            return ActivityTracker.Config(
                 state.pollIdeState,
                 state.pollIdeStateMs.toLong(),
                 state.trackIdeActions,

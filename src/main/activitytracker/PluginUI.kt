@@ -1,6 +1,6 @@
 package activitytracker
 
-import activitytracker.ActivityTrackerPlugin2.Companion.pluginId
+import activitytracker.ActivityTrackerPlugin.Companion.pluginId
 import activitytracker.liveplugin.invokeLaterOnEDT
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.ShowFilePathAction
@@ -29,22 +29,22 @@ import java.awt.Point
 import java.awt.event.MouseEvent
 import javax.swing.event.HyperlinkEvent
 
-class PluginUI2(
-        val plugin: ActivityTrackerPlugin2,
+class PluginUI(
+        val plugin: ActivityTrackerPlugin,
         val trackerLog: TrackerLog,
         val parentDisposable: Disposable)
 {
-    val log = Logger.getInstance(PluginUI2::class.java)
-    var state: ActivityTrackerPlugin2.State = ActivityTrackerPlugin2.State.defaultValue
+    val log = Logger.getInstance(PluginUI::class.java)
+    var state: ActivityTrackerPlugin.State = ActivityTrackerPlugin.State.defaultValue
 
-    fun init(): PluginUI2 {
+    fun init(): PluginUI {
         plugin.setPluginUI(this)
         registerWidget(parentDisposable)
         registerPopup(parentDisposable)
         return this
     }
 
-    fun update(state: ActivityTrackerPlugin2.State) {
+    fun update(state: ActivityTrackerPlugin.State) {
         this.state = state
         updateWidget(widgetId)
     }
@@ -141,7 +141,7 @@ class PluginUI2(
                         val secondsByProject = secondsByProject(events)
                         val countByActionId = countByActionId(events)
                         invokeLaterOnEDT {
-                            StatsToolWindow2.showIn(
+                            StatsToolWindow.showIn(
                                     event.project,
                                     secondsInEditorByFile,
                                     secondsByProject,

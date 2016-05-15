@@ -26,7 +26,7 @@ import java.awt.event.ActionEvent
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
-class StatsToolWindow2 {
+class StatsToolWindow {
     companion object {
         private val toolWindowId = "Tracking Log Stats"
 
