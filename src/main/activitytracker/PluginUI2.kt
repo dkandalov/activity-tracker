@@ -137,9 +137,9 @@ class PluginUI2(
                     if (events.isEmpty()) {
                         showNotification("There are no recorded events to analyze")
                     } else {
-                        val secondsInEditorByFile = EventsAnalyzer.secondsInEditorByFile(events)
-                        val secondsByProject = EventsAnalyzer.secondsByProject(events)
-                        val countByActionId = EventsAnalyzer.countByActionId(events)
+                        val secondsInEditorByFile = secondsInEditorByFile(events)
+                        val secondsByProject = secondsByProject(events)
+                        val countByActionId = countByActionId(events)
                         invokeLaterOnEDT {
                             StatsToolWindow2.showIn(
                                     event.project,

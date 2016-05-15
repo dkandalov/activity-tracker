@@ -31,9 +31,9 @@ class StatsToolWindow2 {
         private val toolWindowId = "Tracking Log Stats"
 
         fun showIn(project: Project?,
-                   secondsInEditorByFile: Map<String, Int>,
-                   secondsByProject: Map<String, Int>,
-                   countByActionId: Map<String, Int>,
+                   secondsInEditorByFile: List<Pair<String, Int>>,
+                   secondsByProject: List<Pair<String, Int>>,
+                   countByActionId: List<Pair<String, Int>>,
                    parentDisposable: Disposable) {
             val disposable = newDisposable(parentDisposable)
             val actionGroup = DefaultActionGroup().apply{
@@ -50,15 +50,15 @@ class StatsToolWindow2 {
                     val bag = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH)
 
                     add(JBLabel("Time spent in editor"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table1 = createTable(listOf("File name", "Time"), secondsInEditorByFile.mapValues{secondsToString(it.value)})
+                    val table1 = createTable(listOf("File name", "Time"), secondsInEditorByFile.map{secondsToString(it)})
                     add(JBScrollPane(table1), bag.nextLine().next().weighty(3.0).anchor(NORTH))
 
                     add(JBLabel("Time spent in project"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table2 = createTable(listOf("Project", "Time"), secondsByProject.mapValues{secondsToString(it.value)})
+                    val table2 = createTable(listOf("Project", "Time"), secondsByProject.map{secondsToString(it)})
                     add(JBScrollPane(table2), bag.nextLine().next().anchor(SOUTH))
 
                     add(JBLabel("IDE action count"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table3 = createTable(listOf("IDE Action", "Count"), countByActionId.mapValues{it.value.toString()})
+                    val table3 = createTable(listOf("IDE Action", "Count"), countByActionId.map { Pair(it.first, it.second.toString()) })
                     add(JBScrollPane(table3), bag.nextLine().next().anchor(SOUTH))
 
                     add(JPanel().apply {
@@ -88,15 +88,15 @@ class StatsToolWindow2 {
             toolWindow.show(doNothing)
         }
 
-        private fun createTable(header: Collection<String>, dataMap: Map<String, String>): JBTable {
+        private fun createTable(header: Collection<String>, data: List<Pair<String, String>>): JBTable {
             val tableModel = object : DefaultTableModel() {
                 override fun isCellEditable(row: Int, column: Int): Boolean { return false }
             }
             header.forEach {
                 tableModel.addColumn(it)
             }
-            dataMap.entries.forEach{
-                tableModel.addRow(arrayListOf(it.key, it.value).toArray())
+            data.forEach{
+                tableModel.addRow(arrayListOf(it.first, it.second).toArray())
             }
             val table = JBTable(tableModel).apply{
                 isStriped = true
@@ -139,8 +139,10 @@ class StatsToolWindow2 {
             return toolWindow
         }
 
-        private fun secondsToString(seconds: Int): String {
-            return (seconds / 60).toString() + ":" + String.format("%02d", seconds % 60)
+        private fun secondsToString(pair: Pair<String, Int>): Pair<String, String> {
+            val seconds = pair.second
+            val formatterSeconds = (seconds / 60).toString() + ":" + String.format("%02d", seconds % 60)
+            return Pair(pair.first, formatterSeconds)
         }
 
     }
