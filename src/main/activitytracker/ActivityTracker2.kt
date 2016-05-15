@@ -232,7 +232,7 @@ class ActivityTracker2(val trackerLog: TrackerLog, val parentDisposable: Disposa
     }
 
     private fun isOnClasspath(className: String): Boolean {
-        return ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
+        return ActivityTracker2::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
     }
 
     private fun psiPathOf(psiElement: PsiElement?): String {
