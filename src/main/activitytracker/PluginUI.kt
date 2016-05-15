@@ -13,7 +13,6 @@ import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -21,13 +20,15 @@ import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
-import groovy.lang.Closure
 import liveplugin.PluginUtil.*
+import liveplugin.implementation.Actions
 import liveplugin.implementation.Misc
+import liveplugin.implementation.Threads.doInBackground
 import org.jetbrains.annotations.NotNull
 import java.awt.Component
 import java.awt.Point
 import java.awt.event.MouseEvent
+import java.util.function.Function
 import javax.swing.event.HyperlinkEvent
 
 class PluginUI(
@@ -51,12 +52,12 @@ class PluginUI(
     }
 
     private fun registerPopup(parentDisposable: Disposable) {
-        registerAction("$pluginId-Popup", "ctrl shift alt O", "", "Activity Tracker Popup", parentDisposable, toGroovyClosure(this, { actionEvent: AnActionEvent ->
-            val project = actionEvent.project
+        Actions.registerAction("$pluginId-Popup", "ctrl shift alt O", "", "Activity Tracker Popup", parentDisposable, Function<AnActionEvent, Any> {
+            val project = it.project
             if (project != null) {
-                createListPopup(actionEvent.dataContext).showCenteredInCurrentWindow(project)
+                createListPopup(it.dataContext).showCenteredInCurrentWindow(project)
             }
-        }))
+        })
     }
 
     private fun registerWidget(parentDisposable: Disposable) {
@@ -129,7 +130,7 @@ class PluginUI(
         data class Error(val line: String, val e: Exception)
         val showStatistics = object : AnAction("Show Stats") {
             override fun actionPerformed(event: AnActionEvent) {
-                doInBackground("Analysing activity log", toGroovyClosure2(this, {
+                doInBackground("Analysing activity log", {
                     val errors = arrayListOf<Error>()
                     val events = trackerLog.readEvents{ line: String, e: Exception ->
                         errors.add(Error(line, e))
@@ -157,7 +158,7 @@ class PluginUI(
                             log.warn(it.line, it.e)
                         }
                     }
-                }))
+                })
             }
         }
         val rollCurrentLog = object : AnAction("Roll Tracking Log") {
@@ -247,22 +248,6 @@ class PluginUI(
                         }
                 )
                 ApplicationManager.getApplication().messageBus.syncPublisher(Notifications.TOPIC).notify(notification)
-            }
-        }
-
-        private fun toGroovyClosure(owner: Any, lambda: (actionEvent: AnActionEvent) -> (Unit)): Closure<Unit> {
-            return object : Closure<Unit>(owner) {
-                override fun call(vararg args: Any?): Unit? {
-                    return lambda(args[0] as AnActionEvent)
-                }
-            }
-        }
-
-        private fun toGroovyClosure2(owner: Any, lambda: (indicator: BackgroundableProcessIndicator) -> (Unit)): Closure<Unit> {
-            return object : Closure<Unit>(owner) {
-                override fun call(vararg args: Any?): Unit? {
-                    return lambda(args[0] as BackgroundableProcessIndicator)
-                }
             }
         }
     }
