@@ -3,15 +3,13 @@ package activitytracker
 import activitytracker.liveplugin.GlobalVar
 import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.ide.util.PropertiesComponent
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import liveplugin.PluginUtil
 
 class ActivityTrackerPlugin(
         val tracker: ActivityTracker,
         val trackerLog: TrackerLog,
-        val propertiesComponent: PropertiesComponent,
-        val parentDisposable: Disposable // TODO use it?
+        val propertiesComponent: PropertiesComponent
 ) {
     private val stateVar: GlobalVar<State> = GlobalVar("$pluginId.state")
     private var pluginUI: PluginUI? = null

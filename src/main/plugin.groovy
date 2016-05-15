@@ -16,7 +16,7 @@ invokeOnEDT {
 	def trackerLog = new TrackerLog(pathToTrackingLogFiles, pluginDisposable).init()
 	def tracker = new ActivityTracker(trackerLog, pluginDisposable)
 	def propertiesComponent = PropertiesComponent.instance
-	def plugin = new ActivityTrackerPlugin(tracker, trackerLog, propertiesComponent, pluginDisposable).init()
+	def plugin = new ActivityTrackerPlugin(tracker, trackerLog, propertiesComponent).init()
 	new PluginUI(plugin, trackerLog, pluginDisposable).init()
 
 	if (!isIdeStartup) show("Reloaded ActivityTracker")
