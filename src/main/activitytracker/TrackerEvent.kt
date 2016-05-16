@@ -34,9 +34,10 @@ data class TrackerEvent(
         )
     }
 
+
     companion object {
-        val dateTimeParseFormat: DateTimeFormatter = createDateTimeParseFormat()
-        val dateTimePrintFormat: DateTimeFormatter = createDateTimePrintFormat()
+        private val dateTimeParseFormat: DateTimeFormatter = createDateTimeParseFormat()
+        private val dateTimePrintFormat: DateTimeFormatter = createDateTimePrintFormat()
 
         fun ideNotInFocus(time: DateTime, userName: String, eventType: String, eventData: String): TrackerEvent {
             return TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1)
@@ -57,7 +58,7 @@ data class TrackerEvent(
             )
         }
 
-        private fun parseDateTime(time: String): DateTime  {
+        fun parseDateTime(time: String): DateTime  {
             return DateTime.parse(time, dateTimeParseFormat)
         }
 
