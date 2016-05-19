@@ -81,7 +81,8 @@ class AppComponent : ApplicationComponent {
                     pluginId + " plugin didn't find Groovy libraries on classpath",
                     "Without it plugin won't work. <a href=\"\">Download Groovy libraries</a> (~6Mb)",
                     NotificationType.ERROR,
-                    listener).notify(null)
+                    listener
+            ).notify(null)
 
             return false
         }

@@ -19,6 +19,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
+import com.intellij.util.SystemProperties
 import groovy.lang.MetaClass
 import liveplugin.PluginUtil
 import liveplugin.PluginUtil.*
@@ -38,7 +39,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
 
     fun startTracking(config: Config) {
         if (trackingDisposable != null) return
-        trackingDisposable = newDisposable(listOf(parentDisposable))
+        trackingDisposable = newDisposable(parentDisposable)
 
         if (config.pollIdeState) {
             startPollingIdeState(trackerLog, trackingDisposable, config.pollIdeStateMs)
@@ -121,19 +122,13 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
         // doesn't notify about actual commits but only about opening commit dialog
         VcsActions.registerVcsListener(parentDisposable, object : VcsActions.Listener() {
             override fun onVcsCommit() {
-                invokeOnEDT {
-                    trackerLog.append(captureIdeState("VcsAction", "Commit"))
-                }
+                invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Commit")) }
             }
             override fun onVcsUpdate() {
-                invokeOnEDT {
-                    trackerLog.append(captureIdeState("VcsAction", "Update"))
-                }
+                invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Update")) }
             }
             override fun onVcsPush() {
-                invokeOnEDT {
-                    trackerLog.append(captureIdeState("VcsAction", "Push"))
-                }
+                invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Push")) }
             }
 
             // TODO not sure why these methods have to be implemented (don't need to do it in Scala, Java)
@@ -149,6 +144,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
             override fun invokeMethod(name: String?, args: Any?): Any? {
                 throw UnsupportedOperationException()
             }
+
             override fun getMetaClass(): MetaClass? {
                 throw UnsupportedOperationException()
             }
@@ -162,7 +158,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
                 eventData = "Inactive"
             }
             val time = DateTime.now()
-            val userName = com.intellij.util.SystemProperties.getUserName()
+            val userName = SystemProperties.getUserName()
 
             val ideFocusManager = IdeFocusManager.getGlobalInstance()
             val focusOwner = ideFocusManager.focusOwner

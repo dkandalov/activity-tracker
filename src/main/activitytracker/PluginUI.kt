@@ -200,27 +200,24 @@ class PluginUI(
         registerAction("Clear Tracking Log", clearCurrentLog)
         // TODO register other actions
 
-        val actionGroup = DefaultActionGroup().run {
+        val actionGroup = DefaultActionGroup().apply {
             add(toggleTracking)
-            add(DefaultActionGroup("Current Log", true).run {
+            add(DefaultActionGroup("Current Log", true).apply {
                 add(showStatistics)
                 add(openLogInIde)
                 add(openLogFolder)
                 addSeparator()
                 add(rollCurrentLog)
                 add(clearCurrentLog)
-                this
             })
             addSeparator()
-            add(DefaultActionGroup("Settings", true).run {
+            add(DefaultActionGroup("Settings", true).apply {
                 add(toggleTrackActions)
                 add(togglePollIdeState)
                 add(toggleTrackKeyboard)
                 add(toggleTrackMouse)
-                this
             })
             add(openHelp)
-            this
         }
 
         return JBPopupFactory.getInstance().createActionGroupPopup(
