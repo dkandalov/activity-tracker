@@ -20,8 +20,8 @@
     ]]></description>
 
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
-    <!-- since IJ 15 -->
-    <idea-version since-build="143.0"/>
+    <!-- since IJ 2016.1 -->
+    <idea-version since-build="145.0"/>
 
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
