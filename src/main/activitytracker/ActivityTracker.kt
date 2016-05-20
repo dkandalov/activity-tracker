@@ -25,6 +25,7 @@ import liveplugin.PluginUtil
 import liveplugin.PluginUtil.*
 import liveplugin.implementation.Misc.newDisposable
 import liveplugin.implementation.VcsActions
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.joda.time.DateTime
 import java.awt.AWTEvent
 import java.awt.Component
@@ -132,21 +133,23 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
             }
 
             // TODO not sure why these methods have to be implemented (don't need to do it in Scala, Java)
-            override fun setProperty(propertyName: String?, newValue: Any?) {
-                throw UnsupportedOperationException()
+            // The metaClass logic below is based on GroovyObjectSupport
+            private var metaClass: MetaClass? = null
+            override fun getMetaClass(): MetaClass? {
+                if (metaClass == null) {
+                    metaClass = InvokerHelper.getMetaClass(javaClass)
+                }
+                return metaClass
             }
             override fun setMetaClass(metaClass: MetaClass?) {
-                throw UnsupportedOperationException()
+                this.metaClass = metaClass
             }
+            override fun setProperty(propertyName: String?, newValue: Any?) {}
             override fun getProperty(propertyName: String?): Any? {
-                throw UnsupportedOperationException()
+                return null
             }
             override fun invokeMethod(name: String?, args: Any?): Any? {
-                throw UnsupportedOperationException()
-            }
-
-            override fun getMetaClass(): MetaClass? {
-                throw UnsupportedOperationException()
+                return null
             }
         })
     }
