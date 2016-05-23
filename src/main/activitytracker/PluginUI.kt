@@ -132,7 +132,7 @@ class PluginUI(
             override fun actionPerformed(event: AnActionEvent) {
                 doInBackground("Analysing activity log", {
                     val errors = arrayListOf<Error>()
-                    val events = trackerLog.readEvents{ line: String, e: Exception ->
+                    val events = trackerLog.readAllEvents { line: String, e: Exception ->
                         errors.add(Error(line, e))
                     }
 

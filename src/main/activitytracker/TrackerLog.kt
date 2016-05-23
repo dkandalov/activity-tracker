@@ -16,24 +16,21 @@ import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
-class TrackerLog(path: String, val parentDisposable: Disposable) {
+class TrackerLog(val eventsFilePath: String) {
     private val log = Logger.getInstance(TrackerLog::class.java)
-    private val writeFrequencyMs = 1000L
     private val utf8 = Charset.forName("UTF-8")
 
-    private val statsFilePath: String
     private val eventQueue: Queue<TrackerEvent> = ConcurrentLinkedQueue()
 
     init {
-        val pathFile = File(path)
+        val pathFile = File(eventsFilePath)
         if (!pathFile.exists()) pathFile.mkdir()
-        this.statsFilePath = path + "/ide-events.csv"
     }
 
-    fun init(): TrackerLog {
+    fun initWriter(writeFrequencyMs: Long, parentDisposable: Disposable): TrackerLog {
         val runnable = {
             try {
-                FileOutputStream(File(statsFilePath), true).buffered().writer(utf8).use { writer ->
+                FileOutputStream(File(eventsFilePath), true).buffered().writer(utf8).use { writer ->
                     val csvPrinter = CSVPrinter(writer, CSVFormat.RFC4180)
                     var event = eventQueue.poll()
                     while (event != null) {
@@ -60,17 +57,16 @@ class TrackerLog(path: String, val parentDisposable: Disposable) {
     }
 
     fun clearLog(): Boolean {
-        return FileUtil.delete(File(statsFilePath))
+        return FileUtil.delete(File(eventsFilePath))
     }
 
-    fun readEvents(onParseError: (String, Exception) -> Unit): List<TrackerEvent> {
-        return File(statsFilePath).bufferedReader(utf8).use { reader ->
-            val result = arrayListOf<TrackerEvent>()
+    fun forEachEvent(onParseError: (String, Exception) -> Unit, consumer: (TrackerEvent) -> Unit) {
+        File(eventsFilePath).bufferedReader(utf8).use { reader ->
             val csvParser = CSVParser(reader, CSVFormat.RFC4180)
             try {
                 csvParser.forEach{
                     try {
-                        result.add(TrackerEvent.fromCsv(it))
+                        consumer.invoke(TrackerEvent.fromCsv(it))
                     } catch (e: Exception) {
                         onParseError(it.toString(), e)
                     }
@@ -78,24 +74,31 @@ class TrackerLog(path: String, val parentDisposable: Disposable) {
             } finally {
                 csvParser.close()
             }
-            result
         }
+    }
+
+    fun readAllEvents(onParseError: (String, Exception) -> Unit): List<TrackerEvent> {
+        val result = arrayListOf<TrackerEvent>()
+        forEachEvent(onParseError) {
+            result.add(it)
+        }
+        return result
     }
 
     fun rollLog(now: Date = Date()): File {
         val postfix = SimpleDateFormat("_yyyy-MM-dd").format(now)
-        var rolledStatsFile = File(statsFilePath + postfix)
+        var rolledStatsFile = File(eventsFilePath + postfix)
         var i = 1
         while (rolledStatsFile.exists()) {
-            rolledStatsFile = File(statsFilePath + postfix + "_" + i)
+            rolledStatsFile = File(eventsFilePath + postfix + "_" + i)
             i++
         }
 
-        FileUtil.rename(File(statsFilePath), rolledStatsFile)
+        FileUtil.rename(File(eventsFilePath), rolledStatsFile)
         return rolledStatsFile
     }
 
     fun currentLogFile(): File {
-        return File(statsFilePath)
+        return File(eventsFilePath)
     }
 }
