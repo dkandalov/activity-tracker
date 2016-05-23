@@ -36,7 +36,8 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import javax.swing.JDialog
 
 class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposable) {
-    var trackingDisposable: Disposable? = null
+    private var trackingDisposable: Disposable? = null
+    private val captureStateDurations: MutableList<Long> = mutableListOf()
 
     fun startTracking(config: Config) {
         if (trackingDisposable != null) return
@@ -65,6 +66,14 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
             // it has to be invokeOnEDT() method so that it's triggered when IDE dialog window is opened (e.g. override or project settings),
             invokeOnEDT {
                 trackerLog.append(captureIdeState("IdeState", ""))
+                if (captureStateDurations.size > 10) {
+                    val time = DateTime.now()
+                    val userName = SystemProperties.getUserName()
+                    val durations = captureStateDurations.joinToString(",")
+                    val trackerEvent = TrackerEvent(time, userName, "Duration", durations, "", "", "", "", -1, -1)
+                    trackerLog.append(trackerEvent)
+                    captureStateDurations.clear()
+                }
             }
         }
 
@@ -155,6 +164,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
     }
 
     private fun captureIdeState(eventType: String, originalEventData: String): TrackerEvent? {
+        val start = System.currentTimeMillis()
         try {
             var eventData = originalEventData
             if (eventType == "IdeState") {
@@ -227,6 +237,8 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
         } catch (e: Exception) {
             PluginUtil.log(e, NotificationType.ERROR)
             return null
+        } finally {
+            captureStateDurations.add(System.currentTimeMillis() - start)
         }
     }
 
