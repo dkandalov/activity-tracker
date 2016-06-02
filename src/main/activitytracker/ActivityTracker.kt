@@ -70,7 +70,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
                     val time = DateTime.now()
                     val userName = SystemProperties.getUserName()
                     val durations = captureStateDurations.joinToString(",")
-                    val trackerEvent = TrackerEvent(time, userName, "Duration", durations, "", "", "", "", -1, -1)
+                    val trackerEvent = TrackerEvent(time, userName, "Duration", durations, "", "", "", "", -1, -1) // TODO remove
                     trackerLog.append(trackerEvent)
                     captureStateDurations.clear()
                 }
