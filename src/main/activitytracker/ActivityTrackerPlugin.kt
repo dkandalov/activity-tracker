@@ -1,6 +1,5 @@
 package activitytracker
 
-import activitytracker.liveplugin.GlobalVar
 import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project
@@ -11,7 +10,7 @@ class ActivityTrackerPlugin(
         val trackerLog: TrackerLog,
         val propertiesComponent: PropertiesComponent
 ) {
-    private val stateVar: GlobalVar<State> = GlobalVar("$pluginId.state")
+    private var state: State = State.defaultValue
     private var pluginUI: PluginUI? = null
 
     fun init(): ActivityTrackerPlugin {
@@ -21,7 +20,7 @@ class ActivityTrackerPlugin(
 
     fun setPluginUI(pluginUI: PluginUI) {
         this.pluginUI = pluginUI
-        pluginUI.update(stateVar.get()!!)
+        pluginUI.update(state)
     }
 
     fun toggleTracking() {
@@ -54,12 +53,9 @@ class ActivityTrackerPlugin(
     }
 
     private fun updateState(closure: (State) -> State) {
-        stateVar.set { oldValue: State? ->
-            val value = oldValue ?: State.defaultValue
-            val newValue = closure(value)
-            onUpdate(value, newValue)
-            newValue
-        }
+        val oldState = state
+        state = closure(state)
+        onUpdate(oldState, state)
     }
 
     private fun onUpdate(oldState: State, newState: State) {
