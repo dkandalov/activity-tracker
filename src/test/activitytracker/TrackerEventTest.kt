@@ -16,13 +16,13 @@ class TrackerEventTest {
         val event = TrackerEvent(dateTime, "user", "IdeState", "Active", "banners", "Editor", "/path/to/file", "", 1938, 57)
         val eventAsCsv = "2016-03-03T01:02:03.000Z,user,IdeState,Active,banners,Editor,/path/to/file,,1938,57\r\n"
 
-        assertThat(formatAsTrackerEvent(event), equalTo(eventAsCsv))
+        assertThat(event.toCsvLine(), equalTo(eventAsCsv))
     }
 
     @Test fun `convert csv line to event object`() {
         val dateTime = parseDateTime("2016-03-03T01:02:03.000")
         val event = TrackerEvent(dateTime, "user", "IdeState", "Active", "banners", "Editor", "/path/to/file", "", 1938, 57)
-        val parsedEvent = parseAsTrackerEvent("2016-03-03T01:02:03.000Z,user,IdeState,Active,banners,Editor,/path/to/file,,1938,57")
+        val parsedEvent = "2016-03-03T01:02:03.000Z,user,IdeState,Active,banners,Editor,/path/to/file,,1938,57".parse()
 
         assertThat(parsedEvent, equalTo(event))
     }
@@ -30,7 +30,7 @@ class TrackerEventTest {
     @Test fun `convert csv line with some millis to event object`() {
         val dateTime = parseDateTime("2016-03-03T01:02:03.012+00:00")
         val event = TrackerEvent(dateTime, "user", "IdeState", "Active", "banners", "Editor", "/path/to/file", "", 1938, 57)
-        val parsedEvent = parseAsTrackerEvent("2016-03-03T01:02:03.12+00:00,user,IdeState,Active,banners,Editor,/path/to/file,,1938,57")
+        val parsedEvent = "2016-03-03T01:02:03.12+00:00,user,IdeState,Active,banners,Editor,/path/to/file,,1938,57".parse()
 
         assertThat(parsedEvent, equalTo(event))
     }
@@ -38,7 +38,7 @@ class TrackerEventTest {
     @Test fun `convert csv line with no millis to event object`() {
         val dateTime = parseDateTime("2016-03-03T01:02:03.000Z")
         val event = TrackerEvent(dateTime, "user", "IdeState", "Active", "banners", "Editor", "/path/to/file", "", 1938, 57)
-        val parsedEvent = parseAsTrackerEvent("2016-03-03T01:02:03Z,user,IdeState,Active,banners,Editor,/path/to/file,,1938,57")
+        val parsedEvent = "2016-03-03T01:02:03Z,user,IdeState,Active,banners,Editor,/path/to/file,,1938,57".parse()
 
         assertThat(parsedEvent, equalTo(event))
     }
@@ -46,20 +46,20 @@ class TrackerEventTest {
     @Test fun `convert csv line with no timezone (old log format) to event object`() {
         val dateTime = parseDateTime("2016-03-03T01:02:03.123Z")
         val event = TrackerEvent(dateTime, "user", "IdeState", "Active", "banners", "Editor", "/path/to/file", "", 1938, 57)
-        val parsedEvent = parseAsTrackerEvent("2016-03-03T01:02:03.123,user,IdeState,Active,banners,Editor,/path/to/file,,1938,57")
+        val parsedEvent = "2016-03-03T01:02:03.123,user,IdeState,Active,banners,Editor,/path/to/file,,1938,57".parse()
 
         assertThat(parsedEvent, equalTo(event))
     }
 
-    private fun formatAsTrackerEvent(event: TrackerEvent): String {
-        StringBuilder().let {
-            event.toCsv(CSVPrinter(it, CSVFormat.RFC4180))
-            return it.toString()
+    private fun TrackerEvent.toCsvLine(): String {
+        return StringBuilder().let {
+            toCsv(CSVPrinter(it, CSVFormat.RFC4180))
+            it.toString()
         }
     }
 
-    private fun parseAsTrackerEvent(csvLine: String): TrackerEvent {
-        val parser = CSVParser(StringReader(csvLine), CSVFormat.RFC4180)
+    private fun String.parse(): TrackerEvent {
+        val parser = CSVParser(StringReader(this), CSVFormat.RFC4180)
         return TrackerEvent.fromCsv(parser.records.first())
     }
 }
