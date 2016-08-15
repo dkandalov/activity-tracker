@@ -14,7 +14,8 @@ class ActivityTrackerPlugin(
     private var pluginUI: PluginUI? = null
 
     fun init(): ActivityTrackerPlugin {
-        updateState{ State.load(propertiesComponent, pluginId) }
+        state = State.load(propertiesComponent, pluginId)
+        onStateChange(state)
         return this
     }
 
@@ -55,12 +56,12 @@ class ActivityTrackerPlugin(
     private fun updateState(closure: (State) -> State) {
         val oldState = state
         state = closure(state)
-        onUpdate(oldState, state)
+        if (oldState != state) {
+            onStateChange(state)
+        }
     }
 
-    private fun onUpdate(oldState: State, newState: State) {
-        if (oldState == newState) return
-
+    private fun onStateChange(newState: State) {
         tracker.stopTracking()
         if (newState.isTracking) {
             tracker.startTracking(asTrackerConfig(newState))
