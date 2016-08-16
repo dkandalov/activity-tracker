@@ -32,25 +32,26 @@ import java.awt.Component
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
+import java.lang.System.currentTimeMillis
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import javax.swing.JDialog
 
-class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposable) {
+class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposable, val logTrackerCallDuration: Boolean = false) {
     private var trackingDisposable: Disposable? = null
-    private val captureStateDurations: MutableList<Long> = mutableListOf()
+    private val trackerCallDurations: MutableList<Long> = mutableListOf()
 
     fun startTracking(config: Config) {
         if (trackingDisposable != null) return
         trackingDisposable = newDisposable(parentDisposable)
 
         if (config.pollIdeState) {
-            startPollingIdeState(trackerLog, trackingDisposable, config.pollIdeStateMs)
+            startPollingIdeState(trackerLog, trackingDisposable!!, config.pollIdeStateMs)
         }
         if (config.trackIdeActions) {
-            startActionListener(trackerLog, trackingDisposable)
+            startActionListener(trackerLog, trackingDisposable!!)
         }
         if (config.trackKeyboard || config.trackMouse) {
-            startAWTEventListener(trackerLog, trackingDisposable, config.trackKeyboard, config.trackMouse, config.mouseMoveEventsThresholdMs)
+            startAWTEventListener(trackerLog, trackingDisposable!!, config.trackKeyboard, config.trackMouse, config.mouseMoveEventsThresholdMs)
         }
     }
 
@@ -61,30 +62,33 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
         }
     }
 
-    private fun startPollingIdeState(trackerLog: TrackerLog, trackingDisposable: Disposable?, frequencyMs: Long) {
+    private fun startPollingIdeState(trackerLog: TrackerLog, trackingDisposable: Disposable, frequencyMs: Long) {
         val runnable = Runnable() {
-            // it has to be invokeOnEDT() method so that it's triggered when IDE dialog window is opened (e.g. override or project settings),
+            // It has to be invokeOnEDT() method so that it's still triggered when IDE dialog window is opened (e.g. override or project settings).
             invokeOnEDT {
                 trackerLog.append(captureIdeState("IdeState", ""))
-                if (captureStateDurations.size > 10) {
-                    val time = DateTime.now()
-                    val userName = SystemProperties.getUserName()
-                    val durations = captureStateDurations.joinToString(",")
-                    val trackerEvent = TrackerEvent(time, userName, "Duration", durations, "", "", "", "", -1, -1) // TODO remove
-                    trackerLog.append(trackerEvent)
-                    captureStateDurations.clear()
-                }
+                trackerLog.append(trackerCallDurationsEvent())
             }
         }
 
-        val nextSecondStartMs = 1000 - (System.currentTimeMillis() % 1000)
+        val nextSecondStartMs = 1000 - (currentTimeMillis() % 1000)
         val future = JobScheduler.getScheduler().scheduleWithFixedDelay(runnable, nextSecondStartMs, frequencyMs, MILLISECONDS)
-        newDisposable(trackingDisposable!!) {
+        newDisposable(trackingDisposable) {
             future.cancel(true)
         }
     }
 
-    private fun startAWTEventListener(trackerLog: TrackerLog, parentDisposable: Disposable?, trackKeyboard: Boolean,
+    private fun trackerCallDurationsEvent(): TrackerEvent? {
+        if (!logTrackerCallDuration || trackerCallDurations.size < 10) return null
+
+        val time = DateTime.now()
+        val userName = SystemProperties.getUserName()
+        val durations = trackerCallDurations.joinToString(",")
+        trackerCallDurations.clear()
+        return TrackerEvent(time, userName, "Duration", durations, "", "", "", "", -1, -1)
+    }
+
+    private fun startAWTEventListener(trackerLog: TrackerLog, parentDisposable: Disposable, trackKeyboard: Boolean,
                                       trackMouse: Boolean, mouseMoveEventsThresholdMs: Long) {
         var lastMouseMoveTimestamp = 0L
         IdeEventQueue.getInstance().addPostprocessor(IdeEventQueue.EventDispatcher { awtEvent: AWTEvent ->
@@ -93,14 +97,14 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
                 trackerLog.append(captureIdeState("MouseEvent", eventData))
             }
             if (trackMouse && awtEvent is MouseEvent && awtEvent.id == MouseEvent.MOUSE_MOVED) {
-                val now = System.currentTimeMillis()
+                val now = currentTimeMillis()
                 if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
                     trackerLog.append(captureIdeState("MouseEvent", "move:" + awtEvent.x + ":" + awtEvent.y + ":" + awtEvent.modifiers))
                     lastMouseMoveTimestamp = now
                 }
             }
             if (trackMouse && awtEvent is MouseWheelEvent && awtEvent.id == MouseEvent.MOUSE_WHEEL) {
-                val now = System.currentTimeMillis()
+                val now = currentTimeMillis()
                 if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
                     trackerLog.append(captureIdeState("MouseEvent", "wheel:" + awtEvent.wheelRotation + ":" + awtEvent.modifiers))
                     lastMouseMoveTimestamp = now
@@ -113,23 +117,23 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
         }, parentDisposable)
     }
 
-    private fun startActionListener(trackerLog: TrackerLog, parentDisposable: Disposable?) {
+    private fun startActionListener(trackerLog: TrackerLog, parentDisposable: Disposable) {
         val actionManager = ActionManager.getInstance()
         actionManager.addAnActionListener(object : AnActionListener {
             override fun beforeActionPerformed(anAction: AnAction?, dataContext: DataContext?, event: AnActionEvent?) {
                 if (anAction == null) return
-                // track action in "before" callback because otherwise timing of action can be wrong
-                // (e.g. commit action shows dialog and finishes only after the dialog is closed)
+                // Track action in "before" callback because otherwise timestamp of the action can be wrong
+                // (e.g. commit action shows dialog and finishes only after the dialog is closed).
+                // Action id can be null e.g. on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction).
                 val actionId = actionManager.getId(anAction) ?: return
-                // can be null e.g. on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction)
                 trackerLog.append(captureIdeState("Action", actionId))
             }
             override fun beforeEditorTyping(c: Char, dataContext: DataContext?) { }
             override fun afterActionPerformed(action: AnAction?, dataContext: DataContext?, event: AnActionEvent?) { }
         }, parentDisposable)
 
-        // use custom listener for VCS because listening to normal IDE actions
-        // doesn't notify about actual commits but only about opening commit dialog
+        // Use custom listener for VCS because listening to normal IDE actions
+        // doesn't notify about actual commits but only about opening commit dialog (see VcsActions source code for details).
         VcsActions.registerVcsListener(parentDisposable, object : VcsActions.Listener() {
             override fun onVcsCommit() {
                 invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Commit")) }
@@ -164,7 +168,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
     }
 
     private fun captureIdeState(eventType: String, originalEventData: String): TrackerEvent? {
-        val start = System.currentTimeMillis()
+        val start = currentTimeMillis()
         try {
             var eventData = originalEventData
             if (eventType == "IdeState") {
@@ -176,7 +180,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
             val ideFocusManager = IdeFocusManager.getGlobalInstance()
             val focusOwner = ideFocusManager.focusOwner
 
-            // this might also work: ApplicationManager.application.isActive()
+            // this might also work: ApplicationManager.application.isActive(), ApplicationActivationListener
             val window = WindowManagerEx.getInstanceEx().mostRecentFocusedWindow
                     ?: return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
 
@@ -199,7 +203,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
             }
 
             val focusOwnerId: String
-            // check for JDialog before EditorComponentImpl because dialog can belong to editor
+            // Check for JDialog before EditorComponentImpl because dialog can belong to editor.
             if (findParentComponent<JDialog>(focusOwner) { it is JDialog } != null) {
                 focusOwnerId = "Dialog"
             } else if (findParentComponent<EditorComponentImpl>(focusOwner) { it is EditorComponentImpl } != null) {
@@ -215,13 +219,13 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
             var column = -1
             val editor = currentEditorIn(project)
             if (editor != null) {
-                // keep full file name because projects and libraries might have files with the same names/partial paths
+                // Keep full file name because projects and libraries might have files with the same names/partial paths.
                 val file = currentFileIn(project)
                 filePath = file?.path ?: ""
                 line = editor.caretModel.logicalPosition.line
                 column = editor.caretModel.logicalPosition.column
 
-                // non-java based IDEs might not have PsiMethod class
+                // Non-java IDEs might not have PsiMethod class.
                 // TODO refactor to do this check only once
                 if (!DumbService.getInstance(project).isDumb && isOnClasspath("com.intellij.psi.PsiMethod")) {
                     val elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
@@ -238,7 +242,9 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
             PluginUtil.log(e, NotificationType.ERROR)
             return null
         } finally {
-            captureStateDurations.add(System.currentTimeMillis() - start)
+            if (logTrackerCallDuration) {
+                trackerCallDurations.add(currentTimeMillis() - start)
+            }
         }
     }
 
