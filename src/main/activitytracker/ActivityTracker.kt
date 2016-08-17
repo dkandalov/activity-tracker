@@ -13,6 +13,7 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.editor.impl.EditorComponentImpl
 import com.intellij.openapi.project.DumbService
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindowManager
@@ -39,6 +40,8 @@ import javax.swing.JDialog
 class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposable, val logTrackerCallDuration: Boolean = false) {
     private var trackingDisposable: Disposable? = null
     private val trackerCallDurations: MutableList<Long> = mutableListOf()
+    private var hasPsiClasses: Boolean? = null
+
 
     fun startTracking(config: Config) {
         if (trackingDisposable != null) return
@@ -145,7 +148,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
                 invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Push")) }
             }
 
-            // TODO not sure why these methods have to be implemented (don't need to do it in Scala, Java)
+            // TODO The code below is workaround to make Kotlin compile
             // The metaClass logic below is based on GroovyObjectSupport
             private var metaClass: MetaClass? = null
             override fun getMetaClass(): MetaClass? {
@@ -226,8 +229,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
                 column = editor.caretModel.logicalPosition.column
 
                 // Non-java IDEs might not have PsiMethod class.
-                // TODO refactor to do this check only once
-                if (!DumbService.getInstance(project).isDumb && isOnClasspath("com.intellij.psi.PsiMethod")) {
+                if (hasPsiClasses(project)) {
                     val elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
                     val psiMethod = findPsiParent<PsiMethod>(elementAtOffset, { it is PsiMethod })
                     val psiFile = findPsiParent<PsiFile>(elementAtOffset, { it is PsiFile })
@@ -246,6 +248,13 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
                 trackerCallDurations.add(currentTimeMillis() - start)
             }
         }
+    }
+
+    private fun hasPsiClasses(project: Project): Boolean {
+        if (hasPsiClasses == null && !DumbService.getInstance(project).isDumb) {
+            hasPsiClasses = isOnClasspath("com.intellij.psi.PsiMethod")
+        }
+        return if (hasPsiClasses == null) false else hasPsiClasses!!
     }
 
     private fun isOnClasspath(className: String): Boolean {
