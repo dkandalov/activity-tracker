@@ -2,7 +2,20 @@ package activitytracker
 
 import java.io.File
 
-fun secondsInEditorByFile(events: List<TrackerEvent>): List<Pair<String, Int>> {
+class StatsAnalyzer(val loadEvents: () -> List<TrackerEvent>) {
+    var secondsInEditorByFile: List<Pair<String, Int>> = emptyList()
+    var secondsByProject: List<Pair<String, Int>> = emptyList()
+    var countByActionId: List<Pair<String, Int>> = emptyList()
+
+    fun update() {
+        val events = loadEvents()
+        secondsInEditorByFile = secondsInEditorByFile(events)
+        secondsByProject = secondsByProject(events)
+        countByActionId = countByActionId(events)
+    }
+}
+
+private fun secondsInEditorByFile(events: List<TrackerEvent>): List<Pair<String, Int>> {
     return events
             .filter{ it.eventType == "IdeState" && it.focusedComponent == "Editor" && it.file != "" }
             .groupBy{ it.file }
@@ -11,7 +24,7 @@ fun secondsInEditorByFile(events: List<TrackerEvent>): List<Pair<String, Int>> {
             .withTotal()
 }
 
-fun secondsByProject(events: List<TrackerEvent>): List<Pair<String, Int>> {
+private fun secondsByProject(events: List<TrackerEvent>): List<Pair<String, Int>> {
     return events
             .filter{ it.eventType == "IdeState" && it.eventData == "Active" }
             .groupBy{ it.projectName }
@@ -20,7 +33,7 @@ fun secondsByProject(events: List<TrackerEvent>): List<Pair<String, Int>> {
             .withTotal()
 }
 
-fun countByActionId(events: List<TrackerEvent>): List<Pair<String, Int>> {
+private fun countByActionId(events: List<TrackerEvent>): List<Pair<String, Int>> {
     return events
         .filter{ it.eventType == "Action" }
         .groupBy{ it.eventData }

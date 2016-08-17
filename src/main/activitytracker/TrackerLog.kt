@@ -77,12 +77,17 @@ class TrackerLog(val eventsFilePath: String) {
         }
     }
 
-    fun readAllEvents(onParseError: (String, Exception) -> Unit): List<TrackerEvent> {
+    fun readAllEvents(): Pair<List<TrackerEvent>, List<ReadError>> {
+        val errors = arrayListOf<ReadError>()
+        val onParseError = { line: String, e: Exception ->
+            errors.add(ReadError(line, e))
+            Unit
+        }
         val result = arrayListOf<TrackerEvent>()
         forEachEvent(onParseError) {
             result.add(it)
         }
-        return result
+        return Pair(result, errors)
     }
 
     fun rollLog(now: Date = Date()): File {
@@ -101,4 +106,11 @@ class TrackerLog(val eventsFilePath: String) {
     fun currentLogFile(): File {
         return File(eventsFilePath)
     }
+
+    fun isTooLargeToProcess(): Boolean {
+        return File(eventsFilePath).length() > 100000000L
+    }
+
+    data class ReadError(val line: String, val e: Exception)
+
 }

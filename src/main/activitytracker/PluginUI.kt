@@ -127,35 +127,22 @@ class PluginUI(
                 plugin.openTrackingLogFolder()
             }
         }
-        data class Error(val line: String, val e: Exception)
         val showStatistics = object : AnAction("Show Stats") {
             override fun actionPerformed(event: AnActionEvent) {
                 doInBackground("Analysing activity log", {
-                    val errors = arrayListOf<Error>()
-                    val events = trackerLog.readAllEvents { line: String, e: Exception ->
-                        errors.add(Error(line, e))
-                    }
-
-                    if (events.isEmpty()) {
-                        showNotification("There are no recorded events to analyze")
+                    if (trackerLog.isTooLargeToProcess()) {
+                        showNotification("Current activity log is too large to process in IDE.")
                     } else {
-                        val secondsInEditorByFile = secondsInEditorByFile(events)
-                        val secondsByProject = secondsByProject(events)
-                        val countByActionId = countByActionId(events)
-                        invokeLaterOnEDT {
-                            StatsToolWindow.showIn(
-                                    event.project,
-                                    secondsInEditorByFile,
-                                    secondsByProject,
-                                    countByActionId,
-                                    parentDisposable
-                            )
+                        val statsAnalyzer = StatsAnalyzer {
+                            val (events, errors) = trackerLog.readAllEvents()
+                            if (errors.isNotEmpty()) {
+                                showNotification("There were ${errors.size} errors parsing log file. See IDE log for details.")
+                                errors.take(20).forEach { log.warn(it.line, it.e) }
+                            }
+                            events
                         }
-                    }
-                    if (!errors.isEmpty()) {
-                        showNotification("There were ${errors.size} errors parsing log file. See IDE log for details.")
-                        errors.take(20).forEach {
-                            log.warn(it.line, it.e)
+                        invokeLaterOnEDT {
+                            StatsToolWindow.showIn(event.project, statsAnalyzer, parentDisposable)
                         }
                     }
                 })

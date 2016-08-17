@@ -31,34 +31,28 @@ class StatsToolWindow {
         private val toolWindowId = "Tracking Log Stats"
 
         fun showIn(project: Project?,
-                   secondsInEditorByFile: List<Pair<String, Int>>,
-                   secondsByProject: List<Pair<String, Int>>,
-                   countByActionId: List<Pair<String, Int>>,
+                   analyzer: StatsAnalyzer,
                    parentDisposable: Disposable) {
-            val disposable = newDisposable(parentDisposable)
-            val actionGroup = DefaultActionGroup().apply{
-                add(object : AnAction(AllIcons.Actions.Cancel) {
-                    override fun actionPerformed(event: AnActionEvent) {
-                        Disposer.dispose(disposable)
-                    }
-                })
-            }
+            if (project == null) return
 
-            val createToolWindowPanel = { ->
-                val rootPanel = JPanel().apply {
+
+            val createRootPanel = { ->
+                JPanel().apply {
                     layout = GridBagLayout()
                     val bag = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH)
 
+                    analyzer.update()
+
                     add(JBLabel("Time spent in editor"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table1 = createTable(listOf("File name", "Time"), secondsInEditorByFile.map{secondsToString(it)})
+                    val table1 = createTable(listOf("File name", "Time"), analyzer.secondsInEditorByFile.map{secondsToString(it)})
                     add(JBScrollPane(table1), bag.nextLine().next().weighty(3.0).anchor(NORTH))
 
                     add(JBLabel("Time spent in project"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table2 = createTable(listOf("Project", "Time"), secondsByProject.map{secondsToString(it)})
+                    val table2 = createTable(listOf("Project", "Time"), analyzer.secondsByProject.map{secondsToString(it)})
                     add(JBScrollPane(table2), bag.nextLine().next().anchor(SOUTH))
 
                     add(JBLabel("IDE action count"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table3 = createTable(listOf("IDE Action", "Count"), countByActionId.map { Pair(it.first, it.second.toString()) })
+                    val table3 = createTable(listOf("IDE Action", "Count"), analyzer.countByActionId.map { Pair(it.first, it.second.toString()) })
                     add(JBScrollPane(table3), bag.nextLine().next().anchor(SOUTH))
 
                     add(JPanel().apply {
@@ -75,16 +69,32 @@ class StatsToolWindow {
                         }, GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).nextLine().next().fillCellHorizontally().anchor(NORTH))
                     }, bag.nextLine().next().weighty(0.5).anchor(SOUTH))
                 }
+            }
+            val toolWindowPanel = SimpleToolWindowPanel(true)
+            var rootPanel = createRootPanel()
+            toolWindowPanel.setContent(rootPanel)
 
-                val toolWindowPanel = SimpleToolWindowPanel(true)
-                toolWindowPanel.setContent(rootPanel)
-                toolWindowPanel.setToolbar(ActionManager.getInstance().createActionToolbar(ActionPlaces.EDITOR_TOOLBAR, actionGroup, true).component)
-                toolWindowPanel
+            val disposable = newDisposable(parentDisposable)
+            val actionGroup = DefaultActionGroup().apply{
+                add(object : AnAction(AllIcons.Actions.Cancel) {
+                    override fun actionPerformed(event: AnActionEvent) {
+                        Disposer.dispose(disposable)
+                    }
+                })
+                add(object : AnAction(AllIcons.Actions.Refresh) {
+                    override fun actionPerformed(e: AnActionEvent?) {
+                        toolWindowPanel.remove(rootPanel)
+                        rootPanel = createRootPanel()
+                        toolWindowPanel.setContent(rootPanel)
+                    }
+                })
             }
 
-            if (project == null) return
-            val toolWindow = registerToolWindowIn(project, toolWindowId, disposable, createToolWindowPanel(), RIGHT)
-            val doNothing = {} as Runnable
+            val actionToolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.EDITOR_TOOLBAR, actionGroup, true)
+            toolWindowPanel.setToolbar(actionToolbar.component)
+
+            val toolWindow = registerToolWindowIn(project, toolWindowId, disposable, toolWindowPanel, RIGHT)
+            val doNothing = null
             toolWindow.show(doNothing)
         }
 
@@ -95,7 +105,7 @@ class StatsToolWindow {
             header.forEach {
                 tableModel.addColumn(it)
             }
-            data.forEach{
+            data.forEach {
                 tableModel.addRow(arrayListOf(it.first, it.second).toArray())
             }
             val table = JBTable(tableModel).apply{
