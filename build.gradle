@@ -1,0 +1,55 @@
+import com.intellij.compiler.ant.taskdefs.Copy
+
+buildscript {
+	ext.kotlin_version = '1.0.0'
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.3"
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'kotlin'
+apply plugin: 'idea'
+
+ext.home = System.env.HOME
+ext.ideaPath = "/Applications/IntelliJ IDEA 2016.app/Contents"
+
+repositories { mavenCentral() }
+enableProvidedScope()
+
+dependencies {
+	compile "org.codehaus.groovy:groovy:2.4.6"
+	compile "joda-time:joda-time:2.9.2"
+	compile "org.apache.commons:commons-csv:1.3"
+	provided "org.jetbrains.kotlin:kotlin-stdlib:1.0.3"
+	provided "org.jetbrains.kotlin:kotlin-test-junit:1.0.3"
+	provided "junit:junit:4.11" // also includes hamcrest-core
+}
+sourceSets {
+	main {
+		kotlin { srcDir "src" }
+		resources { srcDir "resources" }
+	}
+	test {
+		kotlin { srcDir "test" }
+	}
+}
+
+task downloadDependenciesToLibFolder(type: Copy) {
+	from configurations.runtime
+	into './lib'
+}
+
+def enableProvidedScope() {
+	configurations {
+		provided
+		compile.extendsFrom provided
+	}
+	idea {
+		module { scopes.PROVIDED.plus += [configurations.provided] }
+	}
+}
+
