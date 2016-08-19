@@ -30,9 +30,7 @@ class StatsToolWindow {
     companion object {
         private val toolWindowId = "Tracking Log Stats"
 
-        fun showIn(project: Project?,
-                   analyzer: StatsAnalyzer,
-                   parentDisposable: Disposable) {
+        fun showIn(project: Project?, analyzer: StatsAnalyzer, dataFile: String, parentDisposable: Disposable) {
             if (project == null) return
 
 
@@ -57,7 +55,9 @@ class StatsToolWindow {
 
                     add(JPanel().apply {
                         layout = GridBagLayout()
-                        val message = "(Note that time spent in project includes time in IDE toolwindows and dialogs. " +
+                        val message =
+                                "Results are based on $dataFile.\n\n" +
+                                "(Note that time spent in project includes time in IDE toolwindows and dialogs. " +
                                 "Therefore, it will be greater than time spent in IDE editor.)"
                         add(JTextArea(message).apply{
                             isEditable = false

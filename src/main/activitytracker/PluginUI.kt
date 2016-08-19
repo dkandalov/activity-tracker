@@ -142,7 +142,7 @@ class PluginUI(
                             events
                         }
                         invokeLaterOnEDT {
-                            StatsToolWindow.showIn(event.project, statsAnalyzer, parentDisposable)
+                            StatsToolWindow.showIn(event.project, statsAnalyzer, trackerLog.eventsFilePath, parentDisposable)
                         }
                     }
                 })
