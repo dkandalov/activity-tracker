@@ -30,7 +30,9 @@ class TrackerLog(val eventsFilePath: String) {
     fun initWriter(writeFrequencyMs: Long, parentDisposable: Disposable): TrackerLog {
         val runnable = {
             try {
-                FileOutputStream(File(eventsFilePath), true).buffered().writer(utf8).use { writer ->
+                val file = File(eventsFilePath)
+                FileUtil.createIfDoesntExist(file)
+                FileOutputStream(file, true).buffered().writer(utf8).use { writer ->
                     val csvPrinter = CSVPrinter(writer, CSVFormat.RFC4180)
                     var event = eventQueue.poll()
                     while (event != null) {
