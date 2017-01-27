@@ -1,11 +1,9 @@
 package activitytracker
 
-import org.apache.commons.csv.CSVPrinter
-import org.apache.commons.csv.CSVRecord
+import org.apache.commons.csv.*
 import org.joda.time.DateTime
 import org.joda.time.DateTimeFieldType.*
-import org.joda.time.format.DateTimeFormatter
-import org.joda.time.format.DateTimeFormatterBuilder
+import org.joda.time.format.*
 
 data class TrackerEvent(
         val time: DateTime,
@@ -17,7 +15,8 @@ data class TrackerEvent(
         val file: String,
         val psiPath: String,
         val editorLine: Int,
-        val editorColumn: Int
+        val editorColumn: Int,
+        val task: String
 ) {
     fun toCsv(csvPrinter: CSVPrinter) {
         csvPrinter.printRecord(
@@ -30,7 +29,8 @@ data class TrackerEvent(
                 file,
                 psiPath,
                 editorLine,
-                editorColumn
+                editorColumn,
+                task
         )
     }
 
@@ -40,7 +40,7 @@ data class TrackerEvent(
         private val dateTimePrintFormat: DateTimeFormatter = createDateTimePrintFormat()
 
         fun ideNotInFocus(time: DateTime, userName: String, eventType: String, eventData: String): TrackerEvent {
-            return TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1)
+            return TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1, "")
         }
 
         fun fromCsv(csvRecord: CSVRecord): TrackerEvent {
@@ -54,16 +54,17 @@ data class TrackerEvent(
                 file = csvRecord[6],
                 psiPath = csvRecord[7],
                 editorLine = Integer.parseInt(csvRecord[8]),
-                editorColumn = Integer.parseInt(csvRecord[9])
+                editorColumn = Integer.parseInt(csvRecord[9]),
+                task = if (csvRecord.size() < 11) "" else csvRecord[10] // backward compatibility with plugin data before 1.0.6 beta
             )
         }
 
         fun parseDateTime(time: String): DateTime  {
-            return DateTime.parse(time, dateTimeParseFormat)
+            return DateTime.parse(time, dateTimeParseFormat.withZoneUTC())
         }
 
         /**
-         * This has to be separate from {@link #createDateTimePrintFormat()}
+         * Parser has to be separate from {@link #createDateTimePrintFormat()}
          * because builder with optional elements doesn't support printing.
          */
         private fun createDateTimeParseFormat(): DateTimeFormatter {

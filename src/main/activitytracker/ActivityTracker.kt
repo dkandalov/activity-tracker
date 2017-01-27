@@ -14,6 +14,7 @@ import com.intellij.openapi.wm.*
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
+import com.intellij.tasks.TaskManager
 import com.intellij.util.SystemProperties
 import groovy.lang.MetaClass
 import liveplugin.PluginUtil
@@ -32,8 +33,9 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
     private var trackingDisposable: Disposable? = null
     private val trackerCallDurations: MutableList<Long> = mutableListOf()
     private var hasPsiClasses: Boolean? = null
+    private var hasTaskManager: Boolean? = null
 
-
+    
     fun startTracking(config: Config) {
         if (trackingDisposable != null) return
         trackingDisposable = newDisposable(parentDisposable)
@@ -79,7 +81,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
         val userName = SystemProperties.getUserName()
         val durations = trackerCallDurations.joinToString(",")
         trackerCallDurations.clear()
-        return TrackerEvent(time, userName, "Duration", durations, "", "", "", "", -1, -1)
+        return TrackerEvent(time, userName, "Duration", durations, "", "", "", "", -1, -1, "")
     }
 
     private fun startAWTEventListener(trackerLog: TrackerLog, parentDisposable: Disposable, trackKeyboard: Boolean,
@@ -229,7 +231,9 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
                 }
             }
 
-            return TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column)
+            val task = if (hasTaskManager(project)) TaskManager.getManager(project).activeTask.presentableName else ""
+
+            return TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column, task)
 
         } catch (e: Exception) {
             PluginUtil.log(e, NotificationType.ERROR)
@@ -241,11 +245,18 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
         }
     }
 
+    private fun hasTaskManager(project: Project): Boolean {
+        if (hasTaskManager == null && !DumbService.getInstance(project).isDumb) {
+            hasTaskManager = isOnClasspath("com.intellij.tasks.TaskManager")
+        }
+        return hasTaskManager ?: false
+    }
+
     private fun hasPsiClasses(project: Project): Boolean {
         if (hasPsiClasses == null && !DumbService.getInstance(project).isDumb) {
             hasPsiClasses = isOnClasspath("com.intellij.psi.PsiMethod")
         }
-        return if (hasPsiClasses == null) false else hasPsiClasses!!
+        return hasPsiClasses ?: false
     }
 
     private fun isOnClasspath(className: String): Boolean {
