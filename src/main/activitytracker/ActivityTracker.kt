@@ -1,22 +1,16 @@
 package activitytracker
 
-import activitytracker.liveplugin.invokeOnEDT
-import activitytracker.liveplugin.newDisposable
+import activitytracker.liveplugin.*
 import com.intellij.concurrency.JobScheduler
 import com.intellij.ide.IdeEventQueue
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.editor.impl.EditorComponentImpl
-import com.intellij.openapi.project.DumbService
-import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.*
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.wm.IdeFocusManager
-import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.wm.*
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
@@ -28,11 +22,8 @@ import liveplugin.implementation.Misc.newDisposable
 import liveplugin.implementation.VcsActions
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.joda.time.DateTime
-import java.awt.AWTEvent
-import java.awt.Component
-import java.awt.event.KeyEvent
-import java.awt.event.MouseEvent
-import java.awt.event.MouseWheelEvent
+import java.awt.*
+import java.awt.event.*
 import java.lang.System.currentTimeMillis
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import javax.swing.JDialog
@@ -66,7 +57,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
     }
 
     private fun startPollingIdeState(trackerLog: TrackerLog, trackingDisposable: Disposable, frequencyMs: Long) {
-        val runnable = Runnable() {
+        val runnable = Runnable {
             // It has to be invokeOnEDT() method so that it's still triggered when IDE dialog window is opened (e.g. override or project settings).
             invokeOnEDT {
                 trackerLog.append(captureIdeState("IdeState", ""))
@@ -114,7 +105,7 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
                 }
             }
             if (trackKeyboard && awtEvent is KeyEvent && awtEvent.id == KeyEvent.KEY_PRESSED) {
-                trackerLog.append(captureIdeState("KeyEvent", "" + (awtEvent.keyChar.toInt()) + ":" + (awtEvent.keyCode.toInt()) + ":" + awtEvent.modifiers))
+                trackerLog.append(captureIdeState("KeyEvent", "" + (awtEvent.keyChar.toInt()) + ":" + awtEvent.keyCode + ":" + awtEvent.modifiers))
             }
             false
         }, parentDisposable)
