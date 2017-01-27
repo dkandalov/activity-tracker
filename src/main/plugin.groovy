@@ -16,8 +16,7 @@ invokeOnEDT {
 	def pathToTrackingLogFile = "${PathManager.pluginsPath}/activity-tracker/ide-events.csv"
 	def trackerLog = new TrackerLog(pathToTrackingLogFile).initWriter(1000L, pluginDisposable)
 	def tracker = new ActivityTracker(trackerLog, pluginDisposable, false)
-	def propertiesComponent = PropertiesComponent.instance
-	def plugin = new ActivityTrackerPlugin(tracker, trackerLog, propertiesComponent).init()
+	def plugin = new ActivityTrackerPlugin(tracker, trackerLog, PropertiesComponent.instance).init()
 	new PluginUI(plugin, trackerLog, pluginDisposable).init()
 
 	if (!isIdeStartup) show("Reloaded ActivityTracker")

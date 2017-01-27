@@ -24,25 +24,15 @@ class ActivityTrackerPlugin(
         pluginUI.update(state)
     }
 
-    fun toggleTracking() {
-        updateState { it.copy(isTracking = !it.isTracking) }
-    }
+    fun toggleTracking() = updateState { it.copy(isTracking = !it.isTracking) }
 
-    fun enablePollIdeState(value: Boolean) {
-        updateState { it.copy(pollIdeState = value) }
-    }
+    fun enablePollIdeState(value: Boolean) = updateState { it.copy(pollIdeState = value) }
 
-    fun enableTrackIdeActions(value: Boolean) {
-        updateState { it.copy(trackIdeActions = value) }
-    }
+    fun enableTrackIdeActions(value: Boolean) = updateState { it.copy(trackIdeActions = value) }
 
-    fun enableTrackKeyboard(value: Boolean) {
-        updateState { it.copy(trackKeyboard = value) }
-    }
+    fun enableTrackKeyboard(value: Boolean) = updateState { it.copy(trackKeyboard = value) }
 
-    fun enableTrackMouse(value: Boolean) {
-        updateState { it.copy(trackMouse = value) }
-    }
+    fun enableTrackMouse(value: Boolean) = updateState { it.copy(trackMouse = value) }
 
     fun openTrackingLogFile(project: Project?) {
         if (project == null) return
