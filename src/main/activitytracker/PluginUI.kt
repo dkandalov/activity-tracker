@@ -4,10 +4,8 @@ import activitytracker.ActivityTrackerPlugin.Companion.pluginId
 import activitytracker.liveplugin.invokeLaterOnEDT
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.ShowFilePathAction
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationListener
+import com.intellij.notification.*
 import com.intellij.notification.NotificationType.INFORMATION
-import com.intellij.notification.Notifications
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
@@ -15,19 +13,17 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
-import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.openapi.ui.popup.ListPopup
+import com.intellij.openapi.ui.popup.*
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
 import liveplugin.PluginUtil.*
-import liveplugin.implementation.Actions
-import liveplugin.implementation.Misc
+import liveplugin.implementation.*
 import liveplugin.implementation.Threads.doInBackground
 import org.jetbrains.annotations.NotNull
-import java.awt.Component
-import java.awt.Point
+import java.awt.*
 import java.awt.event.MouseEvent
+import java.util.ArrayList
 import java.util.function.Function
 import javax.swing.event.HyperlinkEvent
 
@@ -133,16 +129,21 @@ class PluginUI(
                     if (trackerLog.isTooLargeToProcess()) {
                         showNotification("Current activity log is too large to process in IDE.")
                     } else {
-                        val statsAnalyzer = StatsAnalyzer {
-                            val (events, errors) = trackerLog.readAllEvents()
-                            if (errors.isNotEmpty()) {
-                                showNotification("There were ${errors.size} errors parsing log file. See IDE log for details.")
-                                errors.take(20).forEach { log.warn(it.line, it.e) }
-                            }
-                            events
-                        }
+                        val errors = ArrayList<Pair<String, Exception>>()
+                        val events = trackerLog.readEventSequence(onParseError = { line: String, e: Exception ->
+                            errors.add(Pair(line, e))
+                            if (errors.size > 20) errors.removeAt(0)
+                        })
+
+                        val stats = analyze(events)
+
                         invokeLaterOnEDT {
-                            StatsToolWindow.showIn(event.project, statsAnalyzer, trackerLog.eventsFilePath, parentDisposable)
+                            StatsToolWindow.showIn(event.project, stats, trackerLog.eventsFilePath, parentDisposable)
+                        }
+
+                        if (errors.isNotEmpty()) {
+                            showNotification("There were ${errors.size} errors parsing log file. See IDE log for details.")
+                            errors.forEach { log.warn(it.first, it.second) }
                         }
                     }
                 })

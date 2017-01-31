@@ -30,7 +30,7 @@ class StatsToolWindow {
     companion object {
         private val toolWindowId = "Tracking Log Stats"
 
-        fun showIn(project: Project?, analyzer: StatsAnalyzer, dataFile: String, parentDisposable: Disposable) {
+        fun showIn(project: Project?, analyzer: Stats, dataFile: String, parentDisposable: Disposable) {
             if (project == null) return
 
 
@@ -38,8 +38,6 @@ class StatsToolWindow {
                 JPanel().apply {
                     layout = GridBagLayout()
                     val bag = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH)
-
-                    analyzer.update()
 
                     add(JBLabel("Time spent in editor"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
                     val table1 = createTable(listOf("File name", "Time"), analyzer.secondsInEditorByFile.map{secondsToString(it)})

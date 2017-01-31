@@ -1,44 +1,50 @@
 package activitytracker
 
 import java.io.File
+import java.util.HashMap
 
-class StatsAnalyzer(val loadEvents: () -> List<TrackerEvent>) {
-    var secondsInEditorByFile: List<Pair<String, Int>> = emptyList()
-    var secondsByProject: List<Pair<String, Int>> = emptyList()
-    var countByActionId: List<Pair<String, Int>> = emptyList()
 
-    fun update() {
-        val events = loadEvents()
-        secondsInEditorByFile = secondsInEditorByFile(events)
-        secondsByProject = secondsByProject(events)
-        countByActionId = countByActionId(events)
+data class Stats(
+    val secondsInEditorByFile: List<Pair<String, Int>>,
+    val secondsByProject: List<Pair<String, Int>>,
+    val countByActionId: List<Pair<String, Int>>
+)
+
+fun analyze(events: Sequence<TrackerEvent>): Stats {
+    val map1 = HashMap<String, Int>()
+    val map2 = HashMap<String, Int>()
+    val map3 = HashMap<String, Int>()
+    events.forEach {
+        secondsInEditorByFile(it, map1)
+        secondsByProject(it, map2)
+        countByActionId(it, map3)
+    }
+    return Stats(
+        secondsInEditorByFile = map1.entries.map{ Pair(it.key, it.value) }.sortedBy{ it.second }.withTotal(),
+        secondsByProject = map2.entries.map{ Pair(it.key, it.value) }.sortedBy{ -it.second }.withTotal(),
+        countByActionId = map3.entries.map{ Pair(it.key, it.value) }.sortedBy{ -it.second }
+    )
+}
+
+private fun secondsInEditorByFile(event: TrackerEvent, map: MutableMap<String, Int>) {
+    if (event.eventType == "IdeState" && event.focusedComponent == "Editor" && event.file != "") {
+        val key = fileName(event.file)
+        map[key] = (map[key] ?: 0) + 1
     }
 }
 
-private fun secondsInEditorByFile(events: List<TrackerEvent>): List<Pair<String, Int>> {
-    return events
-            .filter{ it.eventType == "IdeState" && it.focusedComponent == "Editor" && it.file != "" }
-            .groupBy{ it.file }
-            .map{ Pair(fileName(it.key), it.value.size)}
-            .sortedBy{ it.second }
-            .withTotal()
+private fun secondsByProject(event: TrackerEvent, map: MutableMap<String, Int>) {
+    if (event.eventType == "IdeState" && event.eventData == "Active") {
+        val key = event.projectName
+        map[key] = (map[key] ?: 0) + 1
+    }
 }
 
-private fun secondsByProject(events: List<TrackerEvent>): List<Pair<String, Int>> {
-    return events
-            .filter{ it.eventType == "IdeState" && it.eventData == "Active" }
-            .groupBy{ it.projectName }
-            .map{ Pair(it.key, it.value.size)}
-            .sortedBy{ -it.second }
-            .withTotal()
-}
-
-private fun countByActionId(events: List<TrackerEvent>): List<Pair<String, Int>> {
-    return events
-        .filter{ it.eventType == "Action" }
-        .groupBy{ it.eventData }
-        .map{ Pair(it.key, it.value.size) }
-        .sortedBy{ -it.second }
+private fun countByActionId(event: TrackerEvent, map: MutableMap<String, Int>) {
+    if (event.eventType == "Action") {
+        val key = event.eventData
+        map[key] = (map[key] ?: 0) + 1
+    }
 }
 
 private fun fileName(filePath: String): String  {

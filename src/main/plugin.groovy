@@ -8,7 +8,7 @@ import com.intellij.openapi.application.PathManager
 import static liveplugin.PluginUtil.invokeOnEDT
 import static liveplugin.PluginUtil.show
 
-// add-to-classpath $PLUGIN_PATH/bin/production/activity-tracker/
+// add-to-classpath $PLUGIN_PATH/build/classes/main/
 // add-to-classpath $PLUGIN_PATH/lib/commons-csv-1.3.jar
 // add-to-classpath $PLUGIN_PATH/lib/joda-time-2.9.2.jar
 

@@ -1,6 +1,6 @@
 package activitytracker
 
-import java.util.*
+import java.util.TreeMap
 
 fun main(args: Array<String>) {
     val userHome = System.getProperty("user.home")
@@ -11,9 +11,9 @@ fun main(args: Array<String>) {
     val onParseError = { line: String, e: Exception ->
         println("Failed to parse: $line")
     }
-    trackerLog.forEachEvent(onParseError) { event ->
+    trackerLog.readEventSequence(onParseError).forEach { event ->
         if (event.eventType == "Duration") {
-            allDurations.addAll(event.eventData.split(",").map{ it.toInt() })
+            allDurations.addAll(event.eventData.split(",").map(String::toInt))
         }
     }
     val histogram = Histogram().addAll(allDurations)

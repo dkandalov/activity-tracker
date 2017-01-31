@@ -7,15 +7,14 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.io.FileUtil
 import org.apache.commons.csv.*
 import java.io.*
-import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit.MILLISECONDS
+import kotlin.text.Charsets.UTF_8
 
 class TrackerLog(val eventsFilePath: String) {
     private val log = Logger.getInstance(TrackerLog::class.java)
-    private val utf8 = Charset.forName("UTF-8")
 
     private val eventQueue: Queue<TrackerEvent> = ConcurrentLinkedQueue()
 
@@ -29,7 +28,7 @@ class TrackerLog(val eventsFilePath: String) {
             try {
                 val file = File(eventsFilePath)
                 FileUtil.createIfDoesntExist(file)
-                FileOutputStream(file, true).buffered().writer(utf8).use { writer ->
+                FileOutputStream(file, true).buffered().writer(UTF_8).use { writer ->
                     val csvPrinter = CSVPrinter(writer, CSVFormat.RFC4180)
                     var event = eventQueue.poll()
                     while (event != null) {
@@ -59,32 +58,22 @@ class TrackerLog(val eventsFilePath: String) {
         return FileUtil.delete(File(eventsFilePath))
     }
 
-    fun forEachEvent(onParseError: (String, Exception) -> Unit, consumer: (TrackerEvent) -> Unit) {
-        File(eventsFilePath).bufferedReader(utf8).use { reader ->
-            val csvParser = CSVParser(reader, CSVFormat.RFC4180)
-            csvParser.use {
-                it.forEach {
-                    try {
-                        consumer.invoke(TrackerEvent.fromCsv(it))
-                    } catch (e: Exception) {
-                        onParseError(it.toString(), e)
-                    }
-                }
+    fun readEventSequence(onParseError: (String, Exception) -> Any): Sequence<TrackerEvent> {
+        val reader = File(eventsFilePath).bufferedReader(UTF_8)
+        val parser = CSVParser(reader, CSVFormat.RFC4180)
+        val sequence = parser.asSequence().map { csvRecord ->
+            try {
+                TrackerEvent.fromCsv(csvRecord)
+            } catch (e: Exception) {
+                onParseError(csvRecord.toString(), e)
+                null
             }
         }
-    }
 
-    fun readAllEvents(): Pair<List<TrackerEvent>, List<ReadError>> {
-        val errors = arrayListOf<ReadError>()
-        val onParseError = { line: String, e: Exception ->
-            errors.add(ReadError(line, e))
-            Unit
+        return sequence.filterNotNull().onClose {
+            parser.close()
+            reader.close()
         }
-        val result = arrayListOf<TrackerEvent>()
-        forEachEvent(onParseError) {
-            result.add(it)
-        }
-        return Pair(result, errors)
     }
 
     fun rollLog(now: Date = Date()): File {
@@ -105,9 +94,22 @@ class TrackerLog(val eventsFilePath: String) {
     }
 
     fun isTooLargeToProcess(): Boolean {
-        return File(eventsFilePath).length() > 100000000L
+        val `2gb` = 2000000000L
+        return File(eventsFilePath).length() > `2gb`
     }
+}
 
-    data class ReadError(val line: String, val e: Exception)
 
+private fun <T> Sequence<T>.onClose(action: () -> Unit): Sequence<T> {
+    val iterator = this.iterator()
+    return object : Sequence<T> {
+        override fun iterator() = object : Iterator<T> {
+            override fun hasNext(): Boolean {
+                val result = iterator.hasNext()
+                if (!result) action()
+                return result
+            }
+            override fun next() = iterator.next()
+        }
+    }
 }
