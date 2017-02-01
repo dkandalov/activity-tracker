@@ -120,10 +120,10 @@ class PluginUI(
                             if (errors.size > 20) errors.removeAt(0)
                         })
 
-                        val stats = analyze(events)
+                        val stats = analyze(events).copy(dataFile = trackerLog.eventsFilePath)
 
                         invokeLaterOnEDT {
-                            StatsToolWindow.showIn(project, stats, trackerLog.eventsFilePath, parentDisposable)
+                            StatsToolWindow.showIn(project, stats, parentDisposable)
                         }
 
                         if (errors.isNotEmpty()) {

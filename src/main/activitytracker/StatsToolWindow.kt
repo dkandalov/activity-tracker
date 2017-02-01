@@ -27,52 +27,9 @@ class StatsToolWindow {
     companion object {
         private val toolWindowId = "Tracking Log Stats"
 
-        // TODO change move dataFile into stats; make stats a function so that refresh button actually works
-        fun showIn(project: Project, stats: Stats, dataFile: String, parentDisposable: Disposable) {
-            val createRootComponent = { ->
-                JPanel().apply {
-                    layout = GridBagLayout()
-                    val bag = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH)
-
-                    add(JTabbedPane().apply {
-                        val fillBoth = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH).next()
-
-                        addTab("Time spent in editor", JPanel().apply {
-                            layout = GridBagLayout()
-                            val table = createTable(listOf("File name", "Time"), stats.secondsInEditorByFile.map{secondsToString(it)})
-                            add(JBScrollPane(table), fillBoth)
-                        })
-                        addTab("Time spent in project", JPanel().apply {
-                            layout = GridBagLayout()
-                            val table = createTable(listOf("Project", "Time"), stats.secondsByProject.map{secondsToString(it)})
-                            add(JBScrollPane(table), fillBoth)
-                        })
-                        addTab("IDE action count", JPanel().apply {
-                            layout = GridBagLayout()
-                            val table = createTable(listOf("IDE Action", "Count"), stats.countByActionId.map { Pair(it.first, it.second.toString()) })
-                            add(JBScrollPane(table), fillBoth)
-                        })
-                    }, bag.nextLine().next().weighty(4.0).anchor(NORTH))
-
-                    add(JPanel().apply {
-                        layout = GridBagLayout()
-                        val message =
-                                "Results are based on data from '$dataFile'.\n\n" +
-                                "Note that time spent in project includes time in IDE toolwindows and dialogs. " +
-                                "Therefore, it will be greater than time spent in IDE editor."
-                        add(JTextArea(message).apply{
-                            isEditable = false
-                            lineWrap = true
-                            wrapStyleWord = true
-                            background = UIUtil.getLabelBackground()
-                            font = UIUtil.getLabelFont()
-                            UIUtil.applyStyle(UIUtil.ComponentStyle.REGULAR, this)
-                        }, GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).nextLine().next().fillCellHorizontally().anchor(NORTH))
-                    }, bag.nextLine().next().weighty(0.5).anchor(SOUTH))
-                }
-            }
+        fun showIn(project: Project, stats: Stats, parentDisposable: Disposable) {
             val toolWindowPanel = SimpleToolWindowPanel(true)
-            var rootComponent = createRootComponent()
+            var rootComponent = createRootComponent(stats)
             toolWindowPanel.setContent(rootComponent)
 
             val disposable = newDisposable(parentDisposable)
@@ -85,7 +42,7 @@ class StatsToolWindow {
                 add(object : AnAction(Refresh) {
                     override fun actionPerformed(e: AnActionEvent?) {
                         toolWindowPanel.remove(rootComponent)
-                        rootComponent = createRootComponent()
+                        rootComponent = createRootComponent(stats)
                         toolWindowPanel.setContent(rootComponent)
                     }
                 })
@@ -97,6 +54,49 @@ class StatsToolWindow {
             val toolWindow = registerToolWindowIn(project, toolWindowId, disposable, toolWindowPanel, RIGHT)
             val doNothing = null
             toolWindow.show(doNothing)
+        }
+
+        private fun createRootComponent(stats: Stats): JComponent {
+            return JPanel().apply {
+                layout = GridBagLayout()
+                val bag = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH)
+
+                add(JTabbedPane().apply {
+                    val fillBoth = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH).next()
+
+                    addTab("Time spent in editor", JPanel().apply {
+                        layout = GridBagLayout()
+                        val table = createTable(listOf("File name", "Time"), stats.secondsInEditorByFile.map{secondsToString(it)})
+                        add(JBScrollPane(table), fillBoth)
+                    })
+                    addTab("Time spent in project", JPanel().apply {
+                        layout = GridBagLayout()
+                        val table = createTable(listOf("Project", "Time"), stats.secondsByProject.map{secondsToString(it)})
+                        add(JBScrollPane(table), fillBoth)
+                    })
+                    addTab("IDE action count", JPanel().apply {
+                        layout = GridBagLayout()
+                        val table = createTable(listOf("IDE Action", "Count"), stats.countByActionId.map { Pair(it.first, it.second.toString()) })
+                        add(JBScrollPane(table), fillBoth)
+                    })
+                }, bag.nextLine().next().weighty(4.0).anchor(NORTH))
+
+                add(JPanel().apply {
+                    layout = GridBagLayout()
+                    val message =
+                            "Results are based on data from '${stats.dataFile}'.\n\n" +
+                                    "Note that time spent in project includes time in IDE toolwindows and dialogs. " +
+                                    "Therefore, it will be greater than time spent in IDE editor."
+                    add(JTextArea(message).apply{
+                        isEditable = false
+                        lineWrap = true
+                        wrapStyleWord = true
+                        background = UIUtil.getLabelBackground()
+                        font = UIUtil.getLabelFont()
+                        UIUtil.applyStyle(UIUtil.ComponentStyle.REGULAR, this)
+                    }, GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).nextLine().next().fillCellHorizontally().anchor(NORTH))
+                }, bag.nextLine().next().weighty(0.5).anchor(SOUTH))
+            }
         }
 
         private fun createTable(header: Collection<String>, data: List<Pair<String, String>>): JBTable {

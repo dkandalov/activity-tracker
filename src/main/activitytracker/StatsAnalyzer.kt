@@ -7,7 +7,8 @@ import java.util.HashMap
 data class Stats(
     val secondsInEditorByFile: List<Pair<String, Int>>,
     val secondsByProject: List<Pair<String, Int>>,
-    val countByActionId: List<Pair<String, Int>>
+    val countByActionId: List<Pair<String, Int>>,
+    val dataFile: String = ""
 )
 
 fun analyze(events: Sequence<TrackerEvent>): Stats {
