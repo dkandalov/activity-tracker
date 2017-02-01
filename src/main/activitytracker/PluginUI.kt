@@ -110,9 +110,10 @@ class PluginUI(
         val showStatistics = object : AnAction("Show Stats") {
             override fun actionPerformed(event: AnActionEvent) {
                 doInBackground("Analysing activity log", {
+                    val project = event.project
                     if (trackerLog.isTooLargeToProcess()) {
                         showNotification("Current activity log is too large to process in IDE.")
-                    } else {
+                    } else if (project != null) {
                         val errors = ArrayList<Pair<String, Exception>>()
                         val events = trackerLog.readEventSequence(onParseError = { line: String, e: Exception ->
                             errors.add(Pair(line, e))
@@ -122,7 +123,7 @@ class PluginUI(
                         val stats = analyze(events)
 
                         invokeLaterOnEDT {
-                            StatsToolWindow.showIn(event.project, stats, trackerLog.eventsFilePath, parentDisposable)
+                            StatsToolWindow.showIn(project, stats, trackerLog.eventsFilePath, parentDisposable)
                         }
 
                         if (errors.isNotEmpty()) {

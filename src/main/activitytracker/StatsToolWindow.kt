@@ -2,6 +2,7 @@ package activitytracker
 
 import activitytracker.liveplugin.newDisposable
 import com.intellij.icons.AllIcons
+import com.intellij.icons.AllIcons.Actions.*
 import com.intellij.ide.ClipboardSynchronizer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
@@ -26,10 +27,7 @@ class StatsToolWindow {
     companion object {
         private val toolWindowId = "Tracking Log Stats"
 
-        fun showIn(project: Project?, stats: Stats, dataFile: String, parentDisposable: Disposable) {
-            if (project == null) return
-
-
+        fun showIn(project: Project, stats: Stats, dataFile: String, parentDisposable: Disposable) {
             val createRootPanel = { ->
                 JPanel().apply {
                     layout = GridBagLayout()
@@ -70,12 +68,12 @@ class StatsToolWindow {
 
             val disposable = newDisposable(parentDisposable)
             val actionGroup = DefaultActionGroup().apply{
-                add(object : AnAction(AllIcons.Actions.Cancel) {
+                add(object : AnAction(Cancel) {
                     override fun actionPerformed(event: AnActionEvent) {
                         Disposer.dispose(disposable)
                     }
                 })
-                add(object : AnAction(AllIcons.Actions.Refresh) {
+                add(object : AnAction(Refresh) {
                     override fun actionPerformed(e: AnActionEvent?) {
                         toolWindowPanel.remove(rootPanel)
                         rootPanel = createRootPanel()
