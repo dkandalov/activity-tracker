@@ -9,16 +9,12 @@ import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.wm.ToolWindow
-import com.intellij.openapi.wm.ToolWindowAnchor
+import com.intellij.openapi.wm.*
 import com.intellij.openapi.wm.ToolWindowAnchor.RIGHT
-import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.ui.components.JBLabel
-import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.*
 import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.table.JBTable
-import com.intellij.util.ui.GridBag
-import com.intellij.util.ui.UIUtil
+import com.intellij.util.ui.*
 import java.awt.GridBagConstraints.*
 import java.awt.GridBagLayout
 import java.awt.datatransfer.StringSelection
@@ -30,7 +26,7 @@ class StatsToolWindow {
     companion object {
         private val toolWindowId = "Tracking Log Stats"
 
-        fun showIn(project: Project?, analyzer: Stats, dataFile: String, parentDisposable: Disposable) {
+        fun showIn(project: Project?, stats: Stats, dataFile: String, parentDisposable: Disposable) {
             if (project == null) return
 
 
@@ -40,15 +36,15 @@ class StatsToolWindow {
                     val bag = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH)
 
                     add(JBLabel("Time spent in editor"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table1 = createTable(listOf("File name", "Time"), analyzer.secondsInEditorByFile.map{secondsToString(it)})
+                    val table1 = createTable(listOf("File name", "Time"), stats.secondsInEditorByFile.map{secondsToString(it)})
                     add(JBScrollPane(table1), bag.nextLine().next().weighty(3.0).anchor(NORTH))
 
                     add(JBLabel("Time spent in project"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table2 = createTable(listOf("Project", "Time"), analyzer.secondsByProject.map{secondsToString(it)})
+                    val table2 = createTable(listOf("Project", "Time"), stats.secondsByProject.map{secondsToString(it)})
                     add(JBScrollPane(table2), bag.nextLine().next().anchor(SOUTH))
 
                     add(JBLabel("IDE action count"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table3 = createTable(listOf("IDE Action", "Count"), analyzer.countByActionId.map { Pair(it.first, it.second.toString()) })
+                    val table3 = createTable(listOf("IDE Action", "Count"), stats.countByActionId.map { Pair(it.first, it.second.toString()) })
                     add(JBScrollPane(table3), bag.nextLine().next().anchor(SOUTH))
 
                     add(JPanel().apply {

@@ -32,8 +32,8 @@ class PluginUI(
         val trackerLog: TrackerLog,
         val parentDisposable: Disposable)
 {
-    val log = Logger.getInstance(PluginUI::class.java)
-    var state: ActivityTrackerPlugin.State = ActivityTrackerPlugin.State.defaultValue
+    private val log = Logger.getInstance(PluginUI::class.java)
+    private var state: ActivityTrackerPlugin.State = ActivityTrackerPlugin.State.defaultValue
 
     fun init(): PluginUI {
         plugin.setPluginUI(this)
@@ -58,70 +58,54 @@ class PluginUI(
 
     private fun registerWidget(parentDisposable: Disposable) {
         val presentation = object : StatusBarWidget.TextPresentation {
-            override fun getText(): String {
-                return "Activity tracker: " + (if (state.isTracking) "on" else "off")
+            override fun getText() = "Activity tracker: " + (if (state.isTracking) "on" else "off")
+
+            override fun getTooltipText() = "Click to open menu"
+
+            override fun getClickConsumer(): Consumer<MouseEvent> = Consumer { mouseEvent ->
+                val dataContext = newDataContext().put(PlatformDataKeys.CONTEXT_COMPONENT.name, mouseEvent.component)
+                val popup = createListPopup(dataContext)
+                val dimension = popup.content.preferredSize
+                val point = Point(0, -dimension.height)
+                popup.show(RelativePoint(mouseEvent.component, point))
             }
 
-            override fun getTooltipText(): String {
-                return "Click to open menu"
-            }
-
-            override fun getClickConsumer(): Consumer<MouseEvent> {
-                return Consumer { mouseEvent ->
-                    val dataContext = newDataContext().put(PlatformDataKeys.CONTEXT_COMPONENT.name, mouseEvent.component)
-                    val popup = createListPopup(dataContext)
-                    val dimension = popup.content.preferredSize
-                    val point = Point(0, -dimension.height)
-                    popup.show(RelativePoint(mouseEvent.component, point))
-                }
-            }
-
-            override fun getAlignment(): Float {
-                return Component.CENTER_ALIGNMENT
-            }
+            override fun getAlignment() = Component.CENTER_ALIGNMENT
 
             @Suppress("OverridingDeprecatedMember")
-            @NotNull override fun getMaxPossibleText(): String {
-                return ""
-            }
+            @NotNull override fun getMaxPossibleText() = ""
         }
         liveplugin.PluginUtil.registerWidget(widgetId, parentDisposable, "before Position", presentation)
     }
 
     private fun createListPopup(dataContext: DataContext): ListPopup {
         val toggleTracking = object : AnAction() {
-            override fun actionPerformed(event: AnActionEvent) {
-                plugin.toggleTracking()
-            }
+            override fun actionPerformed(event: AnActionEvent) = plugin.toggleTracking()
             override fun update(event: AnActionEvent) {
                 event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
             }
         }
         val togglePollIdeState = object : CheckboxAction("Poll IDE State") {
-            override fun isSelected(event: AnActionEvent): Boolean { return state.pollIdeState }
-            override fun setSelected(event: AnActionEvent, value: Boolean) { plugin.enablePollIdeState(value) }
+            override fun isSelected(event: AnActionEvent) = state.pollIdeState
+            override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enablePollIdeState(value)
         }
         val toggleTrackActions = object : CheckboxAction("Track IDE Actions") {
-            override fun isSelected(event: AnActionEvent): Boolean { return state.trackIdeActions }
-            override fun setSelected(event: AnActionEvent, value: Boolean) { plugin.enableTrackIdeActions(value) }
+            override fun isSelected(event: AnActionEvent) = state.trackIdeActions
+            override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackIdeActions(value)
         }
         val toggleTrackKeyboard = object : CheckboxAction("Track Keyboard") {
-            override fun isSelected(event: AnActionEvent): Boolean { return state.trackKeyboard }
-            override fun setSelected(event: AnActionEvent, value: Boolean) { plugin.enableTrackKeyboard(value) }
+            override fun isSelected(event: AnActionEvent) = state.trackKeyboard
+            override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboard(value)
         }
         val toggleTrackMouse = object : CheckboxAction("Track Mouse") {
-            override fun isSelected(event: AnActionEvent): Boolean { return state.trackMouse }
-            override fun setSelected(event: AnActionEvent, value: Boolean) { plugin.enableTrackMouse(value) }
+            override fun isSelected(event: AnActionEvent) = state.trackMouse
+            override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackMouse(value)
         }
         val openLogInIde = object : AnAction("Open in IDE") {
-            override fun actionPerformed(event: AnActionEvent) {
-                plugin.openTrackingLogFile(event.project)
-            }
+            override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFile(event.project)
         }
         val openLogFolder = object : AnAction("Open in File Manager") {
-            override fun actionPerformed(event: AnActionEvent) {
-                plugin.openTrackingLogFolder()
-            }
+            override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFolder()
         }
         val showStatistics = object : AnAction("Show Stats") {
             override fun actionPerformed(event: AnActionEvent) {
@@ -178,9 +162,7 @@ class PluginUI(
             }
         }
         val openHelp = object : AnAction("Help") {
-            override fun actionPerformed(event: AnActionEvent) {
-                BrowserUtil.open("https://github.com/dkandalov/activity-tracker#help")
-            }
+            override fun actionPerformed(event: AnActionEvent) = BrowserUtil.open("https://github.com/dkandalov/activity-tracker#help")
         }
 
         registerAction("Start/Stop Activity Tracking", toggleTracking)

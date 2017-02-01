@@ -1,16 +1,12 @@
 package activitytracker
 
-import com.intellij.notification.NotificationGroup
-import com.intellij.notification.NotificationListener
-import com.intellij.notification.NotificationType
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.PathManager
+import com.intellij.notification.*
+import com.intellij.openapi.application.*
 import com.intellij.openapi.components.ApplicationComponent
 import com.intellij.openapi.diagnostic.Logger
 import groovy.lang.Binding
 import liveplugin.IDEUtil.*
 import java.lang.reflect.Method
-import java.net.URISyntaxException
 
 class AppComponent : ApplicationComponent {
 
@@ -47,7 +43,6 @@ class AppComponent : ApplicationComponent {
             LOG.error("Error during initialization", e)
         }
 
-        @Throws(URISyntaxException::class)
         private fun createBinding(): Binding {
             val binding = Binding()
             binding.setVariable("event", null)
@@ -59,10 +54,7 @@ class AppComponent : ApplicationComponent {
         }
 
         private fun findMethod(methodName: String, aClass: Class<*>): Method? {
-            for (method in aClass.declaredMethods) {
-                if (method.name == methodName) return method
-            }
-            return null
+            return aClass.declaredMethods.firstOrNull { it.name == methodName }
         }
 
         private fun checkThatGroovyIsOnClasspath(): Boolean {
