@@ -18,8 +18,8 @@ class StatsAnalyzerTest {
         val stats = analyze(eventSequence)
 
         assertThat(stats.secondsInEditorByFile, equalTo(listOf(
-                Pair("2.txt", 1),
                 Pair("1.txt", 2),
+                Pair("2.txt", 1),
                 Pair("Total", 3)
         )))
     }

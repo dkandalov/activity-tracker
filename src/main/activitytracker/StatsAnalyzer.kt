@@ -20,7 +20,7 @@ fun analyze(events: Sequence<TrackerEvent>): Stats {
         countByActionId(it, map3)
     }
     return Stats(
-        secondsInEditorByFile = map1.entries.map{ Pair(it.key, it.value) }.sortedBy{ it.second }.withTotal(),
+        secondsInEditorByFile = map1.entries.map{ Pair(it.key, it.value) }.sortedBy{ -it.second }.withTotal(),
         secondsByProject = map2.entries.map{ Pair(it.key, it.value) }.sortedBy{ -it.second }.withTotal(),
         countByActionId = map3.entries.map{ Pair(it.key, it.value) }.sortedBy{ -it.second }
     )
