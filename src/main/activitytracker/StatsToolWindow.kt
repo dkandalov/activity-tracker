@@ -12,7 +12,7 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.*
 import com.intellij.openapi.wm.ToolWindowAnchor.RIGHT
-import com.intellij.ui.components.*
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.*
@@ -27,30 +27,39 @@ class StatsToolWindow {
     companion object {
         private val toolWindowId = "Tracking Log Stats"
 
+        // TODO change move dataFile into stats; make stats a function so that refresh button actually works
         fun showIn(project: Project, stats: Stats, dataFile: String, parentDisposable: Disposable) {
-            val createRootPanel = { ->
+            val createRootComponent = { ->
                 JPanel().apply {
                     layout = GridBagLayout()
                     val bag = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH)
 
-                    add(JBLabel("Time spent in editor"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table1 = createTable(listOf("File name", "Time"), stats.secondsInEditorByFile.map{secondsToString(it)})
-                    add(JBScrollPane(table1), bag.nextLine().next().weighty(3.0).anchor(NORTH))
+                    add(JTabbedPane().apply {
+                        val fillBoth = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH).next()
 
-                    add(JBLabel("Time spent in project"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table2 = createTable(listOf("Project", "Time"), stats.secondsByProject.map{secondsToString(it)})
-                    add(JBScrollPane(table2), bag.nextLine().next().anchor(SOUTH))
-
-                    add(JBLabel("IDE action count"), bag.nextLine().next().weighty(0.1).fillCellNone().anchor(CENTER))
-                    val table3 = createTable(listOf("IDE Action", "Count"), stats.countByActionId.map { Pair(it.first, it.second.toString()) })
-                    add(JBScrollPane(table3), bag.nextLine().next().anchor(SOUTH))
+                        addTab("Time spent in editor", JPanel().apply {
+                            layout = GridBagLayout()
+                            val table = createTable(listOf("File name", "Time"), stats.secondsInEditorByFile.map{secondsToString(it)})
+                            add(JBScrollPane(table), fillBoth)
+                        })
+                        addTab("Time spent in project", JPanel().apply {
+                            layout = GridBagLayout()
+                            val table = createTable(listOf("Project", "Time"), stats.secondsByProject.map{secondsToString(it)})
+                            add(JBScrollPane(table), fillBoth)
+                        })
+                        addTab("IDE action count", JPanel().apply {
+                            layout = GridBagLayout()
+                            val table = createTable(listOf("IDE Action", "Count"), stats.countByActionId.map { Pair(it.first, it.second.toString()) })
+                            add(JBScrollPane(table), fillBoth)
+                        })
+                    }, bag.nextLine().next().weighty(4.0).anchor(NORTH))
 
                     add(JPanel().apply {
                         layout = GridBagLayout()
                         val message =
-                                "Results are based on $dataFile.\n\n" +
-                                "(Note that time spent in project includes time in IDE toolwindows and dialogs. " +
-                                "Therefore, it will be greater than time spent in IDE editor.)"
+                                "Results are based on data from '$dataFile'.\n\n" +
+                                "Note that time spent in project includes time in IDE toolwindows and dialogs. " +
+                                "Therefore, it will be greater than time spent in IDE editor."
                         add(JTextArea(message).apply{
                             isEditable = false
                             lineWrap = true
@@ -63,8 +72,8 @@ class StatsToolWindow {
                 }
             }
             val toolWindowPanel = SimpleToolWindowPanel(true)
-            var rootPanel = createRootPanel()
-            toolWindowPanel.setContent(rootPanel)
+            var rootComponent = createRootComponent()
+            toolWindowPanel.setContent(rootComponent)
 
             val disposable = newDisposable(parentDisposable)
             val actionGroup = DefaultActionGroup().apply{
@@ -75,9 +84,9 @@ class StatsToolWindow {
                 })
                 add(object : AnAction(Refresh) {
                     override fun actionPerformed(e: AnActionEvent?) {
-                        toolWindowPanel.remove(rootPanel)
-                        rootPanel = createRootPanel()
-                        toolWindowPanel.setContent(rootPanel)
+                        toolWindowPanel.remove(rootComponent)
+                        rootComponent = createRootComponent()
+                        toolWindowPanel.setContent(rootComponent)
                     }
                 })
             }
