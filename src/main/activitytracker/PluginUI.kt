@@ -1,6 +1,8 @@
 package activitytracker
 
 import activitytracker.ActivityTrackerPlugin.Companion.pluginId
+import activitytracker.EventAnalyzer.Result
+import activitytracker.EventAnalyzer.Result.*
 import activitytracker.liveplugin.invokeLaterOnEDT
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.ShowFilePathAction
@@ -23,13 +25,13 @@ import liveplugin.implementation.Threads.doInBackground
 import org.jetbrains.annotations.NotNull
 import java.awt.*
 import java.awt.event.MouseEvent
-import java.util.ArrayList
 import java.util.function.Function
 import javax.swing.event.HyperlinkEvent
 
 class PluginUI(
         val plugin: ActivityTrackerPlugin,
         val trackerLog: TrackerLog,
+        val eventAnalyzer: EventAnalyzer,
         val parentDisposable: Disposable)
 {
     private val log = Logger.getInstance(PluginUI::class.java)
@@ -39,6 +41,9 @@ class PluginUI(
         plugin.setPluginUI(this)
         registerWidget(parentDisposable)
         registerPopup(parentDisposable)
+        eventAnalyzer.runner = { task ->
+            doInBackground("Analysing activity log", { task() })
+        }
         return this
     }
 
@@ -109,29 +114,26 @@ class PluginUI(
         }
         val showStatistics = object : AnAction("Show Stats") {
             override fun actionPerformed(event: AnActionEvent) {
-                doInBackground("Analysing activity log", {
-                    val project = event.project
-                    if (trackerLog.isTooLargeToProcess()) {
-                        showNotification("Current activity log is too large to process in IDE.")
-                    } else if (project != null) {
-                        val errors = ArrayList<Pair<String, Exception>>()
-                        val events = trackerLog.readEventSequence(onParseError = { line: String, e: Exception ->
-                            errors.add(Pair(line, e))
-                            if (errors.size > 20) errors.removeAt(0)
-                        })
-
-                        val stats = analyze(events).copy(dataFile = trackerLog.eventsFilePath)
-
+                val project = event.project
+                if (trackerLog.isTooLargeToProcess()) {
+                    showNotification("Current activity log is too large to process in IDE.")
+                } else if (project != null) {
+                    eventAnalyzer.analyze(whenDone = { result ->
                         invokeLaterOnEDT {
-                            StatsToolWindow.showIn(project, stats, parentDisposable)
+                            when (result) {
+                                is Ok -> {
+                                    StatsToolWindow.showIn(project, result.stats, parentDisposable)
+                                    if (result.errors.isNotEmpty()) {
+                                        showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
+                                        result.errors.forEach { log.warn(it.first, it.second) }
+                                    }
+                                }
+                                is AlreadyRunning -> showNotification("Analysis is already running.")
+                                is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE.")
+                            }
                         }
-
-                        if (errors.isNotEmpty()) {
-                            showNotification("There were ${errors.size} errors parsing log file. See IDE log for details.")
-                            errors.forEach { log.warn(it.first, it.second) }
-                        }
-                    }
-                })
+                    })
+                }
             }
         }
         val rollCurrentLog = object : AnAction("Roll Tracking Log") {

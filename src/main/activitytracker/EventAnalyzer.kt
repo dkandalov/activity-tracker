@@ -1,8 +1,47 @@
 package activitytracker
 
+import activitytracker.EventAnalyzer.Result.*
 import java.io.File
-import java.util.HashMap
+import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
+
+class EventAnalyzer(private val trackerLog: TrackerLog) {
+    var runner: (() -> Unit) -> Unit = {}
+    private val isRunning = AtomicBoolean()
+
+    fun analyze(whenDone: (Result) -> Unit) {
+        runner.invoke {
+            if (trackerLog.isTooLargeToProcess()) {
+                whenDone(DataIsTooLarge())
+            } else if (isRunning.get()) {
+                whenDone(AlreadyRunning())
+            } else {
+                isRunning.set(true)
+
+                try {
+                    val errors = ArrayList<Pair<String, Exception>>()
+                    val events = trackerLog.readEventSequence(onParseError = { line: String, e: Exception ->
+                        errors.add(Pair(line, e))
+                        if (errors.size > 20) errors.removeAt(0)
+                    })
+
+                    val stats = analyze(events).copy(dataFile = trackerLog.currentLogFile().absolutePath)
+
+                    whenDone(Ok(stats, errors))
+                } finally {
+                    isRunning.set(false)
+                }
+            }
+        }
+    }
+
+    sealed class Result {
+        class Ok(val stats: Stats, val errors: List<Pair<String, Exception>>) : Result()
+        class AlreadyRunning : Result()
+        class DataIsTooLarge : Result()
+    }
+}
 
 data class Stats(
     val secondsInEditorByFile: List<Pair<String, Int>>,
