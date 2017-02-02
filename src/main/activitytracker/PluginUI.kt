@@ -1,7 +1,6 @@
 package activitytracker
 
 import activitytracker.ActivityTrackerPlugin.Companion.pluginId
-import activitytracker.EventAnalyzer.Result
 import activitytracker.EventAnalyzer.Result.*
 import activitytracker.liveplugin.invokeLaterOnEDT
 import com.intellij.ide.BrowserUtil
@@ -122,7 +121,7 @@ class PluginUI(
                         invokeLaterOnEDT {
                             when (result) {
                                 is Ok -> {
-                                    StatsToolWindow.showIn(project, result.stats, parentDisposable)
+                                    StatsToolWindow.showIn(project, result.stats, eventAnalyzer, parentDisposable)
                                     if (result.errors.isNotEmpty()) {
                                         showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
                                         result.errors.forEach { log.warn(it.first, it.second) }
@@ -205,7 +204,7 @@ class PluginUI(
     companion object {
         val widgetId = "$pluginId-Widget"
 
-        private fun showNotification(message: Any?, onLinkClick: (HyperlinkEvent) -> Unit = {}) {
+        fun showNotification(message: Any?, onLinkClick: (HyperlinkEvent) -> Unit = {}) {
             invokeLaterOnEDT {
                 val messageString = Misc.asString(message)
                 val title = ""

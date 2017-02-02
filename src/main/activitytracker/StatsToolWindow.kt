@@ -1,6 +1,7 @@
 package activitytracker
 
-import activitytracker.liveplugin.newDisposable
+import activitytracker.EventAnalyzer.Result.*
+import activitytracker.liveplugin.*
 import com.intellij.icons.AllIcons
 import com.intellij.icons.AllIcons.Actions.*
 import com.intellij.ide.ClipboardSynchronizer
@@ -27,7 +28,7 @@ class StatsToolWindow {
     companion object {
         private val toolWindowId = "Tracking Log Stats"
 
-        fun showIn(project: Project, stats: Stats, parentDisposable: Disposable) {
+        fun showIn(project: Project, stats: Stats, eventAnalyzer: EventAnalyzer, parentDisposable: Disposable) {
             val toolWindowPanel = SimpleToolWindowPanel(true)
             var rootComponent = createRootComponent(stats)
             toolWindowPanel.setContent(rootComponent)
@@ -41,9 +42,23 @@ class StatsToolWindow {
                 })
                 add(object : AnAction(Refresh) {
                     override fun actionPerformed(e: AnActionEvent?) {
-                        toolWindowPanel.remove(rootComponent)
-                        rootComponent = createRootComponent(stats)
-                        toolWindowPanel.setContent(rootComponent)
+                        eventAnalyzer.analyze(whenDone = { result ->
+                            invokeLaterOnEDT {
+                                when (result) {
+                                    is AlreadyRunning -> PluginUI.showNotification("Analysis is already running.")
+                                    is DataIsTooLarge -> PluginUI.showNotification("Activity log is too large to process in IDE.")
+                                    is Ok -> {
+                                        toolWindowPanel.remove(rootComponent)
+                                        rootComponent = createRootComponent(stats)
+                                        toolWindowPanel.setContent(rootComponent)
+
+                                        if (result.errors.isNotEmpty()) {
+                                            PluginUI.showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
+                                        }
+                                    }
+                                }
+                            }
+                        })
                     }
                 })
             }
