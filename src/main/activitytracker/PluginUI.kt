@@ -35,6 +35,7 @@ class PluginUI(
 {
     private val log = Logger.getInstance(PluginUI::class.java)
     private var state: ActivityTrackerPlugin.State = ActivityTrackerPlugin.State.defaultValue
+    private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
 
     fun init(): PluginUI {
         plugin.setPluginUI(this)
@@ -83,6 +84,16 @@ class PluginUI(
     }
 
     private fun createListPopup(dataContext: DataContext): ListPopup {
+        return JBPopupFactory.getInstance().createActionGroupPopup(
+                "Activity Tracker",
+                actionGroup,
+                dataContext,
+                JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
+                true
+        )
+    }
+
+    private fun createActionGroup(): DefaultActionGroup {
         val toggleTracking = object : AnAction() {
             override fun actionPerformed(event: AnActionEvent) = plugin.toggleTracking()
             override fun update(event: AnActionEvent) {
@@ -172,7 +183,7 @@ class PluginUI(
         registerAction("Clear Tracking Log", clearCurrentLog)
         // TODO register other actions
 
-        val actionGroup = DefaultActionGroup().apply {
+        return DefaultActionGroup().apply {
             add(toggleTracking)
             add(DefaultActionGroup("Current Log", true).apply {
                 add(showStatistics)
@@ -191,14 +202,6 @@ class PluginUI(
             })
             add(openHelp)
         }
-
-        return JBPopupFactory.getInstance().createActionGroupPopup(
-                "Activity Tracker",
-                actionGroup,
-                dataContext,
-                JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
-                true
-        )
     }
 
     companion object {
