@@ -1,4 +1,4 @@
-### Activity Tracker
+## Activity Tracker
 This is proof-of-concept plugin for IntelliJ IDEs to track and record user activity.
 Currently the main feature is recording user activity into csv files.
 
@@ -11,7 +11,7 @@ To use the plugin see "Activity tracker" widget in IDE statusbar.
 <img src="https://raw.githubusercontent.com/dkandalov/activity-tracker/master/screenshot.png" alt="screenshot" title="screenshot" align="center"/>
 
 
-### Why?
+## Why?
 The main idea is to mine recorded data for interesting user or project-specific insights,
 e.g. time spent in each part of project or editing/browsing ratio.
 Especially it might be interesting to try some unsupervised machine learning on it.
@@ -19,12 +19,12 @@ If you happen to use the plugin and find interesting ways to analyze data, feel 
 [twitter](https://twitter.com/dmitrykandalov) or [GitHub](https://github.com/dkandalov/activity-tracker/issues).
 
 
-### Help
-#### To open plugin popup menu:
+## Help
+To open plugin popup menu:
  - click on "Activity tracker" widget in IDE statusbar or
  - invoke "Activity Tracker Popup" action (``ctrl+alt+shift+O`` shortcut)
 
-#### Popup menu actions
+### Popup menu actions
  - **Start/Stop Tracking** - activate/deactivate recording of IDE events.
  Events are written into ``ide-events.csv`` file located in predefined path.
  This file is referred to as "current log".
@@ -47,8 +47,8 @@ If you happen to use the plugin and find interesting ways to analyze data, feel 
     - **Track Mouse** - enable tracking mouse click events.
       Note that because of high volume of mouse move and wheel events, they are logged at most every 250 milliseconds.
 
-#### Log file format
-The file format is [csv RFC4180](https://tools.ietf.org/html/rfc4180) with UTF-8 encoding.
+### Log file format
+The event log file is written as [csv RFC4180](https://tools.ietf.org/html/rfc4180) in UTF-8 encoding.
 
  - **timestamp** - time of event in ``yyyy-MM-dd'T'HHmmss.SSSZ`` format
    (see [createDateTimePrintFormat() method](https://github.com/dkandalov/activity-tracker/blob/6ca1342e8c71c96f5f7a1c52095c61317cc78650/src/main/activitytracker/TrackerEvent.groovy#L109-L109)).
@@ -77,9 +77,11 @@ The file format is [csv RFC4180](https://tools.ietf.org/html/rfc4180) with UTF-8
                   Empty value if file was not parsed by IDE (e.g. plain text file).
  - **editor line** - caret line number in Editor.
  - **editor column** - caret column number in Editor.
+ - **task/change list name** - name of the current task (`Main Menu -> Tools -> Tasks & Contexts`) 
+                               or current VCS change list name if "Task Management" plugin is not installed.
 
 
-#### Example of log file
+### Example of log file
 ```
 2015-12-31T17:42:30.171Z,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
 2015-12-31T17:42:30.35Z,dima,Action,EditorLineEnd,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
@@ -92,13 +94,13 @@ The file format is [csv RFC4180](https://tools.ietf.org/html/rfc4180) with UTF-8
 2015-12-31T17:42:33.168Z,dima,IdeState,Inactive,,,,,-1,-1
 ```
 
-#### How to use log file?
+### How to use log file?
 This is up to you.
 The main purpose of this plugin is to record data.
 It's similar to collecting IDE statistics usage (which you might be sending to JetBrains) except that you own the data.
 
 
-### Contributing
+## Contributing
 The most interesting thing is analysis of recorded data.
 All suggestions and code (even if it's not JVM language) are welcome.
 If you have a question, feel free to create an issue.
