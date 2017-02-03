@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.editor.impl.EditorComponentImpl
 import com.intellij.openapi.project.*
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.wm.*
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
@@ -231,7 +232,11 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
                 }
             }
 
-            val task = if (hasTaskManager(project)) TaskManager.getManager(project).activeTask.presentableName else ""
+            val task = if (hasTaskManager(project)) {
+                TaskManager.getManager(project).activeTask.presentableName
+            } else {
+                ChangeListManager.getInstance(project).defaultChangeList.name
+            }
 
             return TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column, task)
 
