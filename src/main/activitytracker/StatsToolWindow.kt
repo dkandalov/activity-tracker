@@ -89,6 +89,11 @@ class StatsToolWindow {
                         val table = createTable(listOf("Project", "Time"), stats.secondsByProject.map{secondsToString(it)})
                         add(JBScrollPane(table), fillBoth)
                     })
+                    addTab("Time spent on tasks", JPanel().apply {
+                        layout = GridBagLayout()
+                        val table = createTable(listOf("Task", "Time"), stats.secondsByTask.map{secondsToString(it)})
+                        add(JBScrollPane(table), fillBoth)
+                    })
                     addTab("IDE action count", JPanel().apply {
                         layout = GridBagLayout()
                         val table = createTable(listOf("IDE Action", "Count"), stats.countByActionId.map { Pair(it.first, it.second.toString()) })

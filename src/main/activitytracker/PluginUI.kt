@@ -41,7 +41,7 @@ class PluginUI(
         registerWidget(parentDisposable)
         registerPopup(parentDisposable)
         eventAnalyzer.runner = { task ->
-            doInBackground("Analysing activity log", { task() })
+            doInBackground("Analyzing activity log", { task() })
         }
         return this
     }
