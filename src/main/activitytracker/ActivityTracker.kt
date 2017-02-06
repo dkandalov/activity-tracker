@@ -7,6 +7,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.AnActionListener
+import com.intellij.openapi.compiler.*
 import com.intellij.openapi.editor.impl.EditorComponentImpl
 import com.intellij.openapi.project.*
 import com.intellij.openapi.util.Disposer
@@ -20,8 +21,8 @@ import com.intellij.util.SystemProperties
 import groovy.lang.MetaClass
 import liveplugin.PluginUtil
 import liveplugin.PluginUtil.*
+import liveplugin.implementation.*
 import liveplugin.implementation.Misc.newDisposable
-import liveplugin.implementation.VcsActions
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.joda.time.DateTime
 import java.awt.*
@@ -160,6 +161,12 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
             }
             override fun invokeMethod(name: String?, args: Any?): Any? {
                 return null
+            }
+        })
+
+        Compilation.registerCompilationListener(parentDisposable, object : CompilationStatusListener {
+            override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext?) {
+                invokeOnEDT { trackerLog.append(captureIdeState("CompilationFinished", errors.toString())) }
             }
         })
     }
