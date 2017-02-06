@@ -1,4 +1,4 @@
-<idea-plugin version="2">
+<idea-plugin>
     <id>Activity Tracker</id>
     <name>Activity Tracker</name>
     <version>0.1.6 beta</version>
@@ -25,6 +25,7 @@
 
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends optional="true">com.intellij.tasks</depends>
 
     <application-components>
         <component>
