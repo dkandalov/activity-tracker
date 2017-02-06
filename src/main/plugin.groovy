@@ -9,7 +9,8 @@ import static liveplugin.PluginUtil.show
 // add-to-classpath $PLUGIN_PATH/lib/joda-time-2.9.2.jar
 
 invokeOnEDT {
-//	new StatsToolWindow.Companion().showIn(project, new Stats([], [], [], "some-file.csv"), pluginDisposable)
+//	def analyzer = new EventAnalyzer(new TrackerLog(""))
+//	new StatsToolWindow.Companion().showIn(project, new Stats([], [], [], "some-file.csv"), analyzer, pluginDisposable)
 //	return
 
 	def pathToTrackingLogFile = "${PathManager.pluginsPath}/activity-tracker/ide-events.csv"
