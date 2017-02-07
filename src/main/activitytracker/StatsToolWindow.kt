@@ -49,7 +49,7 @@ class StatsToolWindow {
                                     is DataIsTooLarge -> PluginUI.showNotification("Activity log is too large to process in IDE.")
                                     is Ok -> {
                                         toolWindowPanel.remove(rootComponent)
-                                        rootComponent = createRootComponent(stats)
+                                        rootComponent = createRootComponent(result.stats)
                                         toolWindowPanel.setContent(rootComponent)
 
                                         if (result.errors.isNotEmpty()) {
