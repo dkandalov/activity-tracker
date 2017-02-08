@@ -2,9 +2,9 @@
 This is proof-of-concept plugin for IntelliJ IDEs to track and record user activity.
 Currently the main feature is recording user activity into csv files.
 
-To install the plugin use ``IDE Settings -> Plugins -> Browse Repositories``
+To install the plugin use `IDE Settings -> Plugins -> Browse Repositories`
 or download [latest zip](https://github.com/dkandalov/activity-tracker/blob/master/activity-tracker-plugin.zip)
-and use ``IDE Settings -> Plugins -> Install plugin from disk...``.
+and use `IDE Settings -> Plugins -> Install plugin from disk...`.
 
 To use the plugin see "Activity tracker" widget in IDE statusbar.
 
@@ -22,11 +22,11 @@ If you happen to use the plugin and find interesting ways to analyze data, feel 
 ## Help
 To open plugin popup menu:
  - click on "Activity tracker" widget in IDE statusbar or
- - invoke "Activity Tracker Popup" action (``ctrl+alt+shift+O`` shortcut)
+ - invoke "Activity Tracker Popup" action (`ctrl+alt+shift+O` shortcut)
 
 ### Popup menu actions
  - **Start/Stop Tracking** - activate/deactivate recording of IDE events.
- Events are written into ``ide-events.csv`` file located in predefined path.
+ Events are written into `ide-events.csv` file located in predefined path.
  This file is referred to as "current log".
  - **Current Log**
     - **Show Stats** - analyse current log and open toolwindow which shows time spent editing each file.
@@ -50,30 +50,31 @@ To open plugin popup menu:
 ### Log file format
 The event log file is written as [csv RFC4180](https://tools.ietf.org/html/rfc4180) in UTF-8 encoding.
 
- - **timestamp** - time of event in ``yyyy-MM-dd'T'HHmmss.SSSZ`` format
+ - **timestamp** - time of event in `yyyy-MM-dd'T'HHmmss.SSSZ` format
    (see [createDateTimePrintFormat() method](https://github.com/dkandalov/activity-tracker/blob/6ca1342e8c71c96f5f7a1c52095c61317cc78650/src/main/activitytracker/TrackerEvent.groovy#L109-L109)).
    In plugin version 0.1.3 it was [ISO-8601 extended format](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_OFFSET_DATE_TIME).
-   In plugin version 0.1.2 it was ``yyyy/MM/dd kk:mm:ss.SSS`` format.
+   In plugin version 0.1.2 it was `yyyy/MM/dd kk:mm:ss.SSS` format.
  - **user name** - current user name. The intention is to be able to merge logs from several users.
  - **event type**, **event data** - content depends on type of captured event.
-    - **IDE actions**: event type = ``Action``, event data = ``[action id]`` (e.g. ``Action,EditorUp``);
-                       or event type = ``VcsAction``, event data = ``[Push|Update|Commit]``.
-    - **IDE polling events**: event type = ``IdeState``, event data = ``[Active|Inactive|NoProject]``,
-      where ``Inactive`` means IDE doesn' have focus, ``NoProject`` mean all projects are closed.
-    - **keyboard events**: event type = ``KeyEvent``, event data = ``[keyChar]:[keyCode]:[modifiers]``
+    - **IDE actions**: event type = `Action`, event data = `[action id]` (e.g. `Action,EditorUp`);
+                       or event type = `VcsAction`, event data = `[Push|Update|Commit]`;
+                       or event type = `CompilationFinished`, event data = `[amount of errors during compilation]`.
+    - **IDE polling events**: event type = `IdeState`, event data = `[Active|Inactive|NoProject]`,
+      where `Inactive` means IDE doesn' have focus, `NoProject` mean all projects are closed.
+    - **keyboard events**: event type = `KeyEvent`, event data = `[keyChar]:[keyCode]:[modifiers]`
       (see [AWT KeyEvent](https://docs.oracle.com/javase/7/docs/api/java/awt/event/KeyEvent.html)).
-    - **mouse events**: event type = ``MouseEvent``, event data can be
-        - ``click:[button]:[clickCount]:[modifiers]``
-        - ``move:[x]:[y]:[modifiers]``
-        - ``wheel:[wheelRotation]:[wheelModifiers]``
+    - **mouse events**: event type = `MouseEvent`, event data can be
+        - `click:[button]:[clickCount]:[modifiers]`
+        - `move:[x]:[y]:[modifiers]`
+        - `wheel:[wheelRotation]:[wheelModifiers]`
 
       (see java [MouseEvent](https://docs.oracle.com/javase/7/docs/api/java/awt/event/MouseEvent.html)
       and [MouseWheelEvent](https://docs.oracle.com/javase/7/docs/api/java/awt/event/MouseWheelEvent.html) for details).
  - **project name** - name of active project.
- - **focused component** - can be ``Editor``, ``Dialog``, ``Popup`` or toolwindow id (e.g. ``Version Control`` or ``Project``).
+ - **focused component** - can be `Editor`, `Dialog`, `Popup` or toolwindow id (e.g. `Version Control` or `Project`).
  - **current file** - absolute path to file open in editor (even when editor has no focus).
  - **PSI path** - [PSI](http://www.jetbrains.org/intellij/sdk/docs/basics/architectural_overview/psi_elements.html)
-                  path to currently selected element, format ``[parent]::[child]``.
+                  path to currently selected element, format `[parent]::[child]`.
                   Empty value if file was not parsed by IDE (e.g. plain text file).
  - **editor line** - caret line number in Editor.
  - **editor column** - caret column number in Editor.
@@ -83,15 +84,15 @@ The event log file is written as [csv RFC4180](https://tools.ietf.org/html/rfc41
 
 ### Example of log file
 ```
-2015-12-31T17:42:30.171Z,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015-12-31T17:42:30.35Z,dima,Action,EditorLineEnd,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015-12-31T17:42:30.351Z,dima,KeyEvent,97:79:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24
-2015-12-31T17:42:30.566Z,dima,Action,EditorLineStart,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24
-2015-12-31T17:42:30.568Z,dima,KeyEvent,97:85:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015-12-31T17:42:30.998Z,dima,KeyEvent,65535:157:4,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015-12-31T17:42:31.17Z,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8
-2015-12-31T17:42:32.169Z,dima,IdeState,Inactive,,,,,-1,-1
-2015-12-31T17:42:33.168Z,dima,IdeState,Inactive,,,,,-1,-1
+2015-12-31T17:42:30.171Z,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
+2015-12-31T17:42:30.35Z,dima,Action,EditorLineEnd,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
+2015-12-31T17:42:30.351Z,dima,KeyEvent,97:79:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24,
+2015-12-31T17:42:30.566Z,dima,Action,EditorLineStart,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24,
+2015-12-31T17:42:30.568Z,dima,KeyEvent,97:85:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
+2015-12-31T17:42:30.998Z,dima,KeyEvent,65535:157:4,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
+2015-12-31T17:42:31.17Z,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
+2015-12-31T17:42:32.169Z,dima,IdeState,Inactive,,,,,-1,-1,
+2015-12-31T17:42:33.168Z,dima,IdeState,Inactive,,,,,-1,-1,
 ```
 
 ### How to use log file?
