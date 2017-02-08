@@ -164,11 +164,13 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
             }
         })
 
-        Compilation.registerCompilationListener(parentDisposable, object : CompilationStatusListener {
-            override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext?) {
-                invokeOnEDT { trackerLog.append(captureIdeState("CompilationFinished", errors.toString())) }
-            }
-        })
+        if (haveCompilation()) {
+            Compilation.registerCompilationListener(parentDisposable, object : CompilationStatusListener {
+                override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext?) {
+                    invokeOnEDT { trackerLog.append(captureIdeState("CompilationFinished", errors.toString())) }
+                }
+            })
+        }
     }
 
     private fun captureIdeState(eventType: String, originalEventData: String): TrackerEvent? {
@@ -270,6 +272,8 @@ class ActivityTracker(val trackerLog: TrackerLog, val parentDisposable: Disposab
         }
         return hasPsiClasses ?: false
     }
+
+    private fun haveCompilation() = isOnClasspath("com.intellij.openapi.compiler.CompilationStatusListener")
 
     private fun isOnClasspath(className: String): Boolean {
         return ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
