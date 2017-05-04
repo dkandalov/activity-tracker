@@ -1,7 +1,10 @@
 package activitytracker
 
-import com.intellij.notification.*
-import com.intellij.openapi.application.*
+import com.intellij.notification.NotificationGroup
+import com.intellij.notification.NotificationListener
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.ApplicationComponent
 import com.intellij.openapi.diagnostic.Logger
 import groovy.lang.Binding
@@ -11,8 +14,7 @@ import java.lang.reflect.Method
 class AppComponent : ApplicationComponent {
 
     override fun initComponent() {
-        val onClasspath = checkThatGroovyIsOnClasspath()
-        if (!onClasspath) return
+        if (!checkThatGroovyIsOnClasspath()) return
 
         try {
 
@@ -79,7 +81,6 @@ class AppComponent : ApplicationComponent {
             return false
         }
 
-        private val isGroovyOnClasspath: Boolean
-            get() = isOnClasspath("org.codehaus.groovy.runtime.DefaultGroovyMethods")
+        private val isGroovyOnClasspath = isOnClasspath("org.codehaus.groovy.runtime.DefaultGroovyMethods")
     }
 }

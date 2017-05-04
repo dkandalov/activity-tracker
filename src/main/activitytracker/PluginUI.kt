@@ -5,8 +5,10 @@ import activitytracker.EventAnalyzer.Result.*
 import activitytracker.liveplugin.invokeLaterOnEDT
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.ShowFilePathAction
-import com.intellij.notification.*
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType.INFORMATION
+import com.intellij.notification.Notifications
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
@@ -14,25 +16,28 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
-import com.intellij.openapi.ui.popup.*
+import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
 import liveplugin.PluginUtil.*
-import liveplugin.implementation.*
+import liveplugin.implementation.Actions
+import liveplugin.implementation.Misc
 import liveplugin.implementation.Threads.doInBackground
 import org.jetbrains.annotations.NotNull
-import java.awt.*
+import java.awt.Component
+import java.awt.Point
 import java.awt.event.MouseEvent
 import java.util.function.Function
 import javax.swing.event.HyperlinkEvent
 
 class PluginUI(
-        val plugin: ActivityTrackerPlugin,
-        val trackerLog: TrackerLog,
-        val eventAnalyzer: EventAnalyzer,
-        val parentDisposable: Disposable)
-{
+    private val plugin: ActivityTrackerPlugin,
+    private val trackerLog: TrackerLog,
+    private val eventAnalyzer: EventAnalyzer,
+    private val parentDisposable: Disposable
+) {
     private val log = Logger.getInstance(PluginUI::class.java)
     private var state: ActivityTrackerPlugin.State = ActivityTrackerPlugin.State.defaultValue
     private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
@@ -85,11 +90,11 @@ class PluginUI(
 
     private fun createListPopup(dataContext: DataContext): ListPopup {
         return JBPopupFactory.getInstance().createActionGroupPopup(
-                "Activity Tracker",
-                actionGroup,
-                dataContext,
-                JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
-                true
+            "Activity Tracker",
+            actionGroup,
+            dataContext,
+            JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
+            true
         )
     }
 

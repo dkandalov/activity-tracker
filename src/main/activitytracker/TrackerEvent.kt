@@ -1,36 +1,38 @@
 package activitytracker
 
-import org.apache.commons.csv.*
+import org.apache.commons.csv.CSVPrinter
+import org.apache.commons.csv.CSVRecord
 import org.joda.time.DateTime
 import org.joda.time.DateTimeFieldType.*
-import org.joda.time.format.*
+import org.joda.time.format.DateTimeFormatter
+import org.joda.time.format.DateTimeFormatterBuilder
 
 data class TrackerEvent(
-        val time: DateTime,
-        val userName: String,
-        val eventType: String,
-        val eventData: String,
-        val projectName: String,
-        val focusedComponent: String,
-        val file: String,
-        val psiPath: String,
-        val editorLine: Int,
-        val editorColumn: Int,
-        val task: String
+    val time: DateTime,
+    val userName: String,
+    val eventType: String,
+    val eventData: String,
+    val projectName: String,
+    val focusedComponent: String,
+    val file: String,
+    val psiPath: String,
+    val editorLine: Int,
+    val editorColumn: Int,
+    val task: String
 ) {
     fun toCsv(csvPrinter: CSVPrinter) {
         csvPrinter.printRecord(
-                dateTimePrintFormat.print(time),
-                userName,
-                eventType,
-                eventData,
-                projectName,
-                focusedComponent,
-                file,
-                psiPath,
-                editorLine,
-                editorColumn,
-                task
+            dateTimePrintFormat.print(time),
+            userName,
+            eventType,
+            eventData,
+            projectName,
+            focusedComponent,
+            file,
+            psiPath,
+            editorLine,
+            editorColumn,
+            task
         )
     }
 
@@ -78,15 +80,15 @@ data class TrackerEvent(
                     .toParser()
 
             return DateTimeFormatterBuilder()
-                    .appendFixedDecimal(year(), 4)
-                    .appendLiteral('-').appendFixedDecimal(monthOfYear(), 2)
-                    .appendLiteral('-').appendFixedDecimal(dayOfMonth(), 2)
-                    .appendLiteral('T').appendFixedDecimal(hourOfDay(), 2)
-                    .appendLiteral(':').appendFixedDecimal(minuteOfHour(), 2)
-                    .appendLiteral(':').appendFixedDecimal(secondOfMinute(), 2)
-                    .appendOptional(msParser)
-                    .appendOptional(timeZoneParser)
-                    .toFormatter()
+                .appendFixedDecimal(year(), 4)
+                .appendLiteral('-').appendFixedDecimal(monthOfYear(), 2)
+                .appendLiteral('-').appendFixedDecimal(dayOfMonth(), 2)
+                .appendLiteral('T').appendFixedDecimal(hourOfDay(), 2)
+                .appendLiteral(':').appendFixedDecimal(minuteOfHour(), 2)
+                .appendLiteral(':').appendFixedDecimal(secondOfMinute(), 2)
+                .appendOptional(msParser)
+                .appendOptional(timeZoneParser)
+                .toFormatter()
         }
 
         /**
@@ -96,15 +98,15 @@ data class TrackerEvent(
          */
         private fun createDateTimePrintFormat(): DateTimeFormatter {
             return DateTimeFormatterBuilder()
-                    .appendFixedDecimal(year(), 4)
-                    .appendLiteral('-').appendFixedDecimal(monthOfYear(), 2)
-                    .appendLiteral('-').appendFixedDecimal(dayOfMonth(), 2)
-                    .appendLiteral('T').appendFixedDecimal(hourOfDay(), 2)
-                    .appendLiteral(':').appendFixedDecimal(minuteOfHour(), 2)
-                    .appendLiteral(':').appendFixedDecimal(secondOfMinute(), 2)
-                    .appendLiteral('.').appendDecimal(millisOfSecond(), 3, 3)
-                    .appendTimeZoneOffset("Z", true, 2, 4)
-                    .toFormatter()
+                .appendFixedDecimal(year(), 4)
+                .appendLiteral('-').appendFixedDecimal(monthOfYear(), 2)
+                .appendLiteral('-').appendFixedDecimal(dayOfMonth(), 2)
+                .appendLiteral('T').appendFixedDecimal(hourOfDay(), 2)
+                .appendLiteral(':').appendFixedDecimal(minuteOfHour(), 2)
+                .appendLiteral(':').appendFixedDecimal(secondOfMinute(), 2)
+                .appendLiteral('.').appendDecimal(millisOfSecond(), 3, 3)
+                .appendTimeZoneOffset("Z", true, 2, 4)
+                .toFormatter()
         }
     }
 }

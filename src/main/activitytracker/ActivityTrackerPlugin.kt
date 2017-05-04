@@ -6,9 +6,9 @@ import com.intellij.openapi.project.Project
 import liveplugin.PluginUtil
 
 class ActivityTrackerPlugin(
-        val tracker: ActivityTracker,
-        val trackerLog: TrackerLog,
-        val propertiesComponent: PropertiesComponent
+    private val tracker: ActivityTracker,
+    private val trackerLog: TrackerLog,
+    private val propertiesComponent: PropertiesComponent
 ) {
     private var state: State = State.defaultValue
     private var pluginUI: PluginUI? = null
@@ -61,13 +61,13 @@ class ActivityTrackerPlugin(
     }
 
     data class State(
-            val isTracking: Boolean,
-            val pollIdeState: Boolean,
-            val pollIdeStateMs: Int,
-            val trackIdeActions: Boolean,
-            val trackKeyboard: Boolean,
-            val trackMouse: Boolean,
-            val mouseMoveEventsThresholdMs: Int
+        val isTracking: Boolean,
+        val pollIdeState: Boolean,
+        val pollIdeStateMs: Int,
+        val trackIdeActions: Boolean,
+        val trackKeyboard: Boolean,
+        val trackMouse: Boolean,
+        val mouseMoveEventsThresholdMs: Int
     ) {
         companion object {
             val defaultValue = State(true, true, 1000, true, false, false, 250)
@@ -104,15 +104,13 @@ class ActivityTrackerPlugin(
     companion object {
         val pluginId = "ActivityTracker"
 
-        private fun asTrackerConfig(state: State): ActivityTracker.Config {
-            return ActivityTracker.Config(
-                state.pollIdeState,
-                state.pollIdeStateMs.toLong(),
-                state.trackIdeActions,
-                state.trackKeyboard,
-                state.trackMouse,
-                state.mouseMoveEventsThresholdMs.toLong()
-            )
-        }
+        private fun asTrackerConfig(state: State) = ActivityTracker.Config(
+            state.pollIdeState,
+            state.pollIdeStateMs.toLong(),
+            state.trackIdeActions,
+            state.trackKeyboard,
+            state.trackMouse,
+            state.mouseMoveEventsThresholdMs.toLong()
+        )
     }
 }
