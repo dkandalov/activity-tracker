@@ -10,8 +10,8 @@ import org.joda.time.format.DateTimeFormatterBuilder
 data class TrackerEvent(
     val time: DateTime,
     val userName: String,
-    val eventType: String,
-    val eventData: String,
+    val type: String,
+    val data: String,
     val projectName: String,
     val focusedComponent: String,
     val file: String,
@@ -24,8 +24,8 @@ data class TrackerEvent(
         csvPrinter.printRecord(
             dateTimePrintFormat.print(time),
             userName,
-            eventType,
-            eventData,
+            type,
+            data,
             projectName,
             focusedComponent,
             file,
@@ -49,21 +49,19 @@ data class TrackerEvent(
             return TrackerEvent(
                 time = parseDateTime(csvRecord[0]),
                 userName = csvRecord[1],
-                eventType = csvRecord[2],
-                eventData = csvRecord[3],
+                type = csvRecord[2],
+                data = csvRecord[3],
                 projectName = csvRecord[4],
                 focusedComponent = csvRecord[5],
                 file = csvRecord[6],
                 psiPath = csvRecord[7],
-                editorLine = Integer.parseInt(csvRecord[8]),
-                editorColumn = Integer.parseInt(csvRecord[9]),
+                editorLine = csvRecord[8].toInt(),
+                editorColumn = csvRecord[9].toInt(),
                 task = if (csvRecord.size() < 11) "" else csvRecord[10] // backward compatibility with plugin data before 1.0.6 beta
             )
         }
 
-        fun parseDateTime(time: String): DateTime  {
-            return DateTime.parse(time, dateTimeParseFormat.withZoneUTC())
-        }
+        fun parseDateTime(time: String): DateTime = DateTime.parse(time, dateTimeParseFormat.withZoneUTC())
 
         /**
          * Parser has to be separate from {@link #createDateTimePrintFormat()}

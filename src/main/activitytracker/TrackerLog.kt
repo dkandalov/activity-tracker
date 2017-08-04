@@ -5,8 +5,11 @@ import com.intellij.concurrency.JobScheduler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.io.FileUtil
-import org.apache.commons.csv.*
-import java.io.*
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVPrinter
+import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -58,7 +61,7 @@ class TrackerLog(val eventsFilePath: String) {
         return FileUtil.delete(File(eventsFilePath))
     }
 
-    fun readEventSequence(onParseError: (String, Exception) -> Any): Sequence<TrackerEvent> {
+    fun readEvents(onParseError: (String, Exception) -> Any): Sequence<TrackerEvent> {
         val reader = File(eventsFilePath).bufferedReader(UTF_8)
         val parser = CSVParser(reader, CSVFormat.RFC4180)
         val sequence = parser.asSequence().map { csvRecord ->

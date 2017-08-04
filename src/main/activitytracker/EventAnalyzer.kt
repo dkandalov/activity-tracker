@@ -21,7 +21,7 @@ class EventAnalyzer(private val trackerLog: TrackerLog) {
 
                 try {
                     val errors = ArrayList<Pair<String, Exception>>()
-                    val events = trackerLog.readEventSequence(onParseError = { line: String, e: Exception ->
+                    val events = trackerLog.readEvents(onParseError = { line: String, e: Exception ->
                         errors.add(Pair(line, e))
                         if (errors.size > 20) errors.removeAt(0)
                     })
@@ -71,29 +71,29 @@ fun analyze(events: Sequence<TrackerEvent>): Stats {
 }
 
 private fun secondsInEditorByFile(event: TrackerEvent, map: MutableMap<String, Int>) {
-    if (event.eventType == "IdeState" && event.focusedComponent == "Editor" && event.file != "") {
+    if (event.type == "IdeState" && event.focusedComponent == "Editor" && event.file != "") {
         val key = fileName(event.file)
         map[key] = (map[key] ?: 0) + 1
     }
 }
 
 private fun secondsByProject(event: TrackerEvent, map: MutableMap<String, Int>) {
-    if (event.eventType == "IdeState" && event.eventData == "Active") {
+    if (event.type == "IdeState" && event.data == "Active") {
         val key = event.projectName
         map[key] = (map[key] ?: 0) + 1
     }
 }
 
 private fun secondsByTask(event: TrackerEvent, map: MutableMap<String, Int>) {
-    if (event.eventType == "IdeState" && event.eventData == "Active") {
+    if (event.type == "IdeState" && event.data == "Active") {
         val key = event.task
         map[key] = (map[key] ?: 0) + 1
     }
 }
 
 private fun countByActionId(event: TrackerEvent, map: MutableMap<String, Int>) {
-    if (event.eventType == "Action") {
-        val key = event.eventData
+    if (event.type == "Action") {
+        val key = event.data
         map[key] = (map[key] ?: 0) + 1
     }
 }
