@@ -100,10 +100,7 @@ private fun countByActionId(event: TrackerEvent, map: MutableMap<String, Int>) {
 
 private fun fileName(filePath: String): String  {
     val i = filePath.lastIndexOf(File.separator)
-    return if (i == -1) filePath
-    else filePath.substring(i + 1)
+    return if (i == -1) filePath else filePath.substring(i + 1)
 }
 
-private fun List<Pair<String, Int>>.withTotal(): List<Pair<String, Int>> {
-    return this + Pair("Total", sumBy{ it.second })
-}
+private fun List<Pair<String, Int>>.withTotal() = this + Pair("Total", sumBy{ it.second })

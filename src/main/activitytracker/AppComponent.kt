@@ -32,38 +32,34 @@ class AppComponent : ApplicationComponent {
     override fun disposeComponent() {
     }
 
-    override fun getComponentName(): String {
-        return this.javaClass.name
-    }
+    override fun getComponentName(): String = this.javaClass.name
 
     companion object {
         private val pluginId = "Activity Tracker"
-        private val PLUGIN_LIBS_PATH = PathManager.getPluginsPath() + "/activity-tracker-plugin/lib/"
-        private val LOG = Logger.getInstance(pluginId)
+        private val pluginLibsPath = PathManager.getPluginsPath() + "/activity-tracker-plugin/lib/"
+        private val logger = Logger.getInstance(pluginId)
+        private val isGroovyOnClasspath = isOnClasspath("org.codehaus.groovy.runtime.DefaultGroovyMethods")
 
         private fun handleException(e: Exception) {
-            LOG.error("Error during initialization", e)
+            logger.error("Error during initialization", e)
         }
 
-        private fun createBinding(): Binding {
-            val binding = Binding()
-            binding.setVariable("event", null)
-            binding.setVariable("project", null)
-            binding.setVariable("isIdeStartup", true)
-            binding.setVariable("pluginPath", PathManager.getJarPathForClass(AppComponent::class.java))
-            binding.setVariable("pluginDisposable", ApplicationManager.getApplication())
-            return binding
+        private fun createBinding() = Binding().apply {
+            setVariable("event", null)
+            setVariable("project", null)
+            setVariable("isIdeStartup", true)
+            setVariable("pluginPath", PathManager.getJarPathForClass(AppComponent::class.java))
+            setVariable("pluginDisposable", ApplicationManager.getApplication())
         }
 
-        private fun findMethod(methodName: String, aClass: Class<*>): Method? {
-            return aClass.declaredMethods.firstOrNull { it.name == methodName }
-        }
+        private fun findMethod(methodName: String, aClass: Class<*>): Method? =
+            aClass.declaredMethods.firstOrNull { it.name == methodName }
 
         private fun checkThatGroovyIsOnClasspath(): Boolean {
             if (isGroovyOnClasspath) return true
 
             val listener = NotificationListener { notification, event ->
-                val downloaded = downloadFile("http://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.3.9/", "groovy-all-2.3.9.jar", PLUGIN_LIBS_PATH)
+                val downloaded = downloadFile("http://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.3.9/", "groovy-all-2.3.9.jar", pluginLibsPath)
                 if (downloaded) {
                     notification.expire()
                     askIfUserWantsToRestartIde("For Groovy libraries to be loaded IDE restart is required. Restart now?")
@@ -80,7 +76,5 @@ class AppComponent : ApplicationComponent {
 
             return false
         }
-
-        private val isGroovyOnClasspath = isOnClasspath("org.codehaus.groovy.runtime.DefaultGroovyMethods")
     }
 }

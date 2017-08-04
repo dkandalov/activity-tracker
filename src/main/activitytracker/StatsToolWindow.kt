@@ -1,9 +1,11 @@
 package activitytracker
 
 import activitytracker.EventAnalyzer.Result.*
-import activitytracker.liveplugin.*
+import activitytracker.liveplugin.invokeLaterOnEDT
+import activitytracker.liveplugin.newDisposable
 import com.intellij.icons.AllIcons
-import com.intellij.icons.AllIcons.Actions.*
+import com.intellij.icons.AllIcons.Actions.Cancel
+import com.intellij.icons.AllIcons.Actions.Refresh
 import com.intellij.ide.ClipboardSynchronizer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
@@ -11,12 +13,15 @@ import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.wm.*
+import com.intellij.openapi.wm.ToolWindow
+import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowAnchor.RIGHT
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.table.JBTable
-import com.intellij.util.ui.*
+import com.intellij.util.ui.GridBag
+import com.intellij.util.ui.UIUtil
 import java.awt.GridBagConstraints.*
 import java.awt.GridBagLayout
 import java.awt.datatransfer.StringSelection
@@ -34,13 +39,13 @@ class StatsToolWindow {
             toolWindowPanel.setContent(rootComponent)
 
             val disposable = newDisposable(parentDisposable)
-            val actionGroup = DefaultActionGroup().apply{
-                add(object : AnAction(Cancel) {
+            val actionGroup = DefaultActionGroup().apply {
+                add(object: AnAction(Cancel) {
                     override fun actionPerformed(event: AnActionEvent) {
                         Disposer.dispose(disposable)
                     }
                 })
-                add(object : AnAction(Refresh) {
+                add(object: AnAction(Refresh) {
                     override fun actionPerformed(e: AnActionEvent?) {
                         eventAnalyzer.analyze(whenDone = { result ->
                             invokeLaterOnEDT {
@@ -81,17 +86,17 @@ class StatsToolWindow {
 
                     addTab("Time spent in editor", JPanel().apply {
                         layout = GridBagLayout()
-                        val table = createTable(listOf("File name", "Time"), stats.secondsInEditorByFile.map{secondsToString(it)})
+                        val table = createTable(listOf("File name", "Time"), stats.secondsInEditorByFile.map { secondsToString(it) })
                         add(JBScrollPane(table), fillBoth)
                     })
                     addTab("Time spent in project", JPanel().apply {
                         layout = GridBagLayout()
-                        val table = createTable(listOf("Project", "Time"), stats.secondsByProject.map{secondsToString(it)})
+                        val table = createTable(listOf("Project", "Time"), stats.secondsByProject.map { secondsToString(it) })
                         add(JBScrollPane(table), fillBoth)
                     })
                     addTab("Time spent on tasks", JPanel().apply {
                         layout = GridBagLayout()
-                        val table = createTable(listOf("Task", "Time"), stats.secondsByTask.map{secondsToString(it)})
+                        val table = createTable(listOf("Task", "Time"), stats.secondsByTask.map { secondsToString(it) })
                         add(JBScrollPane(table), fillBoth)
                     })
                     addTab("IDE action count", JPanel().apply {
@@ -104,10 +109,10 @@ class StatsToolWindow {
                 add(JPanel().apply {
                     layout = GridBagLayout()
                     val message =
-                            "Results are based on data from '${stats.dataFile}'.\n\n" +
-                                    "Note that time spent in project includes time in IDE toolwindows and dialogs. " +
-                                    "Therefore, it will be greater than time spent in IDE editor."
-                    add(JTextArea(message).apply{
+                        "Results are based on data from '${stats.dataFile}'.\n\n" +
+                        "Note that time spent in project includes time in IDE toolwindows and dialogs. " +
+                        "Therefore, it will be greater than time spent in IDE editor."
+                    add(JTextArea(message).apply {
                         isEditable = false
                         lineWrap = true
                         wrapStyleWord = true
@@ -120,8 +125,8 @@ class StatsToolWindow {
         }
 
         private fun createTable(header: Collection<String>, data: List<Pair<String, String>>): JBTable {
-            val tableModel = object : DefaultTableModel() {
-                override fun isCellEditable(row: Int, column: Int): Boolean { return false }
+            val tableModel = object: DefaultTableModel() {
+                override fun isCellEditable(row: Int, column: Int) = false
             }
             header.forEach {
                 tableModel.addColumn(it)
@@ -129,7 +134,7 @@ class StatsToolWindow {
             data.forEach {
                 tableModel.addRow(arrayListOf(it.first, it.second).toArray())
             }
-            val table = JBTable(tableModel).apply{
+            val table = JBTable(tableModel).apply {
                 isStriped = true
                 setShowGrid(false)
             }
@@ -139,14 +144,14 @@ class StatsToolWindow {
 
         private fun registerCopyToClipboardShortCut(table: JTable, tableModel: DefaultTableModel) {
             val copyKeyStroke = KeymapUtil.getKeyStroke(ActionManager.getInstance().getAction(IdeActions.ACTION_COPY).shortcutSet)
-            table.registerKeyboardAction(object : AbstractAction() {
+            table.registerKeyboardAction(object: AbstractAction() {
                 override fun actionPerformed(event: ActionEvent) {
                     val selectedCells = table.selectedRows.map { row ->
                         0.until(tableModel.columnCount).map { column ->
                             tableModel.getValueAt(row, column).toString()
                         }
                     }
-                    val content = StringSelection(selectedCells.map{ it.joinToString(",") }.joinToString("\n"))
+                    val content = StringSelection(selectedCells.map { it.joinToString(",") }.joinToString("\n"))
                     ClipboardSynchronizer.getInstance().setContent(content, content)
                 }
             }, "Copy", copyKeyStroke, JComponent.WHEN_FOCUSED)

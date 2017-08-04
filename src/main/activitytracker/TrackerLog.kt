@@ -1,6 +1,7 @@
 package activitytracker
 
 import activitytracker.liveplugin.newDisposable
+import activitytracker.TrackerEvent.Companion.toTrackerEvent
 import com.intellij.concurrency.JobScheduler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
@@ -18,7 +19,6 @@ import kotlin.text.Charsets.UTF_8
 
 class TrackerLog(val eventsFilePath: String) {
     private val log = Logger.getInstance(TrackerLog::class.java)
-
     private val eventQueue: Queue<TrackerEvent> = ConcurrentLinkedQueue()
 
     init {
@@ -57,16 +57,14 @@ class TrackerLog(val eventsFilePath: String) {
         eventQueue.add(event)
     }
 
-    fun clearLog(): Boolean {
-        return FileUtil.delete(File(eventsFilePath))
-    }
+    fun clearLog(): Boolean = FileUtil.delete(File(eventsFilePath))
 
     fun readEvents(onParseError: (String, Exception) -> Any): Sequence<TrackerEvent> {
         val reader = File(eventsFilePath).bufferedReader(UTF_8)
         val parser = CSVParser(reader, CSVFormat.RFC4180)
         val sequence = parser.asSequence().map { csvRecord ->
             try {
-                TrackerEvent.fromCsv(csvRecord)
+                csvRecord.toTrackerEvent()
             } catch (e: Exception) {
                 onParseError(csvRecord.toString(), e)
                 null
@@ -92,9 +90,7 @@ class TrackerLog(val eventsFilePath: String) {
         return rolledStatsFile
     }
 
-    fun currentLogFile(): File {
-        return File(eventsFilePath)
-    }
+    fun currentLogFile(): File = File(eventsFilePath)
 
     fun isTooLargeToProcess(): Boolean {
         val `2gb` = 2000000000L

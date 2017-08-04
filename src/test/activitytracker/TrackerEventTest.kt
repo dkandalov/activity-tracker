@@ -1,7 +1,10 @@
 package activitytracker
 
+import activitytracker.TrackerEvent.Companion.toTrackerEvent
 import activitytracker.TrackerEvent.Companion.parseDateTime
-import org.apache.commons.csv.*
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVPrinter
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.Assert.assertThat
 import org.junit.Test
@@ -49,16 +52,15 @@ class TrackerEventTest {
         assertThat(parsedEvent, equalTo(event))
     }
 
-    private fun TrackerEvent.toCsvLine(): String {
-        return StringBuilder().let {
+    private fun TrackerEvent.toCsvLine() =
+        StringBuilder().let {
             toCsv(CSVPrinter(it, CSVFormat.RFC4180))
             it.toString()
         }
-    }
 
     private fun String.parse(): TrackerEvent {
         val parser = CSVParser(StringReader(this), CSVFormat.RFC4180)
-        return TrackerEvent.fromCsv(parser.records.first())
+        return parser.records.first().toTrackerEvent()
     }
 }
 

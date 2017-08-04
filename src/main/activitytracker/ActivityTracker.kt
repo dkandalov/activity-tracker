@@ -290,24 +290,24 @@ class ActivityTracker(
 
     private fun haveCompilation() = isOnClasspath("com.intellij.openapi.compiler.CompilationStatusListener")
 
-    private fun isOnClasspath(className: String): Boolean {
-        return ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
-    }
+    private fun isOnClasspath(className: String) =
+        ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
 
-    private fun psiPathOf(psiElement: PsiElement?): String {
-        if (psiElement == null || psiElement is PsiFile) return ""
-        else if (psiElement is PsiAnonymousClass) {
-            val parentName = psiPathOf(psiElement.parent)
-            val name = "[" + psiElement.baseClassType.className + "]"
-            return if (parentName.isEmpty()) name else (parentName + "::" + name)
-        } else if (psiElement is PsiMethod || psiElement is PsiClass) {
-            val parentName = psiPathOf(psiElement.parent)
-            val name = (psiElement as PsiNamedElement).name ?: ""
-            return if (parentName.isEmpty()) name else "$parentName::$name"
-        } else {
-            return psiPathOf(psiElement.parent)
+    private fun psiPathOf(psiElement: PsiElement?): String =
+        when (psiElement) {
+            null, is PsiFile -> ""
+            is PsiAnonymousClass -> {
+                val parentName = psiPathOf(psiElement.parent)
+                val name = "[${psiElement.baseClassType.className}]"
+                if (parentName.isEmpty()) name else "$parentName::$name"
+            }
+            is PsiMethod, is PsiClass -> {
+                val parentName = psiPathOf(psiElement.parent)
+                val name = (psiElement as PsiNamedElement).name ?: ""
+                if (parentName.isEmpty()) name else "$parentName::$name"
+            }
+            else -> psiPathOf(psiElement.parent)
         }
-    }
 
     private fun <T> findPsiParent(element: PsiElement?, matches: (PsiElement) -> Boolean): T? {
         @Suppress("UNCHECKED_CAST")

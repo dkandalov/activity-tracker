@@ -17,7 +17,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
@@ -39,7 +38,7 @@ class PluginUI(
     private val parentDisposable: Disposable
 ) {
     private val log = Logger.getInstance(PluginUI::class.java)
-    private var state: ActivityTrackerPlugin.State = ActivityTrackerPlugin.State.defaultValue
+    private var state = ActivityTrackerPlugin.State.defaultValue
     private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
 
     fun init(): PluginUI {
@@ -88,15 +87,14 @@ class PluginUI(
         liveplugin.PluginUtil.registerWidget(widgetId, parentDisposable, "before Position", presentation)
     }
 
-    private fun createListPopup(dataContext: DataContext): ListPopup {
-        return JBPopupFactory.getInstance().createActionGroupPopup(
+    private fun createListPopup(dataContext: DataContext) =
+        JBPopupFactory.getInstance().createActionGroupPopup(
             "Activity Tracker",
             actionGroup,
             dataContext,
             JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
             true
         )
-    }
 
     private fun createActionGroup(): DefaultActionGroup {
         val toggleTracking = object : AnAction() {
@@ -219,10 +217,10 @@ class PluginUI(
                 val notificationType = INFORMATION
                 val groupDisplayId = pluginId
                 val notification = Notification(
-                        groupDisplayId, title, messageString, notificationType,
-                        NotificationListener { notification, event ->
-                            onLinkClick(event)
-                        }
+                    groupDisplayId, title, messageString, notificationType,
+                    NotificationListener { notification, event ->
+                        onLinkClick(event)
+                    }
                 )
                 ApplicationManager.getApplication().messageBus.syncPublisher(Notifications.TOPIC).notify(notification)
             }

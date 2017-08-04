@@ -73,7 +73,7 @@ class ActivityTrackerPlugin(
             val defaultValue = State(true, true, 1000, true, false, false, 250)
 
             fun load(propertiesComponent: PropertiesComponent, id: String): State {
-                return with(propertiesComponent) {
+                return propertiesComponent.run {
                     State(
                         getBoolean("$id-isTracking", defaultValue.isTracking),
                         getBoolean("$id-pollIdeState", defaultValue.pollIdeState),
@@ -88,7 +88,7 @@ class ActivityTrackerPlugin(
         }
 
         fun save(propertiesComponent: PropertiesComponent, id: String) {
-            with(propertiesComponent) {
+            propertiesComponent.run {
                 setValue("$id-isTracking", isTracking)
                 setValue("$id-pollIdeState", pollIdeState)
                 setValue("$id-pollIdeStateMs", pollIdeStateMs, Integer.MIN_VALUE)
@@ -98,7 +98,6 @@ class ActivityTrackerPlugin(
                 setValue("$id-mouseMoveEventsThresholdMs", mouseMoveEventsThresholdMs, Integer.MIN_VALUE)
             }
         }
-
     }
 
     companion object {
