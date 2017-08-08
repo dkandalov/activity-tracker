@@ -171,12 +171,8 @@ class ActivityTracker(
                 this.metaClass = metaClass
             }
             override fun setProperty(propertyName: String?, newValue: Any?) {}
-            override fun getProperty(propertyName: String?): Any? {
-                return null
-            }
-            override fun invokeMethod(name: String?, args: Any?): Any? {
-                return null
-            }
+            override fun getProperty(propertyName: String?) = null
+            override fun invokeMethod(name: String?, args: Any?) = null
         })
 
         if (haveCompilation()) {
@@ -214,7 +210,7 @@ class ActivityTracker(
 
             // use "lastFocusedFrame" to be able to obtain project in cases when some dialog is open (e.g. "override" or "project settings")
             val project = ideFocusManager.lastFocusedFrame?.project
-            if (eventType == "IdeState" && project?.isDefault ?: true) {
+            if (eventType == "IdeState" && project?.isDefault != false) {
                 eventData = "NoProject"
             }
             if (project == null || project.isDefault) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
@@ -257,7 +253,7 @@ class ActivityTracker(
             }
 
             val task = if (hasTaskManager(project)) {
-                TaskManager.getManager(project).activeTask.presentableName
+                TaskManager.getManager(project)?.activeTask?.presentableName ?: ""
             } else {
                 ChangeListManager.getInstance(project).defaultChangeList.name
             }
@@ -309,18 +305,18 @@ class ActivityTracker(
             else -> psiPathOf(psiElement.parent)
         }
 
-    private fun <T> findPsiParent(element: PsiElement?, matches: (PsiElement) -> Boolean): T? {
-        @Suppress("UNCHECKED_CAST")
-        return if (element == null) null
-        else if (matches(element)) element as T?
-        else findPsiParent(element.parent, matches)
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> findPsiParent(element: PsiElement?, matches: (PsiElement) -> Boolean): T? = when {
+        element == null -> null
+        matches(element) -> element as T?
+        else -> findPsiParent(element.parent, matches)
     }
 
-    private fun <T> findParentComponent(component: Component?, matches: (Component) -> Boolean): T? {
-        @Suppress("UNCHECKED_CAST")
-        return if (component == null) null
-        else if (matches(component)) component as T?
-        else findParentComponent(component.parent, matches)
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> findParentComponent(component: Component?, matches: (Component) -> Boolean): T? = when {
+        component == null -> null
+        matches(component) -> component as T?
+        else -> findParentComponent(component.parent, matches)
     }
 
     data class Config(

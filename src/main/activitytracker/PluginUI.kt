@@ -3,6 +3,8 @@ package activitytracker
 import activitytracker.ActivityTrackerPlugin.Companion.pluginId
 import activitytracker.EventAnalyzer.Result.*
 import activitytracker.liveplugin.invokeLaterOnEDT
+import activitytracker.liveplugin.registerProjectListener
+import activitytracker.liveplugin.registerWidget
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.notification.Notification
@@ -66,7 +68,7 @@ class PluginUI(
     }
 
     private fun registerWidget(parentDisposable: Disposable) {
-        val presentation = object : StatusBarWidget.TextPresentation {
+        val presentation = object: StatusBarWidget.TextPresentation {
             override fun getText() = "Activity tracker: " + (if (state.isTracking) "on" else "off")
 
             override fun getTooltipText() = "Click to open menu"
@@ -84,7 +86,10 @@ class PluginUI(
             @Suppress("OverridingDeprecatedMember")
             @NotNull override fun getMaxPossibleText() = ""
         }
-        liveplugin.PluginUtil.registerWidget(widgetId, parentDisposable, "before Position", presentation)
+
+        registerProjectListener { project ->
+            registerWidget(widgetId, project, parentDisposable, "before Position", presentation)
+        }
     }
 
     private fun createListPopup(dataContext: DataContext) =
@@ -97,35 +102,35 @@ class PluginUI(
         )
 
     private fun createActionGroup(): DefaultActionGroup {
-        val toggleTracking = object : AnAction() {
+        val toggleTracking = object: AnAction() {
             override fun actionPerformed(event: AnActionEvent) = plugin.toggleTracking()
             override fun update(event: AnActionEvent) {
                 event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
             }
         }
-        val togglePollIdeState = object : CheckboxAction("Poll IDE State") {
+        val togglePollIdeState = object: CheckboxAction("Poll IDE State") {
             override fun isSelected(event: AnActionEvent) = state.pollIdeState
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enablePollIdeState(value)
         }
-        val toggleTrackActions = object : CheckboxAction("Track IDE Actions") {
+        val toggleTrackActions = object: CheckboxAction("Track IDE Actions") {
             override fun isSelected(event: AnActionEvent) = state.trackIdeActions
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackIdeActions(value)
         }
-        val toggleTrackKeyboard = object : CheckboxAction("Track Keyboard") {
+        val toggleTrackKeyboard = object: CheckboxAction("Track Keyboard") {
             override fun isSelected(event: AnActionEvent) = state.trackKeyboard
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboard(value)
         }
-        val toggleTrackMouse = object : CheckboxAction("Track Mouse") {
+        val toggleTrackMouse = object: CheckboxAction("Track Mouse") {
             override fun isSelected(event: AnActionEvent) = state.trackMouse
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackMouse(value)
         }
-        val openLogInIde = object : AnAction("Open in IDE") {
+        val openLogInIde = object: AnAction("Open in IDE") {
             override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFile(event.project)
         }
-        val openLogFolder = object : AnAction("Open in File Manager") {
+        val openLogFolder = object: AnAction("Open in File Manager") {
             override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFolder()
         }
-        val showStatistics = object : AnAction("Show Stats") {
+        val showStatistics = object: AnAction("Show Stats") {
             override fun actionPerformed(event: AnActionEvent) {
                 val project = event.project
                 if (trackerLog.isTooLargeToProcess()) {
@@ -149,9 +154,10 @@ class PluginUI(
                 }
             }
         }
-        val rollCurrentLog = object : AnAction("Roll Tracking Log") {
+        val rollCurrentLog = object: AnAction("Roll Tracking Log") {
             override fun actionPerformed(event: AnActionEvent) {
-                val userAnswer = showOkCancelDialog(event.project,
+                val userAnswer = showOkCancelDialog(
+                    event.project,
                     "Roll tracking log file?\nCurrent log will be moved into new file.",
                     "Activity Tracker",
                     Messages.getQuestionIcon()
@@ -164,9 +170,10 @@ class PluginUI(
                 }
             }
         }
-        val clearCurrentLog = object : AnAction("Clear Tracking Log") {
+        val clearCurrentLog = object: AnAction("Clear Tracking Log") {
             override fun actionPerformed(event: AnActionEvent) {
-                val userAnswer = showOkCancelDialog(event.project,
+                val userAnswer = showOkCancelDialog(
+                    event.project,
                     "Clear current tracking log file?\n(This operation cannot be undone.)",
                     "Activity Tracker",
                     Messages.getQuestionIcon()
@@ -177,7 +184,7 @@ class PluginUI(
                 if (wasCleared) showNotification("Tracking log was cleared")
             }
         }
-        val openHelp = object : AnAction("Help") {
+        val openHelp = object: AnAction("Help") {
             override fun actionPerformed(event: AnActionEvent) = BrowserUtil.open("https://github.com/dkandalov/activity-tracker#help")
         }
 
