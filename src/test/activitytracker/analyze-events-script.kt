@@ -9,6 +9,13 @@ fun main(args: Array<String>) {
         println("Failed to parse: $line")
     }
 
+    amountOfKeyPresses(eventSequence)
+
+    // eventsGroupedIntoSessions(eventSequence)
+    // createHistogramOfDurationEvents(eventSequence)
+}
+
+private fun amountOfKeyPresses(eventSequence: Sequence<TrackerEvent>) {
     val histogram = Histogram<Char>()
     eventSequence
         .filter { it.type == "KeyEvent" }
@@ -16,28 +23,30 @@ fun main(args: Array<String>) {
         .filter { it[0] != "65535" }
         .map { it[0].toInt().toChar().toLowerCase() }
         .map {
-            if (it == '~') '`'
-            else if (it == '!') '1'
-            else if (it == '@') '2'
-            else if (it == '#') '3'
-            else if (it == '$') '4'
-            else if (it == '%') '5'
-            else if (it == '^') '6'
-            else if (it == '&') '7'
-            else if (it == '*') '8'
-            else if (it == '(') '9'
-            else if (it == ')') '0'
-            else if (it == '_') '-'
-            else if (it == '+') '='
-            else if (it == '<') ','
-            else if (it == '>') '.'
-            else if (it == '{') '['
-            else if (it == '}') ']'
-            else if (it == '|') '\\'
-            else if (it == '\"') '\''
-            else if (it == ':') ';'
-            else if (it == '?') '/'
-            else it
+            when (it) {
+                '~' -> '`'
+                '!' -> '1'
+                '@' -> '2'
+                '#' -> '3'
+                '$' -> '4'
+                '%' -> '5'
+                '^' -> '6'
+                '&' -> '7'
+                '*' -> '8'
+                '(' -> '9'
+                ')' -> '0'
+                '_' -> '-'
+                '+' -> '='
+                '<' -> ','
+                '>' -> '.'
+                '{' -> '['
+                '}' -> ']'
+                '|' -> '\\'
+                '\"' -> '\''
+                ':' -> ';'
+                '?' -> '/'
+                else -> it
+            }
         }
         .forEachIndexed { i, c ->
             histogram.add(c)
@@ -57,9 +66,6 @@ fun main(args: Array<String>) {
 //                print(entry.key)
 //            }
 //        }
-
-    // eventsGroupedIntoSessions(eventSequence)
-    // createHistogramOfDurationEvents(eventSequence)
 }
 
 private data class Session(val events: List<TrackerEvent>)
@@ -104,7 +110,7 @@ private class Histogram<T>(val frequencyByValue: HashMap<T, Int> = HashMap()) {
         frequencyByValue.entries.forEach {
             map[it.key] = (it.value * ratio).toInt()
         }
-        return Histogram<T>(map)
+        return Histogram(map)
     }
 }
 
