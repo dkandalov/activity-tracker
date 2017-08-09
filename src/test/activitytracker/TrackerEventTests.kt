@@ -1,7 +1,7 @@
 package activitytracker
 
-import activitytracker.TrackerEvent.Companion.toTrackerEvent
 import activitytracker.TrackerEvent.Companion.parseDateTime
+import activitytracker.TrackerEvent.Companion.toTrackerEvent
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVPrinter
@@ -10,7 +10,7 @@ import org.junit.Assert.assertThat
 import org.junit.Test
 import java.io.StringReader
 
-class TrackerEventTest {
+class TrackerEventTests {
 
     @Test fun `convert event object into csv line`() {
         val dateTime = parseDateTime("2016-03-03T01:02:03.000")

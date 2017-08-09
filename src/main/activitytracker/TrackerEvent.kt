@@ -41,25 +41,22 @@ data class TrackerEvent(
         private val dateTimeParseFormat: DateTimeFormatter = createDateTimeParseFormat()
         private val dateTimePrintFormat: DateTimeFormatter = createDateTimePrintFormat()
 
-        fun ideNotInFocus(time: DateTime, userName: String, eventType: String, eventData: String): TrackerEvent {
-            return TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1, "")
-        }
+        fun ideNotInFocus(time: DateTime, userName: String, eventType: String, eventData: String) =
+            TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1, "")
 
-        fun CSVRecord.toTrackerEvent(): TrackerEvent {
-            return TrackerEvent(
-                time = parseDateTime(this[0]),
-                userName = this[1],
-                type = this[2],
-                data = this[3],
-                projectName = this[4],
-                focusedComponent = this[5],
-                file = this[6],
-                psiPath = this[7],
-                editorLine = this[8].toInt(),
-                editorColumn = this[9].toInt(),
-                task = if (size() < 11) "" else this[10] // backward compatibility with plugin data before 1.0.6 beta
-            )
-        }
+        fun CSVRecord.toTrackerEvent() = TrackerEvent(
+            time = parseDateTime(this[0]),
+            userName = this[1],
+            type = this[2],
+            data = this[3],
+            projectName = this[4],
+            focusedComponent = this[5],
+            file = this[6],
+            psiPath = this[7],
+            editorLine = this[8].toInt(),
+            editorColumn = this[9].toInt(),
+            task = if (size() < 11) "" else this[10] // backward compatibility with plugin data before 1.0.6 beta
+        )
 
         fun parseDateTime(time: String): DateTime = DateTime.parse(time, dateTimeParseFormat.withZoneUTC())
 

@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.text.Charsets.UTF_8
 
-class TrackerLog(val eventsFilePath: String) {
+class TrackerLog(private val eventsFilePath: String) {
     private val log = Logger.getInstance(TrackerLog::class.java)
     private val eventQueue: Queue<TrackerEvent> = ConcurrentLinkedQueue()
 
