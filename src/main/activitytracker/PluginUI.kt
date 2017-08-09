@@ -3,8 +3,7 @@ package activitytracker
 import activitytracker.ActivityTrackerPlugin.Companion.pluginId
 import activitytracker.EventAnalyzer.Result.*
 import activitytracker.liveplugin.invokeLaterOnEDT
-import activitytracker.liveplugin.registerProjectListener
-import activitytracker.liveplugin.registerWidget
+import activitytracker.liveplugin.registerWindowManagerListener
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.notification.Notification
@@ -19,6 +18,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
@@ -87,8 +87,15 @@ class PluginUI(
             @NotNull override fun getMaxPossibleText() = ""
         }
 
-        registerProjectListener { project ->
-            registerWidget(widgetId, project, parentDisposable, "before Position", presentation)
+        registerWindowManagerListener(parentDisposable) { frame ->
+            val widget = object: StatusBarWidget {
+                override fun ID() = widgetId
+                override fun getPresentation(type: StatusBarWidget.PlatformType) = presentation
+                override fun install(statusBar: StatusBar) {}
+                override fun dispose() {}
+            }
+            frame.statusBar.addWidget(widget, "before Position", parentDisposable)
+            frame.statusBar.updateWidget(widgetId)
         }
     }
 

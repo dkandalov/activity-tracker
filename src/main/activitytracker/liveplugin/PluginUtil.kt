@@ -3,12 +3,9 @@ package activitytracker.liveplugin
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.project.ProjectManagerListener
-import com.intellij.openapi.wm.StatusBar
-import com.intellij.openapi.wm.StatusBarWidget
+import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.WindowManager
+import com.intellij.openapi.wm.WindowManagerListener
 
 fun <T> invokeOnEDT(callback: () -> T): T? {
     var result: T? = null
@@ -21,36 +18,14 @@ fun invokeLaterOnEDT(callback: () -> Unit) {
     ApplicationManager.getApplication().invokeLater { callback() }
 }
 
-fun registerProjectListener(onEachProject: (Project) -> Unit) {
-    val listener = object: ProjectManagerListener {
-        override fun projectOpened(project: Project) {
-            onEachProject(project)
-        }
-        override fun canCloseProject(project: Project?) = true
-        override fun projectClosing(project: Project?) {}
-        override fun projectClosed(project: Project?) {}
+fun registerWindowManagerListener(disposable: Disposable, onFrameCreated: (IdeFrame) -> Unit) {
+    val windowManager = WindowManager.getInstance()
+    val listener = object: WindowManagerListener {
+        override fun frameCreated(ideFrame: IdeFrame) { onFrameCreated(ideFrame) }
+        override fun beforeFrameReleased(ideFrame: IdeFrame) {}
     }
-    val connection = ApplicationManager.getApplication().messageBus.connect()
-    connection.subscribe(ProjectManager.TOPIC, listener)
-
-    ProjectManager.getInstance().openProjects.forEach {
-        onEachProject(it)
+    windowManager.addListener(listener)
+    newDisposable(disposable) {
+        windowManager.removeListener(listener)
     }
-}
-
-fun registerWidget(widgetId: String, project: Project, disposable: Disposable,
-                   anchor: String = "before Position", presentation: StatusBarWidget.WidgetPresentation) {
-    val frame = WindowManager.getInstance()
-        .allProjectFrames
-        .find { it.project == project }
-        ?: return
-
-    val widget = object: StatusBarWidget {
-        override fun ID() = widgetId
-        override fun getPresentation(type: StatusBarWidget.PlatformType) = presentation
-        override fun install(statusBar: StatusBar) {}
-        override fun dispose() {}
-    }
-    frame.statusBar.addWidget(widget, anchor, disposable)
-    frame.statusBar.updateWidget(widgetId)
 }
