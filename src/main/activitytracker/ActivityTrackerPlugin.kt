@@ -54,11 +54,21 @@ class ActivityTrackerPlugin(
     private fun onStateChange(newState: State) {
         tracker.stopTracking()
         if (newState.isTracking) {
-            tracker.startTracking(asTrackerConfig(newState))
+            tracker.startTracking(newState.toConfig())
         }
         pluginUI?.update(newState)
         newState.save(propertiesComponent, pluginId)
     }
+
+    private fun State.toConfig() = ActivityTracker.Config(
+        pollIdeState,
+        pollIdeStateMs.toLong(),
+        trackIdeActions,
+        trackKeyboard,
+        trackMouse,
+        mouseMoveEventsThresholdMs.toLong()
+    )
+
 
     data class State(
         val isTracking: Boolean,
@@ -69,6 +79,18 @@ class ActivityTrackerPlugin(
         val trackMouse: Boolean,
         val mouseMoveEventsThresholdMs: Int
     ) {
+        fun save(propertiesComponent: PropertiesComponent, id: String) {
+            propertiesComponent.run {
+                setValue("$id-isTracking", isTracking, defaultValue.isTracking)
+                setValue("$id-pollIdeState", pollIdeState, defaultValue.pollIdeState)
+                setValue("$id-pollIdeStateMs", pollIdeStateMs, defaultValue.pollIdeStateMs)
+                setValue("$id-trackIdeActions", trackIdeActions, defaultValue.trackIdeActions)
+                setValue("$id-trackKeyboard", trackKeyboard, defaultValue.trackKeyboard)
+                setValue("$id-trackMouse", trackMouse, defaultValue.trackMouse)
+                setValue("$id-mouseMoveEventsThresholdMs", mouseMoveEventsThresholdMs, defaultValue.mouseMoveEventsThresholdMs)
+            }
+        }
+
         companion object {
             val defaultValue = State(true, true, 1000, true, false, false, 250)
 
@@ -86,30 +108,9 @@ class ActivityTrackerPlugin(
                 }
             }
         }
-
-        fun save(propertiesComponent: PropertiesComponent, id: String) {
-            propertiesComponent.run {
-                setValue("$id-isTracking", isTracking)
-                setValue("$id-pollIdeState", pollIdeState)
-                setValue("$id-pollIdeStateMs", pollIdeStateMs, Integer.MIN_VALUE)
-                setValue("$id-trackIdeActions", trackIdeActions)
-                setValue("$id-trackKeyboard", trackKeyboard)
-                setValue("$id-trackMouse", trackMouse)
-                setValue("$id-mouseMoveEventsThresholdMs", mouseMoveEventsThresholdMs, Integer.MIN_VALUE)
-            }
-        }
     }
 
     companion object {
         val pluginId = "ActivityTracker"
-
-        private fun asTrackerConfig(state: State) = ActivityTracker.Config(
-            state.pollIdeState,
-            state.pollIdeStateMs.toLong(),
-            state.trackIdeActions,
-            state.trackKeyboard,
-            state.trackMouse,
-            state.mouseMoveEventsThresholdMs.toLong()
-        )
     }
 }
