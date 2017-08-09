@@ -1,7 +1,7 @@
 package activitytracker
 
-import activitytracker.liveplugin.newDisposable
 import activitytracker.TrackerEvent.Companion.toTrackerEvent
+import activitytracker.liveplugin.whenDisposed
 import com.intellij.concurrency.JobScheduler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
@@ -46,7 +46,7 @@ class TrackerLog(val eventsFilePath: String) {
         }
 
         val future = JobScheduler.getScheduler().scheduleWithFixedDelay(runnable, writeFrequencyMs, writeFrequencyMs, MILLISECONDS)
-        newDisposable(parentDisposable) {
+        parentDisposable.whenDisposed {
             future.cancel(true)
         }
         return this

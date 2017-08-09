@@ -1,7 +1,7 @@
 package activitytracker
 
 import activitytracker.liveplugin.invokeOnEDT
-import activitytracker.liveplugin.newDisposable
+import activitytracker.liveplugin.whenDisposed
 import com.intellij.concurrency.JobScheduler
 import com.intellij.ide.IdeEventQueue
 import com.intellij.notification.NotificationType
@@ -86,7 +86,7 @@ class ActivityTracker(
 
         val nextSecondStartMs = 1000 - (currentTimeMillis() % 1000)
         val future = JobScheduler.getScheduler().scheduleWithFixedDelay(runnable, nextSecondStartMs, frequencyMs, MILLISECONDS)
-        newDisposable(trackingDisposable) {
+        trackingDisposable.whenDisposed {
             future.cancel(true)
         }
     }

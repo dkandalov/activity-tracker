@@ -25,7 +25,7 @@ fun registerWindowManagerListener(disposable: Disposable, onFrameCreated: (IdeFr
         override fun beforeFrameReleased(ideFrame: IdeFrame) {}
     }
     windowManager.addListener(listener)
-    newDisposable(disposable) {
+    disposable.whenDisposed {
         windowManager.removeListener(listener)
     }
 }

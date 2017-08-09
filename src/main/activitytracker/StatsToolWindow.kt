@@ -1,8 +1,9 @@
 package activitytracker
 
 import activitytracker.EventAnalyzer.Result.*
+import activitytracker.liveplugin.createChild
 import activitytracker.liveplugin.invokeLaterOnEDT
-import activitytracker.liveplugin.newDisposable
+import activitytracker.liveplugin.whenDisposed
 import com.intellij.icons.AllIcons
 import com.intellij.icons.AllIcons.Actions.Cancel
 import com.intellij.icons.AllIcons.Actions.Refresh
@@ -38,7 +39,7 @@ class StatsToolWindow {
             var rootComponent = createRootComponent(stats)
             toolWindowPanel.setContent(rootComponent)
 
-            val disposable = newDisposable(parentDisposable)
+            val disposable = parentDisposable.createChild()
             val actionGroup = DefaultActionGroup().apply {
                 add(object: AnAction(Cancel) {
                     override fun actionPerformed(event: AnActionEvent) {
@@ -159,7 +160,7 @@ class StatsToolWindow {
 
         private fun registerToolWindowIn(project: Project, toolWindowId: String, disposable: Disposable,
                                          component: JComponent, location: ToolWindowAnchor = RIGHT): ToolWindow {
-            newDisposable(disposable) {
+            disposable.whenDisposed {
                 ToolWindowManager.getInstance(project).unregisterToolWindow(toolWindowId)
             }
 

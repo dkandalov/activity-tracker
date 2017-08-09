@@ -4,10 +4,11 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import java.util.concurrent.atomic.AtomicBoolean
 
-fun newDisposable(parent: Disposable, callback: () -> Any = {}) =
-    newDisposable(listOf(parent), callback)
+fun Disposable.createChild() = newDisposable(listOf(this), {})
 
-fun newDisposable(parents: Collection<Disposable>, callback: () -> Any = {}): Disposable {
+fun Disposable.whenDisposed(callback: () -> Any) = newDisposable(listOf(this), callback)
+
+private fun newDisposable(parents: Collection<Disposable>, callback: () -> Any = {}): Disposable {
     val isDisposed = AtomicBoolean(false)
     val disposable = Disposable {
         if (!isDisposed.get()) {
