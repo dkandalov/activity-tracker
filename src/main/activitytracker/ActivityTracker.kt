@@ -253,7 +253,8 @@ class ActivityTracker(
             }
 
             val task = if (hasTaskManager(project)) {
-                TaskManager.getManager(project)?.activeTask?.presentableName ?: ""
+                TaskManager.getManager(project)?.activeTask?.presentableName
+                    ?: ChangeListManager.getInstance(project).defaultChangeList.name
             } else {
                 ChangeListManager.getInstance(project).defaultChangeList.name
             }
