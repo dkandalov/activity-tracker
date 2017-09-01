@@ -1,16 +1,19 @@
 package activitytracker
 
+import org.joda.time.DateTimeZone
+import org.joda.time.Duration
 import java.util.*
 
 fun main(args: Array<String>) {
     val userHome = System.getProperty("user.home")
+//    val eventsFilePath = "$userHome/Library/Application Support/IntelliJIdea2017.2/activity-tracker/2017-09-01.csv"
     val eventsFilePath = "$userHome/Library/Application Support/IntelliJIdea2017.2/activity-tracker/ide-events.csv"
     val eventSequence = TrackerLog(eventsFilePath).readEvents { line: String, e: Exception ->
         println("Failed to parse: $line")
     }
 
 //    amountOfKeyPresses(eventSequence)
-     groupEventsIntoSessions(eventSequence.take(10000))
+    groupEventsIntoSessions(eventSequence)
     // createHistogramOfDurationEvents(eventSequence)
 }
 
@@ -70,12 +73,58 @@ private fun amountOfKeyPresses(eventSequence: Sequence<TrackerEvent>) {
 private data class Session(val events: List<TrackerEvent>)
 
 private fun groupEventsIntoSessions(eventSequence: Sequence<TrackerEvent>): List<Session> {
-    val result = ArrayList<Session>()
-    val lastEvent = eventSequence.firstOrNull() ?: return emptyList()
-    eventSequence.forEach {
-        
+    val events = eventSequence.filter { it.type == TrackerEvent.Type.IdeState }
+
+    val allSessions = ArrayList<Session>()
+    var currentSession = ArrayList<TrackerEvent>()
+    events.forEach { event ->
+        if (currentSession.isNotEmpty() && currentSession.last().data != event.data) {
+            allSessions.add(Session(currentSession))
+            currentSession = ArrayList()
+        }
+        currentSession.add(event)
     }
+
+    val result = ArrayList<Session>()
+    var lastSession: Session? = null
+    allSessions
+        .filter { it.events.first().data == "Active" }
+        .forEach { session ->
+            if (lastSession == null) {
+                lastSession = session
+            } else {
+                val duration = Duration(lastSession!!.events.last().time, session.events.first().time)
+                if (duration < Duration.standardMinutes(5)) {
+                    lastSession = Session(lastSession!!.events + session.events)
+                } else {
+                    result.add(lastSession!!)
+                    lastSession = session
+                }
+            }
+        }
+    result.add(lastSession!!)
+
+    val histogram = Histogram<Int>()
+    result.forEach { session ->
+        val duration = Duration(session.events.first().time, session.events.last().time)
+        println(
+            "minutes: ${duration.toStandardMinutes().minutes}; " +
+            "from: ${session.events.first().time.withZone(DateTimeZone.forOffsetHours(1))}; " +
+            "to: ${session.events.last().time.withZone(DateTimeZone.forOffsetHours(1))}; "
+        )
+        histogram.add(duration.toStandardMinutes().minutes)
+    }
+    histogram.printed()
+
     return result
+}
+
+private fun <T: Comparable<T>> Histogram<T>.printed() {
+    frequencyByValue.entries
+        .sortedBy { it.key }
+        .forEach { entry ->
+            println("${entry.value}: ${entry.key}")
+        }
 }
 
 private fun createHistogramOfDurationEvents(eventSequence: Sequence<TrackerEvent>) {
