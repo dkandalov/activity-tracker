@@ -1,6 +1,7 @@
 package activitytracker
 
 import activitytracker.TrackerEvent.Companion.parseDateTime
+import activitytracker.TrackerEvent.Type.IdeState
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.joda.time.DateTime
@@ -8,7 +9,7 @@ import org.junit.Test
 
 class StatsAnalyzerTests {
     @Test fun `count amount of seconds spent in editor per file`() {
-        val event = TrackerEvent(DateTime(0), "", "IdeState", "", "", "Editor", "", "", 0, 0, "")
+        val event = TrackerEvent(DateTime(0), "", IdeState, "", "", "Editor", "", "", 0, 0, "")
         val eventSequence = sequenceOf(
             event.copy(time = parseDateTime("2016-03-03T01:02:03.000"), file = "1.txt"),
             event.copy(time = parseDateTime("2016-03-03T01:02:05.000"), file = "1.txt"),

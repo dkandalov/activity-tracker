@@ -1,6 +1,7 @@
 package activitytracker
 
 import activitytracker.EventAnalyzer.Result.*
+import activitytracker.TrackerEvent.Type.IdeState
 import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -71,28 +72,28 @@ fun analyze(events: Sequence<TrackerEvent>): Stats {
 }
 
 private fun secondsInEditorByFile(event: TrackerEvent, map: MutableMap<String, Int>) {
-    if (event.type == "IdeState" && event.focusedComponent == "Editor" && event.file != "") {
+    if (event.type == IdeState && event.focusedComponent == "Editor" && event.file != "") {
         val key = fileName(event.file)
         map[key] = (map[key] ?: 0) + 1
     }
 }
 
 private fun secondsByProject(event: TrackerEvent, map: MutableMap<String, Int>) {
-    if (event.type == "IdeState" && event.data == "Active") {
+    if (event.type == IdeState && event.data == "Active") {
         val key = event.projectName
         map[key] = (map[key] ?: 0) + 1
     }
 }
 
 private fun secondsByTask(event: TrackerEvent, map: MutableMap<String, Int>) {
-    if (event.type == "IdeState" && event.data == "Active") {
+    if (event.type == IdeState && event.data == "Active") {
         val key = event.task
         map[key] = (map[key] ?: 0) + 1
     }
 }
 
 private fun countByActionId(event: TrackerEvent, map: MutableMap<String, Int>) {
-    if (event.type == "Action") {
+    if (event.type == TrackerEvent.Type.Action) {
         val key = event.data
         map[key] = (map[key] ?: 0) + 1
     }

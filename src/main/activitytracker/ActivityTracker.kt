@@ -1,6 +1,9 @@
 package activitytracker
 
+import activitytracker.TrackerEvent.Type.Duration
+import activitytracker.TrackerEvent.Type.IdeState
 import activitytracker.liveplugin.*
+import activitytracker.liveplugin.VcsActions.Companion.registerVcsListener
 import com.intellij.concurrency.JobScheduler
 import com.intellij.ide.IdeEventQueue
 import com.intellij.notification.NotificationType
@@ -75,7 +78,7 @@ class ActivityTracker(
         val runnable = Runnable {
             // It has to be invokeOnEDT() method so that it's still triggered when IDE dialog window is opened (e.g. override or project settings).
             invokeOnEDT {
-                trackerLog.append(captureIdeState("IdeState", ""))
+                trackerLog.append(captureIdeState(IdeState, ""))
                 trackerLog.append(trackerCallDurationsEvent())
             }
         }
@@ -94,7 +97,7 @@ class ActivityTracker(
         val userName = SystemProperties.getUserName()
         val durations = trackerCallDurations.joinToString(",")
         trackerCallDurations.clear()
-        return TrackerEvent(time, userName, "Duration", durations, "", "", "", "", -1, -1, "")
+        return TrackerEvent(time, userName, Duration, durations, "", "", "", "", -1, -1, "")
     }
 
     private fun startAWTEventListener(trackerLog: TrackerLog, parentDisposable: Disposable, trackKeyboard: Boolean,
@@ -103,24 +106,24 @@ class ActivityTracker(
         IdeEventQueue.getInstance().addPostprocessor(IdeEventQueue.EventDispatcher { awtEvent: AWTEvent ->
             if (trackMouse && awtEvent is MouseEvent && awtEvent.id == MouseEvent.MOUSE_CLICKED) {
                 val eventData = "click:" + awtEvent.button + ":" + awtEvent.clickCount + ":" + awtEvent.modifiers
-                trackerLog.append(captureIdeState("MouseEvent", eventData))
+                trackerLog.append(captureIdeState(TrackerEvent.Type.MouseEvent, eventData))
             }
             if (trackMouse && awtEvent is MouseEvent && awtEvent.id == MouseEvent.MOUSE_MOVED) {
                 val now = currentTimeMillis()
                 if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
-                    trackerLog.append(captureIdeState("MouseEvent", "move:" + awtEvent.x + ":" + awtEvent.y + ":" + awtEvent.modifiers))
+                    trackerLog.append(captureIdeState(TrackerEvent.Type.MouseEvent, "move:" + awtEvent.x + ":" + awtEvent.y + ":" + awtEvent.modifiers))
                     lastMouseMoveTimestamp = now
                 }
             }
             if (trackMouse && awtEvent is MouseWheelEvent && awtEvent.id == MouseEvent.MOUSE_WHEEL) {
                 val now = currentTimeMillis()
                 if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
-                    trackerLog.append(captureIdeState("MouseEvent", "wheel:" + awtEvent.wheelRotation + ":" + awtEvent.modifiers))
+                    trackerLog.append(captureIdeState(TrackerEvent.Type.MouseEvent, "wheel:" + awtEvent.wheelRotation + ":" + awtEvent.modifiers))
                     lastMouseMoveTimestamp = now
                 }
             }
             if (trackKeyboard && awtEvent is KeyEvent && awtEvent.id == KeyEvent.KEY_PRESSED) {
-                trackerLog.append(captureIdeState("KeyEvent", "" + (awtEvent.keyChar.toInt()) + ":" + awtEvent.keyCode + ":" + awtEvent.modifiers))
+                trackerLog.append(captureIdeState(TrackerEvent.Type.KeyEvent, "" + (awtEvent.keyChar.toInt()) + ":" + awtEvent.keyCode + ":" + awtEvent.modifiers))
             }
             false
         }, parentDisposable)
@@ -135,7 +138,7 @@ class ActivityTracker(
                 // (e.g. commit action shows dialog and finishes only after the dialog is closed).
                 // Action id can be null e.g. on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction).
                 val actionId = actionManager.getId(anAction) ?: return
-                trackerLog.append(captureIdeState("Action", actionId))
+                trackerLog.append(captureIdeState(TrackerEvent.Type.Action, actionId))
             }
 
             override fun beforeEditorTyping(c: Char, dataContext: DataContext?) {}
@@ -144,22 +147,22 @@ class ActivityTracker(
 
         // Use custom listener for VCS because listening to normal IDE actions
         // doesn't notify about actual commits but only about opening commit dialog (see VcsActions source code for details).
-        VcsActions.registerVcsListener(parentDisposable, object: VcsActions.Listener {
+        registerVcsListener(parentDisposable, object: VcsActions.Listener {
             override fun onVcsCommit() {
-                invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Commit")) }
+                invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Commit")) }
             }
             override fun onVcsUpdate() {
-                invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Update")) }
+                invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Update")) }
             }
             override fun onVcsPush() {
-                invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Push")) }
+                invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Push")) }
             }
         })
 
         if (haveCompilation()) {
             registerCompilationListener(parentDisposable, object: CompilationStatusListener {
                 override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext?) {
-                    invokeOnEDT { trackerLog.append(captureIdeState("CompilationFinished", errors.toString())) }
+                    invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.CompilationFinished, errors.toString())) }
                 }
             })
         }
@@ -177,11 +180,11 @@ class ActivityTracker(
             .subscribe(CompilerTopics.COMPILATION_STATUS, listener)
     }
 
-    private fun captureIdeState(eventType: String, originalEventData: String): TrackerEvent? {
+    private fun captureIdeState(eventType: TrackerEvent.Type, originalEventData: String): TrackerEvent? {
         val start = currentTimeMillis()
         try {
             var eventData = originalEventData
-            if (eventType == "IdeState") {
+            if (eventType == IdeState) {
                 eventData = "Inactive"
             }
             val time = DateTime.now()
@@ -203,12 +206,12 @@ class ActivityTracker(
 
             // use "lastFocusedFrame" to be able to obtain project in cases when some dialog is open (e.g. "override" or "project settings")
             val project = ideFocusManager.lastFocusedFrame?.project
-            if (eventType == "IdeState" && project?.isDefault != false) {
+            if (eventType == IdeState && project?.isDefault != false) {
                 eventData = "NoProject"
             }
             if (project == null || project.isDefault) return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
 
-            if (eventType == "IdeState") {
+            if (eventType == IdeState) {
                 eventData = "Active"
             }
 

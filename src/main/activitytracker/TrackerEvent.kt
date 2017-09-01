@@ -10,7 +10,7 @@ import org.joda.time.format.DateTimeFormatterBuilder
 data class TrackerEvent(
     val time: DateTime,
     val userName: String,
-    val type: String,
+    val type: Type,
     val data: String,
     val projectName: String,
     val focusedComponent: String,
@@ -36,18 +36,27 @@ data class TrackerEvent(
         )
     }
 
+    enum class Type {
+        IdeState,
+        KeyEvent,
+        MouseEvent,
+        Action,
+        VcsAction,
+        CompilationFinished,
+        Duration
+    }
 
     companion object {
         private val dateTimeParseFormat: DateTimeFormatter = createDateTimeParseFormat()
         private val dateTimePrintFormat: DateTimeFormatter = createDateTimePrintFormat()
 
-        fun ideNotInFocus(time: DateTime, userName: String, eventType: String, eventData: String) =
+        fun ideNotInFocus(time: DateTime, userName: String, eventType: TrackerEvent.Type, eventData: String) =
             TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1, "")
 
         fun CSVRecord.toTrackerEvent() = TrackerEvent(
             time = parseDateTime(this[0]),
             userName = this[1],
-            type = this[2],
+            type = TrackerEvent.Type.valueOf(this[2]),
             data = this[3],
             projectName = this[4],
             focusedComponent = this[5],

@@ -9,16 +9,15 @@ fun main(args: Array<String>) {
         println("Failed to parse: $line")
     }
 
-    amountOfKeyPresses(eventSequence)
-
-    // eventsGroupedIntoSessions(eventSequence)
+//    amountOfKeyPresses(eventSequence)
+     groupEventsIntoSessions(eventSequence.take(10000))
     // createHistogramOfDurationEvents(eventSequence)
 }
 
 private fun amountOfKeyPresses(eventSequence: Sequence<TrackerEvent>) {
     val histogram = Histogram<Char>()
     eventSequence
-        .filter { it.type == "KeyEvent" }
+        .filter { it.type == TrackerEvent.Type.KeyEvent }
         .map { it.data.split(":") }
         .filter { it[0] != "65535" }
         .map { it[0].toInt().toChar().toLowerCase() }
@@ -70,16 +69,19 @@ private fun amountOfKeyPresses(eventSequence: Sequence<TrackerEvent>) {
 
 private data class Session(val events: List<TrackerEvent>)
 
-private fun eventsGroupedIntoSessions(eventSequence: Sequence<TrackerEvent>): List<Session> {
+private fun groupEventsIntoSessions(eventSequence: Sequence<TrackerEvent>): List<Session> {
+    val result = ArrayList<Session>()
     val lastEvent = eventSequence.firstOrNull() ?: return emptyList()
-
-    return emptyList()
+    eventSequence.forEach {
+        
+    }
+    return result
 }
 
 private fun createHistogramOfDurationEvents(eventSequence: Sequence<TrackerEvent>) {
     val allDurations = mutableListOf<Int>()
     eventSequence
-        .filter { it.type == "Duration" }
+        .filter { it.type == TrackerEvent.Type.Duration }
         .forEach { event ->
             allDurations.addAll(event.data.split(",").map(String::toInt))
         }
