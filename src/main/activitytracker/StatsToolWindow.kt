@@ -3,6 +3,7 @@ package activitytracker
 import activitytracker.EventAnalyzer.Result.*
 import activitytracker.liveplugin.createChild
 import activitytracker.liveplugin.invokeLaterOnEDT
+import activitytracker.liveplugin.showNotification
 import activitytracker.liveplugin.whenDisposed
 import com.intellij.icons.AllIcons
 import com.intellij.icons.AllIcons.Actions.Cancel
@@ -50,15 +51,15 @@ object StatsToolWindow {
                     eventAnalyzer.analyze(whenDone = { result ->
                         invokeLaterOnEDT {
                             when (result) {
-                                is AlreadyRunning -> PluginUI.showNotification("Analysis is already running.")
-                                is DataIsTooLarge -> PluginUI.showNotification("Activity log is too large to process in IDE.")
+                                is AlreadyRunning -> showNotification("Analysis is already running.")
+                                is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE.")
                                 is Ok -> {
                                     toolWindowPanel.remove(rootComponent)
                                     rootComponent = createRootComponent(result.stats)
                                     toolWindowPanel.setContent(rootComponent)
 
                                     if (result.errors.isNotEmpty()) {
-                                        PluginUI.showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
+                                        showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
                                     }
                                 }
                             }

@@ -298,3 +298,21 @@ private object Unscramble {
         return if (len < line.length) line.substring(0, len) else line
     }
 }
+
+class MapDataContext(private val map: MutableMap<Any, Any?> = HashMap()) : DataContext {
+    override fun getData(dataId: String): Any? {
+        return map[dataId]
+    }
+
+    fun put(key: String , value: Any): MapDataContext {
+        map.put(key, value)
+        return this
+    }
+}
+
+
+fun updateWidget(widgetId: String ) {
+    WindowManager.getInstance().allProjectFrames.forEach {
+        it.statusBar.updateWidget(widgetId)
+    }
+}

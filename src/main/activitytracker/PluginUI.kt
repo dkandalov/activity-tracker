@@ -16,7 +16,6 @@ import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
-import liveplugin.PluginUtil.*
 import org.jetbrains.annotations.NotNull
 import java.awt.Component
 import java.awt.Point
@@ -63,7 +62,7 @@ class PluginUI(
             override fun getTooltipText() = "Click to open menu"
 
             override fun getClickConsumer(): Consumer<MouseEvent> = Consumer { mouseEvent ->
-                val dataContext = newDataContext().put(PlatformDataKeys.CONTEXT_COMPONENT.name, mouseEvent.component)
+                val dataContext = MapDataContext().put(PlatformDataKeys.CONTEXT_COMPONENT.name, mouseEvent.component)
                 val popup = createListPopup(dataContext)
                 val dimension = popup.content.preferredSize
                 val point = Point(0, -dimension.height)
@@ -184,9 +183,9 @@ class PluginUI(
             override fun actionPerformed(event: AnActionEvent) = BrowserUtil.open("https://github.com/dkandalov/activity-tracker#help")
         }
 
-        registerAction("Start/Stop Activity Tracking", toggleTracking)
-        registerAction("Roll Tracking Log", rollCurrentLog)
-        registerAction("Clear Tracking Log", clearCurrentLog)
+        registerAction("Start/Stop Activity Tracking", action = toggleTracking)
+        registerAction("Roll Tracking Log", action = rollCurrentLog)
+        registerAction("Clear Tracking Log", action = clearCurrentLog)
         // TODO register other actions
 
         return DefaultActionGroup().apply {

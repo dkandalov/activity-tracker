@@ -27,3 +27,45 @@ fun newDisposable(parents: Collection<Disposable>, callback: () -> Any = {}): Di
     }
     return disposable
 }
+
+fun <T> accessField(o: Any, possibleFieldNames: Collection<String>, fieldClass: Class<*>? = null): T {
+    for (fieldName in possibleFieldNames) {
+        try {
+            val result = accessField<T>(o, fieldName, fieldClass)
+            if (result != null) return result
+        } catch (ignored: Exception) {
+        }
+    }
+    val className = if (fieldClass == null) "" else " (with class ${fieldClass.canonicalName})"
+    throw IllegalStateException("Didn't find any of the fields ${possibleFieldNames.joinToString(",")} $className in object $o")
+}
+
+@Suppress("UNCHECKED_CAST")
+fun <T> accessField(o: Any, fieldName: String, fieldClass: Class<*>? = null): T {
+    var aClass: Class<T> = o.javaClass as Class<T>
+    val allClasses = mutableListOf<Class<T>>()
+    while (aClass != Object::getClass) {
+        allClasses.add(aClass)
+        aClass = aClass.superclass as Class<T>
+    }
+    val allFields = allClasses.map { it.declaredFields.toList() }.toList().flatten()
+
+    for (field in allFields) {
+        if (field.name == fieldName && (fieldClass == null || fieldClass.isAssignableFrom(field.type))) {
+            field.isAccessible = true
+            return field.get(o) as T
+        }
+    }
+    val className = if (fieldClass == null) "" else " (with class ${fieldClass.canonicalName})"
+    throw IllegalStateException("Didn't find field '$fieldName'$className in object $o")
+}
+
+fun registerDisposable(id: String): Disposable {
+    val disposable = newDisposable()
+    Disposer.register(disposable, disposable, id)
+    return disposable
+}
+
+fun unregisterDisposable(id: String) {
+    Disposer.get(id).dispose()
+}

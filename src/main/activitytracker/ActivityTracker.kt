@@ -28,9 +28,6 @@ import com.intellij.openapi.wm.impl.IdeFrameImpl
 import com.intellij.psi.*
 import com.intellij.tasks.TaskManager
 import com.intellij.util.SystemProperties
-import groovy.lang.MetaClass
-import liveplugin.implementation.VcsActions
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.joda.time.DateTime
 import java.awt.AWTEvent
 import java.awt.Component
@@ -147,37 +144,16 @@ class ActivityTracker(
 
         // Use custom listener for VCS because listening to normal IDE actions
         // doesn't notify about actual commits but only about opening commit dialog (see VcsActions source code for details).
-        VcsActions.registerVcsListener(parentDisposable, object: VcsActions.Listener() {
+        VcsActions.registerVcsListener(parentDisposable, object: VcsActions.Listener {
             override fun onVcsCommit() {
                 invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Commit")) }
             }
-
             override fun onVcsUpdate() {
                 invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Update")) }
             }
-
             override fun onVcsPush() {
                 invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Push")) }
             }
-
-            // TODO The code below is workaround to make Kotlin compile
-            // The metaClass logic below is based on GroovyObjectSupport
-            private var metaClass: MetaClass? = null
-
-            override fun getMetaClass(): MetaClass? {
-                if (metaClass == null) {
-                    metaClass = InvokerHelper.getMetaClass(javaClass)
-                }
-                return metaClass
-            }
-
-            override fun setMetaClass(metaClass: MetaClass?) {
-                this.metaClass = metaClass
-            }
-
-            override fun setProperty(propertyName: String?, newValue: Any?) {}
-            override fun getProperty(propertyName: String?) = null
-            override fun invokeMethod(name: String?, args: Any?) = null
         })
 
         if (haveCompilation()) {
