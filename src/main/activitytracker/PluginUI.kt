@@ -2,18 +2,12 @@ package activitytracker
 
 import activitytracker.ActivityTrackerPlugin.Companion.pluginId
 import activitytracker.EventAnalyzer.Result.*
-import activitytracker.liveplugin.invokeLaterOnEDT
-import activitytracker.liveplugin.registerWindowManagerListener
+import activitytracker.liveplugin.*
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.ShowFilePathAction
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationListener
-import com.intellij.notification.NotificationType.INFORMATION
-import com.intellij.notification.Notifications
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
@@ -23,15 +17,10 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
 import liveplugin.PluginUtil.*
-import liveplugin.implementation.Actions
-import liveplugin.implementation.Misc
-import liveplugin.implementation.Threads.doInBackground
 import org.jetbrains.annotations.NotNull
 import java.awt.Component
 import java.awt.Point
 import java.awt.event.MouseEvent
-import java.util.function.Function
-import javax.swing.event.HyperlinkEvent
 
 class PluginUI(
     private val plugin: ActivityTrackerPlugin,
@@ -48,7 +37,7 @@ class PluginUI(
         registerWidget(parentDisposable)
         registerPopup(parentDisposable)
         eventAnalyzer.runner = { task ->
-            doInBackground("Analyzing activity log", { task() })
+            runInBackground("Analyzing activity log", task = { task() })
         }
         return this
     }
@@ -59,7 +48,7 @@ class PluginUI(
     }
 
     private fun registerPopup(parentDisposable: Disposable) {
-        Actions.registerAction("$pluginId-Popup", "ctrl shift alt O", "", "Activity Tracker Popup", parentDisposable, Function<AnActionEvent, Any> {
+        registerAction("$pluginId-Popup", "ctrl shift alt O", "", "Activity Tracker Popup", parentDisposable, {
             val project = it.project
             if (project != null) {
                 createListPopup(it.dataContext).showCenteredInCurrentWindow(project)
@@ -223,21 +212,5 @@ class PluginUI(
 
     companion object {
         val widgetId = "$pluginId-Widget"
-
-        fun showNotification(message: Any?, onLinkClick: (HyperlinkEvent) -> Unit = {}) {
-            invokeLaterOnEDT {
-                val messageString = Misc.asString(message)
-                val title = ""
-                val notificationType = INFORMATION
-                val groupDisplayId = pluginId
-                val notification = Notification(
-                    groupDisplayId, title, messageString, notificationType,
-                    NotificationListener { notification, event ->
-                        onLinkClick(event)
-                    }
-                )
-                ApplicationManager.getApplication().messageBus.syncPublisher(Notifications.TOPIC).notify(notification)
-            }
-        }
     }
 }

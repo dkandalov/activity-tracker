@@ -8,7 +8,9 @@ fun Disposable.createChild() = newDisposable(listOf(this), {})
 
 fun Disposable.whenDisposed(callback: () -> Any) = newDisposable(listOf(this), callback)
 
-private fun newDisposable(parents: Collection<Disposable>, callback: () -> Any = {}): Disposable {
+fun newDisposable(vararg parents: Disposable, callback: () -> Any = {}) = newDisposable(parents.toList(), callback)
+
+fun newDisposable(parents: Collection<Disposable>, callback: () -> Any = {}): Disposable {
     val isDisposed = AtomicBoolean(false)
     val disposable = Disposable {
         if (!isDisposed.get()) {

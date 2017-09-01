@@ -1,7 +1,6 @@
 package activitytracker
 
-import activitytracker.liveplugin.invokeOnEDT
-import activitytracker.liveplugin.whenDisposed
+import activitytracker.liveplugin.*
 import com.intellij.concurrency.JobScheduler
 import com.intellij.ide.IdeEventQueue
 import com.intellij.notification.NotificationType
@@ -13,11 +12,15 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.compiler.CompilationStatusListener
 import com.intellij.openapi.compiler.CompileContext
+import com.intellij.openapi.compiler.CompilerTopics
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorComponentImpl
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vcs.changes.ChangeListManager
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
@@ -26,10 +29,6 @@ import com.intellij.psi.*
 import com.intellij.tasks.TaskManager
 import com.intellij.util.SystemProperties
 import groovy.lang.MetaClass
-import liveplugin.PluginUtil
-import liveplugin.PluginUtil.*
-import liveplugin.implementation.Compilation
-import liveplugin.implementation.Misc.newDisposable
 import liveplugin.implementation.VcsActions
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.joda.time.DateTime
@@ -52,7 +51,7 @@ class ActivityTracker(
     private var hasPsiClasses: Boolean? = null
     private var hasTaskManager: Boolean? = null
 
-    
+
     fun startTracking(config: Config) {
         if (trackingDisposable != null) return
         trackingDisposable = newDisposable(parentDisposable)
@@ -132,7 +131,7 @@ class ActivityTracker(
 
     private fun startActionListener(trackerLog: TrackerLog, parentDisposable: Disposable) {
         val actionManager = ActionManager.getInstance()
-        actionManager.addAnActionListener(object : AnActionListener {
+        actionManager.addAnActionListener(object: AnActionListener {
             override fun beforeActionPerformed(anAction: AnAction?, dataContext: DataContext?, event: AnActionEvent?) {
                 if (anAction == null) return
                 // Track action in "before" callback because otherwise timestamp of the action can be wrong
@@ -141,19 +140,22 @@ class ActivityTracker(
                 val actionId = actionManager.getId(anAction) ?: return
                 trackerLog.append(captureIdeState("Action", actionId))
             }
-            override fun beforeEditorTyping(c: Char, dataContext: DataContext?) { }
-            override fun afterActionPerformed(action: AnAction?, dataContext: DataContext?, event: AnActionEvent?) { }
+
+            override fun beforeEditorTyping(c: Char, dataContext: DataContext?) {}
+            override fun afterActionPerformed(action: AnAction?, dataContext: DataContext?, event: AnActionEvent?) {}
         }, parentDisposable)
 
         // Use custom listener for VCS because listening to normal IDE actions
         // doesn't notify about actual commits but only about opening commit dialog (see VcsActions source code for details).
-        VcsActions.registerVcsListener(parentDisposable, object : VcsActions.Listener() {
+        VcsActions.registerVcsListener(parentDisposable, object: VcsActions.Listener() {
             override fun onVcsCommit() {
                 invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Commit")) }
             }
+
             override fun onVcsUpdate() {
                 invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Update")) }
             }
+
             override fun onVcsPush() {
                 invokeOnEDT { trackerLog.append(captureIdeState("VcsAction", "Push")) }
             }
@@ -161,27 +163,42 @@ class ActivityTracker(
             // TODO The code below is workaround to make Kotlin compile
             // The metaClass logic below is based on GroovyObjectSupport
             private var metaClass: MetaClass? = null
+
             override fun getMetaClass(): MetaClass? {
                 if (metaClass == null) {
                     metaClass = InvokerHelper.getMetaClass(javaClass)
                 }
                 return metaClass
             }
+
             override fun setMetaClass(metaClass: MetaClass?) {
                 this.metaClass = metaClass
             }
+
             override fun setProperty(propertyName: String?, newValue: Any?) {}
             override fun getProperty(propertyName: String?) = null
             override fun invokeMethod(name: String?, args: Any?) = null
         })
 
         if (haveCompilation()) {
-            Compilation.registerCompilationListener(parentDisposable, object : CompilationStatusListener {
+            registerCompilationListener(parentDisposable, object: CompilationStatusListener {
                 override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext?) {
                     invokeOnEDT { trackerLog.append(captureIdeState("CompilationFinished", errors.toString())) }
                 }
             })
         }
+    }
+
+    private fun registerCompilationListener(disposable: Disposable, listener: CompilationStatusListener) {
+        registerProjectListener(disposable) { project ->
+            registerCompilationListener(disposable, project, listener)
+        }
+    }
+
+    private fun registerCompilationListener(disposable: Disposable, project: Project, listener: CompilationStatusListener) {
+        project.messageBus
+            .connect(newDisposable(listOf(disposable, project)))
+            .subscribe(CompilerTopics.COMPILATION_STATUS, listener)
     }
 
     private fun captureIdeState(eventType: String, originalEventData: String): TrackerEvent? {
@@ -199,7 +216,7 @@ class ActivityTracker(
 
             // this might also work: ApplicationManager.application.isActive(), ApplicationActivationListener
             val window = WindowManagerEx.getInstanceEx().mostRecentFocusedWindow
-                    ?: return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
+                ?: return TrackerEvent.ideNotInFocus(time, userName, eventType, eventData)
 
             var ideHasFocus = window.isActive
             if (!ideHasFocus) {
@@ -262,7 +279,7 @@ class ActivityTracker(
             return TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column, task)
 
         } catch (e: Exception) {
-            PluginUtil.log(e, NotificationType.ERROR)
+            log(e, NotificationType.ERROR)
             return null
         } finally {
             if (logTrackerCallDuration) {
@@ -318,6 +335,21 @@ class ActivityTracker(
         component == null -> null
         matches(component) -> component as T?
         else -> findParentComponent(component.parent, matches)
+    }
+
+    private fun currentEditorIn(project: Project): Editor? =
+        (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).selectedTextEditor
+
+    private fun currentFileIn(project: Project): VirtualFile? =
+        (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).currentFile
+
+    private fun currentPsiFileIn(project: Project): PsiFile? {
+        return psiFile(currentFileIn(project), project)
+    }
+
+    private fun psiFile(file: VirtualFile?, project: Project): PsiFile? {
+        file ?: return null
+        return PsiManager.getInstance(project).findFile(file)
     }
 
     data class Config(

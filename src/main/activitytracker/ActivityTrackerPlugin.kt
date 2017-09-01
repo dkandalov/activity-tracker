@@ -1,9 +1,9 @@
 package activitytracker
 
+import activitytracker.liveplugin.openInEditor
 import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project
-import liveplugin.PluginUtil
 
 class ActivityTrackerPlugin(
     private val tracker: ActivityTracker,
@@ -36,7 +36,7 @@ class ActivityTrackerPlugin(
 
     fun openTrackingLogFile(project: Project?) {
         if (project == null) return
-        PluginUtil.openInEditor(trackerLog.currentLogFile().absolutePath, project)
+        openInEditor(trackerLog.currentLogFile().absolutePath, project)
     }
 
     fun openTrackingLogFolder() {
