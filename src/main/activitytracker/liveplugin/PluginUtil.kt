@@ -68,7 +68,6 @@ fun registerWindowManagerListener(disposable: Disposable, onFrameCreated: (IdeFr
         override fun frameCreated(ideFrame: IdeFrame) {
             onFrameCreated(ideFrame)
         }
-
         override fun beforeFrameReleased(ideFrame: IdeFrame) {}
     }
     windowManager.addListener(listener)
