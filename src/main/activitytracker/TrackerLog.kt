@@ -21,11 +21,6 @@ class TrackerLog(private val eventsFilePath: String) {
     private val log = Logger.getInstance(TrackerLog::class.java)
     private val eventQueue: Queue<TrackerEvent> = ConcurrentLinkedQueue()
 
-    init {
-        val pathFile = File(eventsFilePath)
-        if (!pathFile.exists()) pathFile.mkdir()
-    }
-
     fun initWriter(writeFrequencyMs: Long, parentDisposable: Disposable): TrackerLog {
         val runnable = {
             try {
@@ -38,6 +33,7 @@ class TrackerLog(private val eventsFilePath: String) {
                         event.toCsv(csvPrinter)
                         event = eventQueue.poll()
                     }
+                    csvPrinter.flush()
                     csvPrinter.close()
                 }
             } catch (e: Exception) {
