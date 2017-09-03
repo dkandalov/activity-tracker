@@ -1,5 +1,6 @@
 package activitytracker
 
+import activitytracker.TrackerEvent.Companion.printEvent
 import activitytracker.TrackerEvent.Companion.toTrackerEvent
 import activitytracker.liveplugin.whenDisposed
 import com.intellij.concurrency.JobScheduler
@@ -21,16 +22,16 @@ class TrackerLog(private val eventsFilePath: String) {
     private val log = Logger.getInstance(TrackerLog::class.java)
     private val eventQueue: Queue<TrackerEvent> = ConcurrentLinkedQueue()
 
-    fun initWriter(writeFrequencyMs: Long, parentDisposable: Disposable): TrackerLog {
+    fun initWriter(parentDisposable: Disposable, writeFrequencyMs: Long): TrackerLog {
         val runnable = {
             try {
                 val file = File(eventsFilePath)
                 FileUtil.createIfDoesntExist(file)
                 FileOutputStream(file, true).buffered().writer(UTF_8).use { writer ->
                     val csvPrinter = CSVPrinter(writer, CSVFormat.RFC4180)
-                    var event = eventQueue.poll()
+                    var event: TrackerEvent? = eventQueue.poll()
                     while (event != null) {
-                        event.toCsv(csvPrinter)
+                        csvPrinter.printEvent(event)
                         event = eventQueue.poll()
                     }
                     csvPrinter.flush()

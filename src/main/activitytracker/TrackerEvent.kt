@@ -20,21 +20,6 @@ data class TrackerEvent(
     val editorColumn: Int,
     val task: String
 ) {
-    fun toCsv(csvPrinter: CSVPrinter) {
-        csvPrinter.printRecord(
-            dateTimePrintFormat.print(time),
-            userName,
-            type,
-            data,
-            projectName,
-            focusedComponent,
-            file,
-            psiPath,
-            editorLine,
-            editorColumn,
-            task
-        )
-    }
 
     enum class Type {
         IdeState,
@@ -52,6 +37,22 @@ data class TrackerEvent(
 
         fun ideNotInFocus(time: DateTime, userName: String, eventType: TrackerEvent.Type, eventData: String) =
             TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1, "")
+
+        fun CSVPrinter.printEvent(event: TrackerEvent) = event.apply {
+            printRecord(
+                dateTimePrintFormat.print(time),
+                userName,
+                type,
+                data,
+                projectName,
+                focusedComponent,
+                file,
+                psiPath,
+                editorLine,
+                editorColumn,
+                task
+            )
+        }
 
         fun CSVRecord.toTrackerEvent() = TrackerEvent(
             time = parseDateTime(this[0]),
@@ -76,12 +77,12 @@ data class TrackerEvent(
         private fun createDateTimeParseFormat(): DateTimeFormatter {
             // support for plugin version "0.1.3 beta" format where amount of milliseconds could vary (java8 DateTimeFormatter.ISO_OFFSET_DATE_TIME)
             val msParser = DateTimeFormatterBuilder()
-                    .appendLiteral('.').appendDecimal(millisOfSecond(), 1, 3)
-                    .toParser()
+                .appendLiteral('.').appendDecimal(millisOfSecond(), 1, 3)
+                .toParser()
             // support for plugin version "0.1.2 beta" format which didn't have timezone
             val timeZoneParser = DateTimeFormatterBuilder()
-                    .appendTimeZoneOffset("Z", true, 2, 4)
-                    .toParser()
+                .appendTimeZoneOffset("Z", true, 2, 4)
+                .toParser()
 
             return DateTimeFormatterBuilder()
                 .appendFixedDecimal(year(), 4)

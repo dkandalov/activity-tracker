@@ -10,8 +10,8 @@ class AppComponent: ApplicationComponent {
     override fun initComponent() {
         val disposable = ApplicationManager.getApplication()
         val pathToTrackingLogFile = "${PathManager.getPluginsPath()}/activity-tracker/ide-events.csv"
-        val trackerLog = TrackerLog(pathToTrackingLogFile).initWriter(1000L, disposable)
-        val tracker = ActivityTracker(trackerLog, disposable, false)
+        val trackerLog = TrackerLog(pathToTrackingLogFile).initWriter(disposable, writeFrequencyMs = 10000L)
+        val tracker = ActivityTracker(trackerLog, disposable, logTrackerCallDuration = false)
         val plugin = ActivityTrackerPlugin(tracker, trackerLog, PropertiesComponent.getInstance()).init()
         val eventAnalyzer = EventAnalyzer(trackerLog)
         PluginUI(plugin, trackerLog, eventAnalyzer, disposable).init()
