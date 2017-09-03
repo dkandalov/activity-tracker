@@ -1,6 +1,7 @@
 package activitytracker
 
 import activitytracker.TrackerEvent.Companion.parseDateTime
+import activitytracker.TrackerEvent.Companion.printEvent
 import activitytracker.TrackerEvent.Companion.toTrackerEvent
 import activitytracker.TrackerEvent.Type.IdeState
 import org.apache.commons.csv.CSVFormat
@@ -55,7 +56,7 @@ class TrackerEventTests {
 
     private fun TrackerEvent.toCsvLine() =
         StringBuilder().let {
-            toCsv(CSVPrinter(it, CSVFormat.RFC4180))
+            CSVPrinter(it, CSVFormat.RFC4180).printEvent(this)
             it.toString()
         }
 
