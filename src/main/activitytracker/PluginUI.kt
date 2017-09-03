@@ -12,8 +12,10 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
+import com.intellij.openapi.wm.WindowManagerListener
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
 import org.jetbrains.annotations.NotNull
@@ -75,16 +77,22 @@ class PluginUI(
             @NotNull override fun getMaxPossibleText() = ""
         }
 
-        registerWindowManagerListener(parentDisposable) { frame ->
-            val widget = object: StatusBarWidget {
-                override fun ID() = widgetId
-                override fun getPresentation(type: StatusBarWidget.PlatformType) = presentation
-                override fun install(statusBar: StatusBar) {}
-                override fun dispose() {}
+        registerWindowManagerListener(parentDisposable, object: WindowManagerListener {
+            override fun frameCreated(frame: IdeFrame) {
+                val widget = object: StatusBarWidget {
+                    override fun ID() = widgetId
+                    override fun getPresentation(type: StatusBarWidget.PlatformType) = presentation
+                    override fun install(statusBar: StatusBar) {}
+                    override fun dispose() {}
+                }
+                frame.statusBar.addWidget(widget, "before Position")
+                frame.statusBar.updateWidget(widgetId)
             }
-            frame.statusBar.addWidget(widget, "before Position", parentDisposable)
-            frame.statusBar.updateWidget(widgetId)
-        }
+
+            override fun beforeFrameReleased(frame: IdeFrame) {
+                frame.statusBar.removeWidget(widgetId)
+            }
+        })
     }
 
     private fun createListPopup(dataContext: DataContext) =

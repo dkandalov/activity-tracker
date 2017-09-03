@@ -23,7 +23,6 @@ import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.openapi.wm.WindowManagerListener
 import com.intellij.util.text.CharArrayUtil
@@ -62,14 +61,8 @@ fun showNotification(message: Any?, onLinkClick: (HyperlinkEvent) -> Unit = {}) 
     }
 }
 
-fun registerWindowManagerListener(disposable: Disposable, onFrameCreated: (IdeFrame) -> Unit) {
+fun registerWindowManagerListener(disposable: Disposable, listener: WindowManagerListener) {
     val windowManager = WindowManager.getInstance()
-    val listener = object: WindowManagerListener {
-        override fun frameCreated(ideFrame: IdeFrame) {
-            onFrameCreated(ideFrame)
-        }
-        override fun beforeFrameReleased(ideFrame: IdeFrame) {}
-    }
     windowManager.addListener(listener)
     disposable.whenDisposed {
         windowManager.removeListener(listener)
