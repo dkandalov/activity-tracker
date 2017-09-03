@@ -85,7 +85,7 @@ class VcsActions {
 
     private fun checkinHandlers(): ArrayList<CheckinHandlerFactory> {
         val checkinHandlersManager = CheckinHandlersManager.getInstance() as CheckinHandlersManagerImpl
-        return accessField(checkinHandlersManager, listOf("myRegisteredBeforeCheckinHandlers", "a", "b"), ArrayList::class.java)
+        return accessField(checkinHandlersManager, listOf("myRegisteredBeforeCheckinHandlers", "a", "b"), java.util.List::class.java)
     }
 
     private fun isVcsNotification(notification: Notification) =

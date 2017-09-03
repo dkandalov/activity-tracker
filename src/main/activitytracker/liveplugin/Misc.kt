@@ -42,13 +42,13 @@ fun <T> accessField(o: Any, possibleFieldNames: Collection<String>, fieldClass: 
 
 @Suppress("UNCHECKED_CAST")
 fun <T> accessField(o: Any, fieldName: String, fieldClass: Class<*>? = null): T {
-    var aClass: Class<T> = o.javaClass as Class<T>
+    var aClass = o.javaClass as Class<T>
     val allClasses = mutableListOf<Class<T>>()
-    while (aClass != Object::getClass) {
+    while (aClass != Object::class.java) {
         allClasses.add(aClass)
         aClass = aClass.superclass as Class<T>
     }
-    val allFields = allClasses.map { it.declaredFields.toList() }.toList().flatten()
+    val allFields = allClasses.map { it.declaredFields.toList() }.flatten()
 
     for (field in allFields) {
         if (field.name == fieldName && (fieldClass == null || fieldClass.isAssignableFrom(field.type))) {
