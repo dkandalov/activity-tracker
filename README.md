@@ -103,8 +103,13 @@ It's similar to collecting IDE statistics usage (which you might be sending to J
 
 ## Contributing
 The most interesting thing is analysis of recorded data.
-All suggestions and code (even if it's not JVM language) are welcome.
+All suggestions and code are welcome (even if it's not a JVM language, e.g. a python snippet).
 If you have a question, feel free to create an issue.
 
-The best way to compile/run the project from source code is to use [LivePlugin](https://github.com/dkandalov/live-plugin)
-using it as an [entry point](https://github.com/dkandalov/live-plugin/wiki/Liveplugin-as-an-entry-point-for-standard-plugins).
+Working on the plugin:
+ - to edit code, open project in IJ IDEA importing gradle configuration 
+ - to build use `./gradlew buildPlugin` task which will create `build/distributions/activity-tracker-plugin.zip` files
+ - to run use `./gradlew runIde` task
+ - alternatively, you can use [LivePlugin](https://github.com/dkandalov/live-plugin) 
+ as an [entry point](https://github.com/dkandalov/live-plugin/wiki/Liveplugin-as-an-entry-point-for-standard-plugins)
+ for this plugin code.

@@ -8,6 +8,8 @@ import static liveplugin.PluginUtil.show
 // add-to-classpath $PLUGIN_PATH/lib/commons-csv-1.3.jar
 // add-to-classpath $PLUGIN_PATH/lib/joda-time-2.9.2.jar
 
+if (isIdeStartup) return
+
 invokeOnEDT {
 //	def analyzer = new EventAnalyzer(new TrackerLog(""))
 //	new StatsToolWindow.Companion().showIn(project, new Stats([], [], [], "some-file.csv"), analyzer, pluginDisposable)
