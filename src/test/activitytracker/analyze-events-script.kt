@@ -1,9 +1,11 @@
 package activitytracker
 
+import activitytracker.TrackerEvent.Type.*
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.Duration
 import java.util.*
+import kotlin.coroutines.experimental.buildSequence
 
 fun main(args: Array<String>) {
     val userHome = System.getProperty("user.home")
@@ -13,25 +15,18 @@ fun main(args: Array<String>) {
         println("Failed to parse: $line")
     }
 
-//    amountOfKeyPresses(eventSequence)
-     createHistogramOfDurationEvents(eventSequence)
+//     amountOfKeyPresses(eventSequence)
+//     createHistogramOfDurationEvents(eventSequence)
 
-/*
-    groupEventsIntoSessions(eventSequence).apply {
-        val histogram = Histogram<Long>()
-        forEach { session ->
-            println(session)
-            histogram.add(session.duration.standardMinutes)
-        }
-        histogram.printed()
-    }
-*/
+    val sessions = eventSequence.groupIntoSessions().filterAndMergeSessions().onEach { println(it) }
+
+    Histogram(sessions.map{ it.duration.standardMinutes }.toList()).bucketed(20).printed()
 }
 
 private fun amountOfKeyPresses(eventSequence: Sequence<TrackerEvent>) {
     val histogram = Histogram<Char>()
     eventSequence
-        .filter { it.type == TrackerEvent.Type.KeyEvent }
+        .filter { it.type == KeyEvent }
         .map { it.data.split(":") }
         .filter { it[0] != "65535" }
         .map { it[0].toInt().toChar().toLowerCase() }
@@ -92,48 +87,47 @@ private data class Session(val events: List<TrackerEvent>) {
     private val TrackerEvent.localTime: DateTime get() = time.withZone(DateTimeZone.forOffsetHours(1))
 }
 
-private fun groupEventsIntoSessions(eventSequence: Sequence<TrackerEvent>): List<Session> {
-    val events = eventSequence.filter { it.type == TrackerEvent.Type.IdeState }
+fun TrackerEvent.ideIsActive() = type != IdeState || (type == IdeState && data != "Inactive")
 
-    val allSessions = ArrayList<Session>()
-    var currentSession = ArrayList<TrackerEvent>()
-    events.forEach { event ->
-        if (currentSession.isNotEmpty() && currentSession.last().data != event.data) {
-            allSessions.add(Session(currentSession))
-            currentSession = ArrayList()
+private fun Sequence<TrackerEvent>.groupIntoSessions(): Sequence<Session> =
+    buildSequence {
+        var currentEvents = ArrayList<TrackerEvent>()
+        forEach { event ->
+            val isEndOfCurrentSession =
+                currentEvents.isNotEmpty() && currentEvents.last().ideIsActive() != event.ideIsActive()
+
+            if (isEndOfCurrentSession) {
+                yield(Session(currentEvents))
+                currentEvents = ArrayList()
+            }
+            currentEvents.add(event)
         }
-        currentSession.add(event)
     }
 
-    val result = ArrayList<Session>()
-    var lastSession: Session? = null
-    allSessions
-        .filter { it.events.first().data == "Active" }
-        .forEach { session ->
-            if (lastSession == null) {
-                lastSession = session
-            } else {
-                val timeBetweenSessions = Duration(lastSession!!.events.last().time, session.events.first().time)
-                if (timeBetweenSessions < Duration.standardMinutes(5)) {
-                    lastSession = Session(lastSession!!.events + session.events)
-                } else {
-                    result.add(lastSession!!)
+private fun Sequence<Session>.filterAndMergeSessions(): Sequence<Session> =
+    buildSequence {
+        var lastSession: Session? = null
+        this@filterAndMergeSessions
+            .filter {
+                it.events.first().ideIsActive()
+                && it.duration > Duration.standardMinutes(5)
+                && it.events.any { it.type == IdeState && it.focusedComponent == "Editor" }
+            }
+            .forEach { session ->
+                if (lastSession == null) {
                     lastSession = session
+                } else {
+                    val timeBetweenSessions = Duration(lastSession!!.events.last().time, session.events.first().time)
+                    if (timeBetweenSessions < Duration.standardMinutes(5)) {
+                        lastSession = Session(lastSession!!.events + session.events)
+                    } else {
+                        yield(lastSession!!)
+                        lastSession = session
+                    }
                 }
             }
-        }
-    result.add(lastSession!!)
-
-    return result
-}
-
-private fun <T: Comparable<T>> Histogram<T>.printed() {
-    frequencyByValue.entries
-        .sortedBy { it.key }
-        .forEach { entry ->
-            println("${entry.value}: ${entry.key}")
-        }
-}
+        yield(lastSession!!)
+    }
 
 /**
  * The intention is to check whether activity-tracker has significant impact on IDE performance.
@@ -147,7 +141,7 @@ private fun <T: Comparable<T>> Histogram<T>.printed() {
 private fun createHistogramOfDurationEvents(eventSequence: Sequence<TrackerEvent>) {
     val allDurations = mutableListOf<Int>()
     eventSequence
-        .filter { it.type == TrackerEvent.Type.Duration }
+        .filter { it.type == Duration }
         .forEach { event ->
             allDurations.addAll(event.data.split(",").map(String::toInt))
         }
@@ -159,6 +153,10 @@ private fun createHistogramOfDurationEvents(eventSequence: Sequence<TrackerEvent
 
 private class Histogram<T>(val frequencyByValue: HashMap<T, Int> = HashMap()) {
 
+    constructor(values: Collection<T>): this() {
+        addAll(values)
+    }
+
     fun add(value: T): Histogram<T> {
         val frequency = frequencyByValue.getOrElse(value, { -> 0 })
         frequencyByValue.put(value, frequency + 1)
@@ -169,16 +167,20 @@ private class Histogram<T>(val frequencyByValue: HashMap<T, Int> = HashMap()) {
         values.forEach { add(it) }
         return this
     }
-
-    fun normalizeTo(max: Int): Histogram<T> {
-        val maxValue = frequencyByValue.values.max()!!
-        val ratio = max.toDouble() / maxValue
-
-        val map = HashMap<T, Int>()
-        frequencyByValue.entries.forEach {
-            map[it.key] = (it.value * ratio).toInt()
-        }
-        return Histogram(map)
-    }
 }
 
+private fun <T: Comparable<T>> Histogram<T>.printed() {
+    frequencyByValue.entries
+        .sortedBy { it.key }
+        .forEach { entry ->
+            println("${entry.key}\t${entry.value}")
+        }
+}
+
+private fun Histogram<Long>.bucketed(bucketSize: Long): Histogram<Long> {
+    val histogram = Histogram<Long>()
+    frequencyByValue.entries.forEach {
+        histogram.add((it.key / bucketSize) * bucketSize + bucketSize)
+    }
+    return histogram
+}
