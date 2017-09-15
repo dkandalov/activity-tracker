@@ -48,11 +48,10 @@ compileKotlin {
 }
 
 intellij {
-	version "IU-172.3757.29"
-	type "UI"
+	version System.getenv().getOrDefault("ACTIVITY_TRACKER_IDEA_VERSION", "IC-172.3757.29")
 	// The artifact name is deliberately not "activity-tracker" because
-	// .csv files are stored in the "activity-tracker" directory and
-	// if plugin archive has the same name, the directory will deleted on plugin update.
+	// *.csv files are stored in the "activity-tracker" directory.
+	// If plugin archive has the same name, the directory will be deleted on plugin update.
 	pluginName "activity-tracker-plugin"
 	downloadSources true
 	sameSinceUntilBuild false
