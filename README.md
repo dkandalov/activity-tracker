@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/dkandalov/activity-tracker.svg?branch=master)](https://travis-ci.org/dkandalov/activity-tracker)
+
 ## Activity Tracker
 This is proof-of-concept plugin for IntelliJ IDEs to track and record user activity.
 Currently the main feature is recording user activity into csv files.
