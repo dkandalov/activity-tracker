@@ -62,7 +62,7 @@ The event log file is written as [csv RFC4180](https://tools.ietf.org/html/rfc41
                        or event type = `VcsAction`, event data = `[Push|Update|Commit]`;
                        or event type = `CompilationFinished`, event data = `[amount of errors during compilation]`.
     - **IDE polling events**: event type = `IdeState`, event data = `[Active|Inactive|NoProject]`,
-      where `Inactive` means IDE doesn' have focus, `NoProject` mean all projects are closed.
+      where `Inactive` means IDE doesn't have focus, `NoProject` mean all projects are closed.
     - **keyboard events**: event type = `KeyEvent`, event data = `[keyChar]:[keyCode]:[modifiers]`
       (see [AWT KeyEvent](https://docs.oracle.com/javase/7/docs/api/java/awt/event/KeyEvent.html)).
     - **mouse events**: event type = `MouseEvent`, event data can be
