@@ -1,5 +1,6 @@
 package activitytracker
 
+import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.Duration
 import java.util.*
@@ -13,8 +14,18 @@ fun main(args: Array<String>) {
     }
 
 //    amountOfKeyPresses(eventSequence)
-    groupEventsIntoSessions(eventSequence)
-    // createHistogramOfDurationEvents(eventSequence)
+     createHistogramOfDurationEvents(eventSequence)
+
+/*
+    groupEventsIntoSessions(eventSequence).apply {
+        val histogram = Histogram<Long>()
+        forEach { session ->
+            println(session)
+            histogram.add(session.duration.standardMinutes)
+        }
+        histogram.printed()
+    }
+*/
 }
 
 private fun amountOfKeyPresses(eventSequence: Sequence<TrackerEvent>) {
@@ -70,7 +81,16 @@ private fun amountOfKeyPresses(eventSequence: Sequence<TrackerEvent>) {
 //        }
 }
 
-private data class Session(val events: List<TrackerEvent>)
+private data class Session(val events: List<TrackerEvent>) {
+    val duration: Duration get() = Duration(events.first().time, events.last().time)
+
+    override fun toString() =
+        "minutes: ${duration.standardMinutes}; " +
+        "from: ${events.first().localTime}; " +
+        "to: ${events.last().localTime};"
+
+    private val TrackerEvent.localTime: DateTime get() = time.withZone(DateTimeZone.forOffsetHours(1))
+}
 
 private fun groupEventsIntoSessions(eventSequence: Sequence<TrackerEvent>): List<Session> {
     val events = eventSequence.filter { it.type == TrackerEvent.Type.IdeState }
@@ -93,8 +113,8 @@ private fun groupEventsIntoSessions(eventSequence: Sequence<TrackerEvent>): List
             if (lastSession == null) {
                 lastSession = session
             } else {
-                val duration = Duration(lastSession!!.events.last().time, session.events.first().time)
-                if (duration < Duration.standardMinutes(5)) {
+                val timeBetweenSessions = Duration(lastSession!!.events.last().time, session.events.first().time)
+                if (timeBetweenSessions < Duration.standardMinutes(5)) {
                     lastSession = Session(lastSession!!.events + session.events)
                 } else {
                     result.add(lastSession!!)
@@ -103,18 +123,6 @@ private fun groupEventsIntoSessions(eventSequence: Sequence<TrackerEvent>): List
             }
         }
     result.add(lastSession!!)
-
-    val histogram = Histogram<Int>()
-    result.forEach { session ->
-        val duration = Duration(session.events.first().time, session.events.last().time)
-        println(
-            "minutes: ${duration.toStandardMinutes().minutes}; " +
-            "from: ${session.events.first().time.withZone(DateTimeZone.forOffsetHours(1))}; " +
-            "to: ${session.events.last().time.withZone(DateTimeZone.forOffsetHours(1))}; "
-        )
-        histogram.add(duration.toStandardMinutes().minutes)
-    }
-    histogram.printed()
 
     return result
 }
@@ -127,6 +135,15 @@ private fun <T: Comparable<T>> Histogram<T>.printed() {
         }
 }
 
+/**
+ * The intention is to check whether activity-tracker has significant impact on IDE performance.
+ *
+ * To do this `ActivityTracker.logTrackerCallDuration` was enabled, the plugin was used for some time
+ * and then this function was used to analyse events.
+ *
+ * The conclusion was that there is no significant impact on performance
+ * (no numbers are available at the time of writing though).
+ */
 private fun createHistogramOfDurationEvents(eventSequence: Sequence<TrackerEvent>) {
     val allDurations = mutableListOf<Int>()
     eventSequence
