@@ -53,7 +53,7 @@ fun showNotification(message: Any?, onLinkClick: (HyperlinkEvent) -> Unit = {}) 
         val groupDisplayId = ActivityTrackerPlugin.pluginId
         val notification = Notification(
             groupDisplayId, title, messageString, notificationType,
-            NotificationListener { notification, event ->
+            NotificationListener { _, event ->
                 onLinkClick(event)
             }
         )
@@ -77,7 +77,7 @@ fun registerAction(
     disposable: Disposable? = null,
     callback: (AnActionEvent) -> Unit
 ): AnAction {
-    return registerAction(actionId, keyStroke, actionGroupId, displayText, disposable, object: AnAction() {
+    return registerAction(actionId, keyStroke, actionGroupId, displayText, disposable, object : AnAction() {
         override fun actionPerformed(event: AnActionEvent) {
             callback.invoke(event)
         }
@@ -170,7 +170,7 @@ fun <T> runInBackground(
 ) {
     invokeOnEDT {
         val result = AtomicReference<T>(null)
-        object: Task.Backgroundable(null, taskDescription, canBeCancelledByUser, backgroundOption) {
+        object : Task.Backgroundable(null, taskDescription, canBeCancelledByUser, backgroundOption) {
             override fun run(indicator: ProgressIndicator) {
                 result.set(task.invoke(indicator))
             }
@@ -199,7 +199,7 @@ fun openUrlInEditor(fileUrl: String, project: Project): VirtualFile? {
 
 fun registerProjectListener(disposable: Disposable, onEachProject: (Project) -> Unit) {
     registerProjectListener(disposable, object : ProjectManagerListener {
-        override fun projectOpened(project: Project ) {
+        override fun projectOpened(project: Project) {
             onEachProject(project)
         }
     })
@@ -208,27 +208,26 @@ fun registerProjectListener(disposable: Disposable, onEachProject: (Project) -> 
     }
 }
 
-fun registerProjectListener(disposable: Disposable, listener: ProjectManagerListener ) {
+fun registerProjectListener(disposable: Disposable, listener: ProjectManagerListener) {
     val connection = ApplicationManager.getApplication().messageBus.connect(disposable)
     connection.subscribe(ProjectManager.TOPIC, listener)
 }
 
 val logger = Logger.getInstance("LivePlugin")
 
-fun log(message: Any?, notificationType : NotificationType = INFORMATION) {
+fun log(message: Any?, notificationType: NotificationType = INFORMATION) {
     val s = (message as? Throwable)?.toString() ?: asString(message)
-    if (notificationType == INFORMATION) logger.info(s)
-    else if (notificationType == WARNING) logger.warn(s)
-    else if (notificationType == ERROR) logger.error(s)
+    when (notificationType) {
+        INFORMATION -> logger.info(s)
+        WARNING     -> logger.warn(s)
+        ERROR       -> logger.error(s)
+    }
 }
 
-fun asString(message: Any?): String {
-    return if (message?.javaClass?.isArray == true) Arrays.toString(message as Array<*>)
-    else if (message is Throwable) {
-        unscrambleThrowable(message)
-    } else {
-        message.toString()
-    }
+fun asString(message: Any?): String = when {
+    message?.javaClass?.isArray == true -> Arrays.toString(message as Array<*>)
+    message is Throwable                -> unscrambleThrowable(message)
+    else                                -> message.toString()
 }
 
 fun unscrambleThrowable(throwable: Throwable): String {
@@ -296,14 +295,14 @@ class MapDataContext(private val map: MutableMap<Any, Any?> = HashMap()) : DataC
         return map[dataId]
     }
 
-    fun put(key: String , value: Any): MapDataContext {
-        map.put(key, value)
+    fun put(key: String, value: Any): MapDataContext {
+        map[key] = value
         return this
     }
 }
 
 
-fun updateWidget(widgetId: String ) {
+fun updateWidget(widgetId: String) {
     WindowManager.getInstance().allProjectFrames.forEach {
         it.statusBar.updateWidget(widgetId)
     }
