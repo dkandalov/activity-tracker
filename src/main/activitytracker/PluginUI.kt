@@ -218,6 +218,6 @@ class PluginUI(
     }
 
     companion object {
-        val widgetId = "$pluginId-Widget"
+        const val widgetId = "$pluginId-Widget"
     }
 }

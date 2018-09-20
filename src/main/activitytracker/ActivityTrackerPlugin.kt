@@ -111,6 +111,6 @@ class ActivityTrackerPlugin(
     }
 
     companion object {
-        val pluginId = "ActivityTracker"
+        const val pluginId = "ActivityTracker"
     }
 }

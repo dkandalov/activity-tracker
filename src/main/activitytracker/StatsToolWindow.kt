@@ -32,7 +32,7 @@ import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
 object StatsToolWindow {
-    private val toolWindowId = "Tracking Log Stats"
+    private const val toolWindowId = "Tracking Log Stats"
 
     fun showIn(project: Project, stats: Stats, eventAnalyzer: EventAnalyzer, parentDisposable: Disposable) {
         val toolWindowPanel = SimpleToolWindowPanel(true)

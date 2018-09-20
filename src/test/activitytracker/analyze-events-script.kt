@@ -56,7 +56,7 @@ private fun amountOfKeyPresses(eventSequence: Sequence<TrackerEvent>) {
                 else -> it
             }
         }
-        .forEachIndexed { i, c ->
+        .forEachIndexed { _, c ->
             histogram.add(c)
         }
 
@@ -108,10 +108,10 @@ private fun Sequence<Session>.filterAndMergeSessions(): Sequence<Session> =
     buildSequence {
         var lastSession: Session? = null
         this@filterAndMergeSessions
-            .filter {
-                it.events.first().ideIsActive()
-                && it.duration > Duration.standardMinutes(5)
-                && it.events.any { it.type == IdeState && it.focusedComponent == "Editor" }
+            .filter { session ->
+                session.events.first().ideIsActive()
+                && session.duration > Duration.standardMinutes(5)
+                && session.events.any { it.type == IdeState && it.focusedComponent == "Editor" }
             }
             .forEach { session ->
                 if (lastSession == null) {
