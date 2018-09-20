@@ -56,7 +56,7 @@ compileKotlin {
 }
 
 intellij {
-	def ideVersion = System.getenv().getOrDefault("ACTIVITY_TRACKER_IDEA_VERSION", "LATEST-EAP-SNAPSHOT")
+	def ideVersion = System.getenv().getOrDefault("ACTIVITY_TRACKER_IDEA_VERSION", "IC-172.3757.29")
 	println("Using ide version: ${ideVersion}")
 	version ideVersion
 	// The artifact name is deliberately not "activity-tracker" because
