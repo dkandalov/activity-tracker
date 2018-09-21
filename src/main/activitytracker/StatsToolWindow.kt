@@ -47,7 +47,7 @@ object StatsToolWindow {
                 }
             })
             add(object: AnAction(Refresh) {
-                override fun actionPerformed(e: AnActionEvent?) {
+                override fun actionPerformed(e: AnActionEvent) {
                     eventAnalyzer.analyze(whenDone = { result ->
                         invokeLaterOnEDT {
                             when (result) {
@@ -174,7 +174,7 @@ object StatsToolWindow {
         val toolWindow = manager.registerToolWindow(toolWindowId, false, location)
         val content = ContentFactory.SERVICE.getInstance().createContent(component, "", false)
         toolWindow.contentManager.addContent(content)
-        toolWindow.icon = AllIcons.General.MessageHistory
+        toolWindow.icon = AllIcons.Vcs.History
         return toolWindow
     }
 
