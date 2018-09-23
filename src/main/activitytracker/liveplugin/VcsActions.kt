@@ -16,11 +16,42 @@ import com.intellij.openapi.vcs.update.UpdatedFilesListener
 import com.intellij.util.messages.MessageBusConnection
 import java.util.*
 
-class VcsActions {
-    private var busConnection: MessageBusConnection?
-    private var updatedListener: UpdatedFilesListener?
-    private var checkinListener: CheckinHandlerFactory?
-    private var pushListener: NotificationsAdapter?
+class VcsActions(project: Project, listener: Listener) {
+    private val busConnection: MessageBusConnection = project.messageBus.connect()
+
+    private val updatedListener: UpdatedFilesListener = UpdatedFilesListener { listener.onVcsUpdate() }
+
+    private val checkinListener: CheckinHandlerFactory = object : CheckinHandlerFactory() {
+        override fun createHandler(panel: CheckinProjectPanel, commitContext: CommitContext): CheckinHandler {
+            return object : CheckinHandler() {
+                override fun checkinSuccessful() {
+                    if (panel.project == project) {
+                        listener.onVcsCommit()
+                    }
+                }
+
+                override fun checkinFailed(exception: List<VcsException>) {
+                    if (panel.project == project) {
+                        listener.onVcsCommitFailed()
+                    }
+                }
+            }
+        }
+    }
+
+    // see git4idea.push.GitPushResultNotification#create
+    // see org.zmlx.hg4idea.push.HgPusher#push
+    private val pushListener: NotificationsAdapter = object : NotificationsAdapter() {
+        override fun notify(notification: Notification) {
+            if (!isVcsNotification(notification)) return
+
+            if (matchTitleOf(notification, "Push successful")) {
+                listener.onVcsPush()
+            } else if (matchTitleOf(notification, "Push failed", "Push partially failed", "Push rejected", "Push partially rejected")) {
+                listener.onVcsPushFailed()
+            }
+        }
+    }
 
     fun registerVcsListener(id: String, project: Project, listener: Listener) {
         registerVcsListener(registerDisposable(id), project, listener)
@@ -30,55 +61,17 @@ class VcsActions {
         unregisterDisposable(id)
     }
 
-    constructor(project: Project, listener: Listener) {
-        this.busConnection = project.messageBus.connect()
-
-        updatedListener = UpdatedFilesListener { listener.onVcsUpdate() }
-
-        checkinListener = object: CheckinHandlerFactory() {
-            override fun createHandler(panel: CheckinProjectPanel, commitContext: CommitContext): CheckinHandler {
-                return object: CheckinHandler() {
-                    override fun checkinSuccessful() {
-                        if (panel.project == project) {
-                            listener.onVcsCommit()
-                        }
-                    }
-
-                    override fun checkinFailed(exception: List<VcsException>) {
-                        if (panel.project == project) {
-                            listener.onVcsCommitFailed()
-                        }
-                    }
-                }
-            }
-        }
-
-        // see git4idea.push.GitPushResultNotification#create
-        // see org.zmlx.hg4idea.push.HgPusher#push
-        pushListener = object: NotificationsAdapter() {
-            override fun notify(notification: Notification) {
-                if (!isVcsNotification(notification)) return
-
-                if (matchTitleOf(notification, "Push successful")) {
-                    listener.onVcsPush()
-                } else if (matchTitleOf(notification, "Push failed", "Push partially failed", "Push rejected", "Push partially rejected")) {
-                    listener.onVcsPushFailed()
-                }
-            }
-        }
-    }
-
     fun start(): VcsActions {
         // using bus to listen to vcs updates because normal listener calls it twice
         // (see also https://gist.github.com/dkandalov/8840509)
-        busConnection?.subscribe(UpdatedFilesListener.UPDATED_FILES, updatedListener!!)
-        busConnection?.subscribe(Notifications.TOPIC, pushListener!!)
-        checkinHandlers().add(0, checkinListener!!)
+        busConnection.subscribe(UpdatedFilesListener.UPDATED_FILES, updatedListener)
+        busConnection.subscribe(Notifications.TOPIC, pushListener)
+        checkinHandlers().add(0, checkinListener)
         return this
     }
 
     fun stop(): VcsActions {
-        busConnection?.disconnect()
+        busConnection.disconnect()
         checkinHandlers().remove(checkinListener)
         return this
     }
@@ -90,9 +83,9 @@ class VcsActions {
 
     private fun isVcsNotification(notification: Notification) =
         notification.groupId == "Vcs Messages" ||
-            notification.groupId == "Vcs Important Messages" ||
-            notification.groupId == "Vcs Minor Notifications" ||
-            notification.groupId == "Vcs Silent Notifications"
+        notification.groupId == "Vcs Important Messages" ||
+        notification.groupId == "Vcs Minor Notifications" ||
+        notification.groupId == "Vcs Silent Notifications"
 
     private fun matchTitleOf(notification: Notification, vararg expectedTitles: String): Boolean {
         return expectedTitles.any { notification.title.startsWith(it) }
