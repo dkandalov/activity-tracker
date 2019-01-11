@@ -7,8 +7,10 @@ import org.joda.time.Duration
 import java.util.*
 import kotlin.coroutines.experimental.buildSequence
 
+val userHome = System.getProperty("user.home")!!
+val printError = { line: String, _: Exception -> println("Failed to parse: $line") }
+
 fun main(args: Array<String>) {
-    val userHome = System.getProperty("user.home")
 //    val eventsFilePath = "$userHome/Library/Application Support/IntelliJIdea2017.2/activity-tracker/2017-09-01.csv"
     val eventsFilePath = "$userHome/Library/Application Support/IntelliJIdea2017.2/activity-tracker/ide-events.csv"
     val eventSequence = TrackerLog(eventsFilePath).readEvents { line: String, e: Exception ->

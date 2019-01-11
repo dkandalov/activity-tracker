@@ -131,7 +131,7 @@ class ActivityTracker(
 
     private fun startActionListener(trackerLog: TrackerLog, parentDisposable: Disposable) {
         val actionManager = ActionManager.getInstance()
-        actionManager.addAnActionListener(object: AnActionListener {
+        actionManager.addAnActionListener(object : AnActionListener {
             override fun beforeActionPerformed(anAction: AnAction, dataContext: DataContext, event: AnActionEvent?) {
                 // Track action in "before" callback because otherwise timestamp of the action can be wrong
                 // (e.g. commit action shows dialog and finishes only after the dialog is closed).
@@ -145,7 +145,7 @@ class ActivityTracker(
 
         // Use custom listener for VCS because listening to normal IDE actions
         // doesn't notify about actual commits but only about opening commit dialog (see VcsActions source code for details).
-        registerVcsListener(parentDisposable, object: VcsActions.Listener {
+        registerVcsListener(parentDisposable, object : VcsActions.Listener {
             override fun onVcsCommit() {
                 invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Commit")) }
             }
@@ -158,7 +158,7 @@ class ActivityTracker(
         })
 
         if (haveCompilation()) {
-            registerCompilationListener(parentDisposable, object: CompilationStatusListener {
+            registerCompilationListener(parentDisposable, object : CompilationStatusListener {
                 override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext) {
                     invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.CompilationFinished, errors.toString())) }
                 }
@@ -213,15 +213,14 @@ class ActivityTracker(
                 eventData = "Active"
             }
 
-            val focusOwnerId: String
             // Check for JDialog before EditorComponentImpl because dialog can belong to editor.
-            if (findParentComponent<JDialog>(focusOwner) { it is JDialog } != null) {
-                focusOwnerId = "Dialog"
-            } else if (findParentComponent<EditorComponentImpl>(focusOwner) { it is EditorComponentImpl } != null) {
-                focusOwnerId = "Editor"
-            } else {
-                val toolWindowId = ToolWindowManager.getInstance(project)?.activeToolWindowId
-                focusOwnerId = toolWindowId ?: "Popup"
+            val focusOwnerId = when {
+                findParentComponent<JDialog>(focusOwner) { it is JDialog } != null                         -> "Dialog"
+                findParentComponent<EditorComponentImpl>(focusOwner) { it is EditorComponentImpl } != null -> "Editor"
+                else                                                                                       -> {
+                    val toolWindowId = ToolWindowManager.getInstance(project)?.activeToolWindowId
+                    toolWindowId ?: "Popup"
+                }
             }
 
             var filePath = ""
@@ -286,8 +285,8 @@ class ActivityTracker(
 
     private fun psiPathOf(psiElement: PsiElement?): String =
         when (psiElement) {
-            null, is PsiFile -> ""
-            is PsiAnonymousClass -> {
+            null, is PsiFile          -> ""
+            is PsiAnonymousClass      -> {
                 val parentName = psiPathOf(psiElement.parent)
                 val name = "[${psiElement.baseClassType.className}]"
                 if (parentName.isEmpty()) name else "$parentName::$name"
@@ -297,21 +296,21 @@ class ActivityTracker(
                 val name = (psiElement as PsiNamedElement).name ?: ""
                 if (parentName.isEmpty()) name else "$parentName::$name"
             }
-            else -> psiPathOf(psiElement.parent)
+            else                      -> psiPathOf(psiElement.parent)
         }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> findPsiParent(element: PsiElement?, matches: (PsiElement) -> Boolean): T? = when {
-        element == null -> null
+        element == null  -> null
         matches(element) -> element as T?
-        else -> findPsiParent(element.parent, matches)
+        else             -> findPsiParent(element.parent, matches)
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> findParentComponent(component: Component?, matches: (Component) -> Boolean): T? = when {
-        component == null -> null
+        component == null  -> null
         matches(component) -> component as T?
-        else -> findParentComponent(component.parent, matches)
+        else               -> findParentComponent(component.parent, matches)
     }
 
     private fun currentEditorIn(project: Project): Editor? =
