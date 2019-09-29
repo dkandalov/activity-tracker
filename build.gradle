@@ -7,7 +7,7 @@ buildscript {
 	}
 }
 plugins {
-	id "org.jetbrains.intellij" version "0.3.10"
+	id "org.jetbrains.intellij" version "0.4.10"
 	id "org.jetbrains.kotlin.jvm" version "1.1.1"
 }
 apply plugin:"java"
@@ -63,6 +63,7 @@ intellij {
 	// *.csv files are stored in the "activity-tracker" directory.
 	// If plugin archive has the same name, the directory will be deleted on plugin update.
 	pluginName "activity-tracker-plugin"
+    plugins = ["java"]
 	downloadSources true
 	sameSinceUntilBuild false
 	updateSinceUntilBuild false

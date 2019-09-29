@@ -304,6 +304,6 @@ class MapDataContext(private val map: MutableMap<Any, Any?> = HashMap()) : DataC
 
 fun updateWidget(widgetId: String) {
     WindowManager.getInstance().allProjectFrames.forEach {
-        it.statusBar.updateWidget(widgetId)
+        it.statusBar?.updateWidget(widgetId)
     }
 }

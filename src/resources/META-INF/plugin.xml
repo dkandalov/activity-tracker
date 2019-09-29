@@ -20,12 +20,13 @@
     ]]></description>
 
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
-    <!-- since IJ 2016.1 -->
-    <idea-version since-build="145.0"/>
+    <!-- since IJ 2019.2 -->
+    <idea-version since-build="192"/>
 
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
-    <depends optional="true">com.intellij.tasks</depends>
+    <depends optional="true" config-file="">com.intellij.java</depends>
+    <depends optional="true" config-file="">com.intellij.tasks</depends>
 
     <application-components>
         <component>

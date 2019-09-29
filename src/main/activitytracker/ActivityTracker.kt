@@ -132,15 +132,13 @@ class ActivityTracker(
     private fun startActionListener(trackerLog: TrackerLog, parentDisposable: Disposable) {
         val actionManager = ActionManager.getInstance()
         actionManager.addAnActionListener(object : AnActionListener {
-            override fun beforeActionPerformed(anAction: AnAction, dataContext: DataContext, event: AnActionEvent?) {
+            override fun beforeActionPerformed(anAction: AnAction, dataContext: DataContext, event: AnActionEvent) {
                 // Track action in "before" callback because otherwise timestamp of the action can be wrong
                 // (e.g. commit action shows dialog and finishes only after the dialog is closed).
                 // Action id can be null e.g. on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction).
                 val actionId = actionManager.getId(anAction) ?: return
                 trackerLog.append(captureIdeState(TrackerEvent.Type.Action, actionId))
             }
-            override fun beforeEditorTyping(c: Char, dataContext: DataContext) {}
-            override fun afterActionPerformed(action: AnAction, dataContext: DataContext, event: AnActionEvent?) {}
         }, parentDisposable)
 
         // Use custom listener for VCS because listening to normal IDE actions

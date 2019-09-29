@@ -85,12 +85,12 @@ class PluginUI(
                     override fun install(statusBar: StatusBar) {}
                     override fun dispose() {}
                 }
-                frame.statusBar.addWidget(widget, "before Position")
-                frame.statusBar.updateWidget(widgetId)
+                frame.statusBar?.addWidget(widget, "before Position")
+                frame.statusBar?.updateWidget(widgetId)
             }
 
             override fun beforeFrameReleased(frame: IdeFrame) {
-                frame.statusBar.removeWidget(widgetId)
+                frame.statusBar?.removeWidget(widgetId)
             }
         })
     }
