@@ -20,7 +20,6 @@ targetCompatibility = 1.8
 
 repositories {
 	mavenCentral()
-	maven { url 'lib' }
 }
 
 dependencies {
