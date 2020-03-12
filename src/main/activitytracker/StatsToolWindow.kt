@@ -23,6 +23,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.GridBag
+import com.intellij.util.ui.StartupUiUtil
 import com.intellij.util.ui.UIUtil
 import java.awt.GridBagConstraints.*
 import java.awt.GridBagLayout
@@ -118,7 +119,7 @@ object StatsToolWindow {
                     lineWrap = true
                     wrapStyleWord = true
                     background = UIUtil.getLabelBackground()
-                    font = UIUtil.getLabelFont()
+                    font = StartupUiUtil.getLabelFont()
                     UIUtil.applyStyle(UIUtil.ComponentStyle.REGULAR, this)
                 }, GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).nextLine().next().fillCellHorizontally().anchor(NORTH))
             }, bag.nextLine().next().weighty(0.5).anchor(SOUTH))
@@ -174,7 +175,7 @@ object StatsToolWindow {
         val toolWindow = manager.registerToolWindow(toolWindowId, false, location)
         val content = ContentFactory.SERVICE.getInstance().createContent(component, "", false)
         toolWindow.contentManager.addContent(content)
-        toolWindow.icon = AllIcons.Vcs.History
+        toolWindow.setIcon(AllIcons.Vcs.History)
         return toolWindow
     }
 
