@@ -2,7 +2,6 @@ package activitytracker.liveplugin
 
 import com.intellij.notification.Notification
 import com.intellij.notification.Notifications
-import com.intellij.notification.NotificationsAdapter
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.CheckinProjectPanel
@@ -25,15 +24,11 @@ class VcsActions(project: Project, listener: Listener) {
         override fun createHandler(panel: CheckinProjectPanel, commitContext: CommitContext): CheckinHandler {
             return object : CheckinHandler() {
                 override fun checkinSuccessful() {
-                    if (panel.project == project) {
-                        listener.onVcsCommit()
-                    }
+                    if (panel.project == project) listener.onVcsCommit()
                 }
 
                 override fun checkinFailed(exception: List<VcsException>) {
-                    if (panel.project == project) {
-                        listener.onVcsCommitFailed()
-                    }
+                    if (panel.project == project) listener.onVcsCommitFailed()
                 }
             }
         }

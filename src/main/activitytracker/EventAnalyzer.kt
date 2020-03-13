@@ -6,7 +6,6 @@ import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
-
 class EventAnalyzer(private val trackerLog: TrackerLog) {
     var runner: (() -> Unit) -> Unit = {}
     private val isRunning = AtomicBoolean()
