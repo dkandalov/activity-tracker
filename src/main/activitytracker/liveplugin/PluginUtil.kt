@@ -108,7 +108,7 @@ fun registerAction(
     action.templatePresentation.setText(displayText, true)
 
     if (disposable != null) {
-        newDisposable(listOf(disposable)) { unregisterAction(actionId) }
+        newDisposable(disposable) { unregisterAction(actionId) }
     }
 
     return action

@@ -172,7 +172,7 @@ class ActivityTracker(
 
     private fun registerCompilationListener(disposable: Disposable, project: Project, listener: CompilationStatusListener) {
         project.messageBus
-            .connect(newDisposable(listOf(disposable, project)))
+            .connect(newDisposable(disposable, project))
             .subscribe(CompilerTopics.COMPILATION_STATUS, listener)
     }
 

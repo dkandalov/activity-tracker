@@ -105,13 +105,13 @@ class VcsActions(project: Project, listener: Listener) {
     companion object {
         fun registerVcsListener(disposable: Disposable, listener: Listener) {
             registerProjectListener(disposable) { project ->
-                registerVcsListener(newDisposable(listOf(project, disposable)), project, listener)
+                registerVcsListener(newDisposable(project, disposable), project, listener)
             }
         }
 
         fun registerVcsListener(disposable: Disposable, project: Project, listener: Listener) {
             val vcsActions = VcsActions(project, listener)
-            newDisposable(listOf(project, disposable)) {
+            newDisposable(project, disposable) {
                 vcsActions.stop()
             }
             vcsActions.start()
