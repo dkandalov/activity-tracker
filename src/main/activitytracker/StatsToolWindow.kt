@@ -71,7 +71,7 @@ object StatsToolWindow {
         }
 
         val actionToolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.EDITOR_TOOLBAR, actionGroup, true)
-        toolWindowPanel.setToolbar(actionToolbar.component)
+        toolWindowPanel.toolbar = actionToolbar.component
 
         val toolWindow = registerToolWindowIn(project, toolWindowId, disposable, toolWindowPanel, RIGHT)
         val doNothing = null

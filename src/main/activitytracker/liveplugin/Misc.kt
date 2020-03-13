@@ -4,7 +4,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import java.util.concurrent.atomic.AtomicBoolean
 
-fun Disposable.createChild() = newDisposable(listOf(this), {})
+fun Disposable.createChild() = newDisposable(listOf(this)) {}
 
 fun Disposable.whenDisposed(callback: () -> Any) = newDisposable(listOf(this), callback)
 

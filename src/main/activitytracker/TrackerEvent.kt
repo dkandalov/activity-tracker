@@ -35,7 +35,7 @@ data class TrackerEvent(
         private val dateTimeParseFormat: DateTimeFormatter = createDateTimeParseFormat()
         private val dateTimePrintFormat: DateTimeFormatter = createDateTimePrintFormat()
 
-        fun ideNotInFocus(time: DateTime, userName: String, eventType: TrackerEvent.Type, eventData: String) =
+        fun ideNotInFocus(time: DateTime, userName: String, eventType: Type, eventData: String) =
             TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1, "")
 
         fun CSVPrinter.printEvent(event: TrackerEvent) = event.apply {
@@ -57,7 +57,7 @@ data class TrackerEvent(
         fun CSVRecord.toTrackerEvent() = TrackerEvent(
             time = parseDateTime(this[0]),
             userName = this[1],
-            type = TrackerEvent.Type.valueOf(this[2]),
+            type = Type.valueOf(this[2]),
             data = this[3],
             projectName = this[4],
             focusedComponent = this[5],

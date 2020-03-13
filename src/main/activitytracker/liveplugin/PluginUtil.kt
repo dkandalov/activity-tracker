@@ -225,7 +225,7 @@ fun log(message: Any?, notificationType: NotificationType = INFORMATION) {
 }
 
 fun asString(message: Any?): String = when {
-    message?.javaClass?.isArray == true -> Arrays.toString(message as Array<*>)
+    message?.javaClass?.isArray == true -> (message as Array<*>).contentToString()
     message is Throwable                -> unscrambleThrowable(message)
     else                                -> message.toString()
 }

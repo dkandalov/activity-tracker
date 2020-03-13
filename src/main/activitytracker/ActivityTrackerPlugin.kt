@@ -1,7 +1,7 @@
 package activitytracker
 
 import activitytracker.liveplugin.openInEditor
-import com.intellij.ide.actions.ShowFilePathAction
+import com.intellij.ide.actions.RevealFileAction
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project
 
@@ -40,7 +40,7 @@ class ActivityTrackerPlugin(
     }
 
     fun openTrackingLogFolder() {
-        ShowFilePathAction.openFile(trackerLog.currentLogFile().parentFile)
+        RevealFileAction.openFile(trackerLog.currentLogFile().parentFile)
     }
 
     private fun updateState(closure: (State) -> State) {
@@ -92,7 +92,15 @@ class ActivityTrackerPlugin(
         }
 
         companion object {
-            val defaultValue = State(true, true, 1000, true, false, false, 250)
+            val defaultValue = State(
+                isTracking = true,
+                pollIdeState = true,
+                pollIdeStateMs = 1000,
+                trackIdeActions = true,
+                trackKeyboard = false,
+                trackMouse = false,
+                mouseMoveEventsThresholdMs = 250
+            )
 
             fun load(propertiesComponent: PropertiesComponent, id: String): State {
                 return propertiesComponent.run {

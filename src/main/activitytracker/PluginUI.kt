@@ -4,7 +4,7 @@ import activitytracker.ActivityTrackerPlugin.Companion.pluginId
 import activitytracker.EventAnalyzer.Result.*
 import activitytracker.liveplugin.*
 import com.intellij.ide.BrowserUtil
-import com.intellij.ide.actions.ShowFilePathAction
+import com.intellij.ide.actions.RevealFileAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
@@ -18,7 +18,6 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.WindowManagerListener
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
-import org.jetbrains.annotations.NotNull
 import java.awt.Component
 import java.awt.Point
 import java.awt.event.MouseEvent
@@ -72,9 +71,6 @@ class PluginUI(
             }
 
             override fun getAlignment() = Component.CENTER_ALIGNMENT
-
-            @Suppress("OverridingDeprecatedMember")
-            @NotNull override fun getMaxPossibleText() = ""
         }
 
         registerWindowManagerListener(parentDisposable, object: WindowManagerListener {
@@ -169,7 +165,7 @@ class PluginUI(
 
                 val rolledFile = trackerLog.rollLog()
                 showNotification("Rolled tracking log into <a href=''>${rolledFile.name}</a>") {
-                    ShowFilePathAction.openFile(rolledFile)
+                    RevealFileAction.openFile(rolledFile)
                 }
             }
         }

@@ -216,7 +216,7 @@ class ActivityTracker(
                 findParentComponent<JDialog>(focusOwner) { it is JDialog } != null                         -> "Dialog"
                 findParentComponent<EditorComponentImpl>(focusOwner) { it is EditorComponentImpl } != null -> "Editor"
                 else                                                                                       -> {
-                    val toolWindowId = ToolWindowManager.getInstance(project)?.activeToolWindowId
+                    val toolWindowId = ToolWindowManager.getInstance(project).activeToolWindowId
                     toolWindowId ?: "Popup"
                 }
             }

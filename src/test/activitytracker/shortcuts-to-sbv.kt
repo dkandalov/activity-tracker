@@ -60,7 +60,7 @@ private val keyNameByCode = java.awt.event.KeyEvent::class.java.declaredFields
     .filter { it.name.startsWith("VK_") && Modifier.isStatic(it.modifiers) }
     .associate { Pair(it.get(null), it.name.vkToPrintableName()) }
 
-private fun Int.toPrintableKeyName(): String = keyNameByCode[this]!!
+private fun Int.toPrintableKeyName(): String = keyNameByCode[this] ?: error("")
 
 private fun Int.toPrintableModifiers(): List<String> =
     listOf(

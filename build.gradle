@@ -57,7 +57,7 @@ compileKotlin {
 intellij {
 	def ideVersion = System.getenv().getOrDefault(
 			"ACTIVITY_TRACKER_IDEA_VERSION",
-			"192.5728.98"
+			"193.5233.102"
 //			"LATEST-EAP-SNAPSHOT"
 	)
 	println("Using ide version: ${ideVersion}")
