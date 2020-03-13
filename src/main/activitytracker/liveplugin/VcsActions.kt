@@ -41,7 +41,7 @@ class VcsActions(project: Project, listener: Listener) {
 
     // see git4idea.push.GitPushResultNotification#create
     // see org.zmlx.hg4idea.push.HgPusher#push
-    private val pushListener: NotificationsAdapter = object : NotificationsAdapter() {
+    private val pushListener: Notifications = object : Notifications {
         override fun notify(notification: Notification) {
             if (!isVcsNotification(notification)) return
 

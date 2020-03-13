@@ -77,7 +77,7 @@ class PluginUI(
             override fun frameCreated(frame: IdeFrame) {
                 val widget = object: StatusBarWidget {
                     override fun ID() = widgetId
-                    override fun getPresentation(type: StatusBarWidget.PlatformType) = presentation
+                    override fun getPresentation() = presentation
                     override fun install(statusBar: StatusBar) {}
                     override fun dispose() {}
                 }
@@ -159,6 +159,8 @@ class PluginUI(
                     event.project,
                     "Roll tracking log file?\nCurrent log will be moved into new file.",
                     "Activity Tracker",
+                    Messages.OK_BUTTON,
+                    Messages.CANCEL_BUTTON,
                     Messages.getQuestionIcon()
                 )
                 if (userAnswer != Messages.OK) return
@@ -175,6 +177,8 @@ class PluginUI(
                     event.project,
                     "Clear current tracking log file?\n(This operation cannot be undone.)",
                     "Activity Tracker",
+                    Messages.OK_BUTTON,
+                    Messages.CANCEL_BUTTON,
                     Messages.getQuestionIcon()
                 )
                 if (userAnswer != Messages.OK) return
