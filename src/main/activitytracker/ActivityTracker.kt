@@ -13,6 +13,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.AnActionListener
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.compiler.CompilationStatusListener
 import com.intellij.openapi.compiler.CompileContext
 import com.intellij.openapi.compiler.CompilerTopics
@@ -130,16 +131,18 @@ class ActivityTracker(
     }
 
     private fun startActionListener(trackerLog: TrackerLog, parentDisposable: Disposable) {
-        val actionManager = ActionManager.getInstance()
-        actionManager.addAnActionListener(object : AnActionListener {
+        val actionListener = object: AnActionListener {
             override fun beforeActionPerformed(anAction: AnAction, dataContext: DataContext, event: AnActionEvent) {
                 // Track action in "before" callback because otherwise timestamp of the action can be wrong
                 // (e.g. commit action shows dialog and finishes only after the dialog is closed).
                 // Action id can be null e.g. on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction).
-                val actionId = actionManager.getId(anAction) ?: return
+                val actionId = ActionManager.getInstance().getId(anAction) ?: return
                 trackerLog.append(captureIdeState(TrackerEvent.Type.Action, actionId))
             }
-        }, parentDisposable)
+        }
+        ApplicationManager.getApplication()
+            .messageBus.connect(parentDisposable)
+            .subscribe(AnActionListener.TOPIC, actionListener)
 
         // Use custom listener for VCS because listening to normal IDE actions
         // doesn't notify about actual commits but only about opening commit dialog (see VcsActions source code for details).
@@ -236,8 +239,8 @@ class ActivityTracker(
                 // Non-java IDEs might not have PsiMethod class.
                 if (hasPsiClasses(project)) {
                     val elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
-                    val psiMethod = findPsiParent<PsiMethod>(elementAtOffset, { it is PsiMethod })
-                    val psiFile = findPsiParent<PsiFile>(elementAtOffset, { it is PsiFile })
+                    val psiMethod = findPsiParent<PsiMethod>(elementAtOffset) { it is PsiMethod }
+                    val psiFile = findPsiParent<PsiFile>(elementAtOffset) { it is PsiFile }
                     val currentElement = psiMethod ?: psiFile
                     psiPath = psiPathOf(currentElement)
                 }
