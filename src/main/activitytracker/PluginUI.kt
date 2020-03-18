@@ -159,8 +159,8 @@ class PluginUI(
                     event.project,
                     "Roll tracking log file?\nCurrent log will be moved into new file.",
                     "Activity Tracker",
-                    Messages.OK_BUTTON,
-                    Messages.CANCEL_BUTTON,
+                    Messages.getOkButton(),
+                    Messages.getCancelButton(),
                     Messages.getQuestionIcon()
                 )
                 if (userAnswer != Messages.OK) return
@@ -177,8 +177,8 @@ class PluginUI(
                     event.project,
                     "Clear current tracking log file?\n(This operation cannot be undone.)",
                     "Activity Tracker",
-                    Messages.OK_BUTTON,
-                    Messages.CANCEL_BUTTON,
+                    Messages.getOkButton(),
+                    Messages.getCancelButton(),
                     Messages.getQuestionIcon()
                 )
                 if (userAnswer != Messages.OK) return
