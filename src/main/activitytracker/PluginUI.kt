@@ -3,6 +3,7 @@ package activitytracker
 import activitytracker.ActivityTrackerPlugin.Companion.pluginId
 import activitytracker.EventAnalyzer.Result.*
 import activitytracker.liveplugin.*
+import com.intellij.CommonBundle
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.RevealFileAction
 import com.intellij.openapi.Disposable
@@ -159,8 +160,8 @@ class PluginUI(
                     event.project,
                     "Roll tracking log file?\nCurrent log will be moved into new file.",
                     "Activity Tracker",
-                    Messages.getOkButton(),
-                    Messages.getCancelButton(),
+                    CommonBundle.getOkButtonText(),
+                    CommonBundle.getCancelButtonText(),
                     Messages.getQuestionIcon()
                 )
                 if (userAnswer != Messages.OK) return
@@ -177,8 +178,8 @@ class PluginUI(
                     event.project,
                     "Clear current tracking log file?\n(This operation cannot be undone.)",
                     "Activity Tracker",
-                    Messages.getOkButton(),
-                    Messages.getCancelButton(),
+                    CommonBundle.getOkButtonText(),
+                    CommonBundle.getCancelButtonText(),
                     Messages.getQuestionIcon()
                 )
                 if (userAnswer != Messages.OK) return
