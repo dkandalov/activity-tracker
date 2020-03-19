@@ -6,33 +6,19 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.CheckinProjectPanel
 import com.intellij.openapi.vcs.VcsException
-import com.intellij.openapi.vcs.changes.CommitContext
+import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vcs.checkin.CheckinHandler
-import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory
+import com.intellij.openapi.vcs.checkin.VcsCheckinHandlerFactory
 import com.intellij.openapi.vcs.impl.CheckinHandlersManager
 import com.intellij.openapi.vcs.impl.CheckinHandlersManagerImpl
 import com.intellij.openapi.vcs.update.UpdatedFilesListener
+import com.intellij.util.containers.MultiMap
 import com.intellij.util.messages.MessageBusConnection
-import java.util.*
 
-class VcsActions(project: Project, listener: Listener) {
+class VcsActions(private val project: Project, private val listener: Listener) {
     private val busConnection: MessageBusConnection = project.messageBus.connect()
 
     private val updatedListener: UpdatedFilesListener = UpdatedFilesListener { listener.onVcsUpdate() }
-
-    private val checkinListener: CheckinHandlerFactory = object : CheckinHandlerFactory() {
-        override fun createHandler(panel: CheckinProjectPanel, commitContext: CommitContext): CheckinHandler {
-            return object : CheckinHandler() {
-                override fun checkinSuccessful() {
-                    if (panel.project == project) listener.onVcsCommit()
-                }
-
-                override fun checkinFailed(exception: List<VcsException>) {
-                    if (panel.project == project) listener.onVcsCommitFailed()
-                }
-            }
-        }
-    }
 
     // see git4idea.push.GitPushResultNotification#create
     // see org.zmlx.hg4idea.push.HgPusher#push
@@ -48,32 +34,34 @@ class VcsActions(project: Project, listener: Listener) {
         }
     }
 
-    fun registerVcsListener(id: String, project: Project, listener: Listener) {
-        registerVcsListener(registerDisposable(id), project, listener)
-    }
-
-    fun unregisterVcsListener(id: String) {
-        unregisterDisposable(id)
-    }
-
     fun start(): VcsActions {
         // using bus to listen to vcs updates because normal listener calls it twice
         // (see also https://gist.github.com/dkandalov/8840509)
         busConnection.subscribe(UpdatedFilesListener.UPDATED_FILES, updatedListener)
         busConnection.subscribe(Notifications.TOPIC, pushListener)
-        checkinHandlers().add(0, checkinListener)
+        checkinHandlers { vcsFactories ->
+            for (key in vcsFactories.keySet()) {
+                vcsFactories.putValue(key, DelegatingCheckinHandlerFactory(project, key))
+            }
+        }
         return this
     }
 
     fun stop(): VcsActions {
         busConnection.disconnect()
-        checkinHandlers().remove(checkinListener)
+        checkinHandlers { vcsFactories ->
+            vcsFactories.entrySet().forEach { entry ->
+                entry.value.removeIf { it is DelegatingCheckinHandlerFactory && it.project == project }
+            }
+        }
         return this
     }
 
-    private fun checkinHandlers(): ArrayList<CheckinHandlerFactory> {
+    private fun checkinHandlers(f: (MultiMap<VcsKey, VcsCheckinHandlerFactory>) -> Unit) {
         val checkinHandlersManager = CheckinHandlersManager.getInstance() as CheckinHandlersManagerImpl
-        return accessField(checkinHandlersManager, listOf("myRegisteredBeforeCheckinHandlers", "a", "b"), java.util.List::class.java)
+        accessField(checkinHandlersManager, listOf("a", "b", "myVcsMap", "vcsFactories")) { multiMap: MultiMap<VcsKey, VcsCheckinHandlerFactory> ->
+            f(multiMap)
+        }
     }
 
     private fun isVcsNotification(notification: Notification) =
@@ -95,6 +83,20 @@ class VcsActions(project: Project, listener: Listener) {
         fun onVcsUpdate() {}
         fun onVcsPush() {}
         fun onVcsPushFailed() {}
+    }
+
+    private inner class DelegatingCheckinHandlerFactory(val project: Project, key: VcsKey): VcsCheckinHandlerFactory(key) {
+        override fun createVcsHandler(panel: CheckinProjectPanel): CheckinHandler {
+            return object : CheckinHandler() {
+                override fun checkinSuccessful() {
+                    if (panel.project == project) listener.onVcsCommit()
+                }
+
+                override fun checkinFailed(exception: List<VcsException>) {
+                    if (panel.project == project) listener.onVcsCommitFailed()
+                }
+            }
+        }
     }
 
     companion object {

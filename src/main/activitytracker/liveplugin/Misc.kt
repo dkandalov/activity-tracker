@@ -26,16 +26,18 @@ fun newDisposable(vararg parents: Disposable, callback: () -> Any = {}): Disposa
     return disposable
 }
 
-fun <T> accessField(o: Any, possibleFieldNames: Collection<String>, fieldClass: Class<*>? = null): T {
-    for (fieldName in possibleFieldNames) {
-        try {
-            val result = accessField<T>(o, fieldName, fieldClass)
-            if (result != null) return result
-        } catch (ignored: Exception) {
+inline fun <reified T> accessField(anObject: Any, possibleFieldNames: List<String>, f: (T) -> Unit): Boolean {
+    for (field in anObject.javaClass.declaredFields) {
+        if (possibleFieldNames.contains(field.name) && T::class.java.isAssignableFrom(field.type)) {
+            field.isAccessible = true
+            try {
+                f.invoke(field.get(anObject) as T)
+                return true
+            } catch (ignored: Exception) {
+            }
         }
     }
-    val className = if (fieldClass == null) "" else " (with class ${fieldClass.canonicalName})"
-    throw IllegalStateException("Didn't find any of the fields ${possibleFieldNames.joinToString(",")} $className in object $o")
+    return false
 }
 
 @Suppress("UNCHECKED_CAST")
