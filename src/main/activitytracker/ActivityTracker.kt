@@ -198,6 +198,7 @@ class ActivityTracker(
 
             var ideHasFocus = window.isActive
             if (!ideHasFocus) {
+                @Suppress("UnstableApiUsage")
                 val ideFrame = findParentComponent<IdeFrameImpl?>(focusOwner) { it is IdeFrameImpl }
                 ideHasFocus = ideFrame != null && ideFrame.isActive
             }
