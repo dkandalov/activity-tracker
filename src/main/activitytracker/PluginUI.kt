@@ -12,6 +12,7 @@ import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.Extensions
 import com.intellij.openapi.extensions.LoadingOrder
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
@@ -102,7 +103,7 @@ class PluginUI(
         )
 
     private fun createActionGroup(): DefaultActionGroup {
-        val toggleTracking = object: AnAction() {
+        val toggleTracking = object: AnAction(), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.toggleTracking()
             override fun update(event: AnActionEvent) {
                 event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
@@ -124,13 +125,13 @@ class PluginUI(
             override fun isSelected(event: AnActionEvent) = state.trackMouse
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackMouse(value)
         }
-        val openLogInIde = object: AnAction("Open in IDE") {
+        val openLogInIde = object: AnAction("Open in IDE"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFile(event.project)
         }
-        val openLogFolder = object: AnAction("Open in File Manager") {
+        val openLogFolder = object: AnAction("Open in File Manager"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFolder()
         }
-        val showStatistics = object: AnAction("Show Stats") {
+        val showStatistics = object: AnAction("Show Stats"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
                 val project = event.project
                 if (trackerLog.isTooLargeToProcess()) {
@@ -154,7 +155,7 @@ class PluginUI(
                 }
             }
         }
-        val rollCurrentLog = object: AnAction("Roll Tracking Log") {
+        val rollCurrentLog = object: AnAction("Roll Tracking Log"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
                 val userAnswer = showOkCancelDialog(
                     event.project,
@@ -172,7 +173,7 @@ class PluginUI(
                 }
             }
         }
-        val clearCurrentLog = object: AnAction("Clear Tracking Log") {
+        val clearCurrentLog = object: AnAction("Clear Tracking Log"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
                 val userAnswer = showOkCancelDialog(
                     event.project,
@@ -188,7 +189,7 @@ class PluginUI(
                 if (wasCleared) showNotification("Tracking log was cleared")
             }
         }
-        val openHelp = object: AnAction("Help") {
+        val openHelp = object: AnAction("Help"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = BrowserUtil.open("https://github.com/dkandalov/activity-tracker#help")
         }
 
