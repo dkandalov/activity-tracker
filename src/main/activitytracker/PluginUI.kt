@@ -34,7 +34,7 @@ class PluginUI(
     private val log = Logger.getInstance(PluginUI::class.java)
     private var state = ActivityTrackerPlugin.State.defaultValue
     private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
-    private val widgetId = "$pluginId-Widget"
+    private val widgetId = "Activity Tracker Widget"
 
     fun init(): PluginUI {
         plugin.setPluginUI(this)
