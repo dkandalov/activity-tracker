@@ -54,7 +54,7 @@ object StatsToolWindow {
                             when (result) {
                                 is AlreadyRunning -> showNotification("Analysis is already running.")
                                 is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE.")
-                                is Ok -> {
+                                is Ok             -> {
                                     toolWindowPanel.remove(rootComponent)
                                     rootComponent = createRootComponent(result.stats)
                                     toolWindowPanel.setContent(rootComponent)
@@ -110,8 +110,7 @@ object StatsToolWindow {
 
             add(JPanel().apply {
                 layout = GridBagLayout()
-                val message =
-                    "Results are based on data from '${stats.dataFile}'.\n\n" +
+                val message = "Results are based on data from '${stats.dataFile}'.\n\n" +
                     "Note that time spent in project includes time in IDE toolwindows and dialogs. " +
                     "Therefore, it will be greater than time spent in IDE editor."
                 add(JTextArea(message).apply {

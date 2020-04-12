@@ -101,8 +101,10 @@ class ActivityTracker(
         return TrackerEvent(time, userName, Duration, durations, "", "", "", "", -1, -1, "")
     }
 
-    private fun startAWTEventListener(trackerLog: TrackerLog, parentDisposable: Disposable, trackKeyboard: Boolean,
-                                      trackMouse: Boolean, mouseMoveEventsThresholdMs: Long) {
+    private fun startAWTEventListener(
+        trackerLog: TrackerLog, parentDisposable: Disposable, trackKeyboard: Boolean,
+        trackMouse: Boolean, mouseMoveEventsThresholdMs: Long
+    ) {
         var lastMouseMoveTimestamp = 0L
         IdeEventQueue.getInstance().addPostprocessor(IdeEventQueue.EventDispatcher { awtEvent: AWTEvent ->
             if (trackMouse && awtEvent is MouseEvent && awtEvent.id == MouseEvent.MOUSE_CLICKED) {
@@ -146,20 +148,22 @@ class ActivityTracker(
 
         // Use custom listener for VCS because listening to normal IDE actions
         // doesn't notify about actual commits but only about opening commit dialog (see VcsActions source code for details).
-        registerVcsListener(parentDisposable, object : VcsActions.Listener {
+        registerVcsListener(parentDisposable, object: VcsActions.Listener {
             override fun onVcsCommit() {
                 invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Commit")) }
             }
+
             override fun onVcsUpdate() {
                 invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Update")) }
             }
+
             override fun onVcsPush() {
                 invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Push")) }
             }
         })
 
         if (haveCompilation()) {
-            registerCompilationListener(parentDisposable, object : CompilationStatusListener {
+            registerCompilationListener(parentDisposable, object: CompilationStatusListener {
                 override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext) {
                     invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.CompilationFinished, errors.toString())) }
                 }
@@ -302,18 +306,20 @@ class ActivityTracker(
         }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T> findPsiParent(element: PsiElement?, matches: (PsiElement) -> Boolean): T? = when {
-        element == null  -> null
-        matches(element) -> element as T?
-        else             -> findPsiParent(element.parent, matches)
-    }
+    private fun <T> findPsiParent(element: PsiElement?, matches: (PsiElement) -> Boolean): T? =
+        when {
+            element == null  -> null
+            matches(element) -> element as T?
+            else             -> findPsiParent(element.parent, matches)
+        }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T> findParentComponent(component: Component?, matches: (Component) -> Boolean): T? = when {
-        component == null  -> null
-        matches(component) -> component as T?
-        else               -> findParentComponent(component.parent, matches)
-    }
+    private fun <T> findParentComponent(component: Component?, matches: (Component) -> Boolean): T? =
+        when {
+            component == null  -> null
+            matches(component) -> component as T?
+            else               -> findParentComponent(component.parent, matches)
+        }
 
     private fun currentEditorIn(project: Project): Editor? =
         (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).selectedTextEditor
@@ -321,9 +327,8 @@ class ActivityTracker(
     private fun currentFileIn(project: Project): VirtualFile? =
         (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).currentFile
 
-    private fun currentPsiFileIn(project: Project): PsiFile? {
-        return psiFile(currentFileIn(project), project)
-    }
+    private fun currentPsiFileIn(project: Project): PsiFile? =
+        psiFile(currentFileIn(project), project)
 
     private fun psiFile(file: VirtualFile?, project: Project): PsiFile? {
         file ?: return null

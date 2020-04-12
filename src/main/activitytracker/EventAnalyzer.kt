@@ -36,9 +36,9 @@ class EventAnalyzer(private val trackerLog: TrackerLog) {
     }
 
     sealed class Result {
-        class Ok(val stats: Stats, val errors: List<Pair<String, Exception>>) : Result()
-        object AlreadyRunning : Result()
-        object DataIsTooLarge : Result()
+        class Ok(val stats: Stats, val errors: List<Pair<String, Exception>>): Result()
+        object AlreadyRunning: Result()
+        object DataIsTooLarge: Result()
     }
 }
 
@@ -62,10 +62,10 @@ fun analyze(events: Sequence<TrackerEvent>): Stats {
         countByActionId(it, map4)
     }
     return Stats(
-        secondsInEditorByFile = map1.entries.map{ Pair(it.key, it.value) }.sortedBy{ -it.second }.withTotal(),
-        secondsByProject = map2.entries.map{ Pair(it.key, it.value) }.sortedBy{ -it.second }.withTotal(),
-        secondsByTask = map3.entries.map{ Pair(it.key, it.value) }.sortedBy{ -it.second }.withTotal(),
-        countByActionId = map4.entries.map{ Pair(it.key, it.value) }.sortedBy{ -it.second }
+        secondsInEditorByFile = map1.entries.map { Pair(it.key, it.value) }.sortedBy { -it.second }.withTotal(),
+        secondsByProject = map2.entries.map { Pair(it.key, it.value) }.sortedBy { -it.second }.withTotal(),
+        secondsByTask = map3.entries.map { Pair(it.key, it.value) }.sortedBy { -it.second }.withTotal(),
+        countByActionId = map4.entries.map { Pair(it.key, it.value) }.sortedBy { -it.second }
     )
 }
 
@@ -97,9 +97,9 @@ private fun countByActionId(event: TrackerEvent, map: MutableMap<String, Int>) {
     }
 }
 
-private fun fileName(filePath: String): String  {
+private fun fileName(filePath: String): String {
     val i = filePath.lastIndexOf(File.separator)
     return if (i == -1) filePath else filePath.substring(i + 1)
 }
 
-private fun List<Pair<String, Int>>.withTotal() = this + Pair("Total", sumBy{ it.second })
+private fun List<Pair<String, Int>>.withTotal() = this + Pair("Total", sumBy { it.second })
