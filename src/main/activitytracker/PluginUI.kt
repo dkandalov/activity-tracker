@@ -10,13 +10,15 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.extensions.Extensions
+import com.intellij.openapi.extensions.LoadingOrder
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.openapi.wm.IdeFrame
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
-import com.intellij.openapi.wm.WindowManagerListener
+import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
 import java.awt.Component
@@ -32,6 +34,7 @@ class PluginUI(
     private val log = Logger.getInstance(PluginUI::class.java)
     private var state = ActivityTrackerPlugin.State.defaultValue
     private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
+    private val widgetId = "$pluginId-Widget"
 
     fun init(): PluginUI {
         plugin.setPluginUI(this)
@@ -60,36 +63,33 @@ class PluginUI(
     private fun registerWidget(parentDisposable: Disposable) {
         val presentation = object: StatusBarWidget.TextPresentation {
             override fun getText() = "Activity tracker: " + (if (state.isTracking) "on" else "off")
-
+            override fun getAlignment() = Component.CENTER_ALIGNMENT
             override fun getTooltipText() = "Click to open menu"
-
-            override fun getClickConsumer(): Consumer<MouseEvent> = Consumer { mouseEvent ->
+            override fun getClickConsumer() = Consumer { mouseEvent: MouseEvent ->
                 val dataContext = MapDataContext().put(PlatformDataKeys.CONTEXT_COMPONENT.name, mouseEvent.component)
                 val popup = createListPopup(dataContext)
                 val dimension = popup.content.preferredSize
                 val point = Point(0, -dimension.height)
                 popup.show(RelativePoint(mouseEvent.component, point))
             }
-
-            override fun getAlignment() = Component.CENTER_ALIGNMENT
         }
 
-        registerWindowManagerListener(parentDisposable, object: WindowManagerListener {
-            override fun frameCreated(frame: IdeFrame) {
-                val widget = object: StatusBarWidget {
-                    override fun ID() = widgetId
-                    override fun getPresentation() = presentation
-                    override fun install(statusBar: StatusBar) {}
-                    override fun dispose() {}
-                }
-                frame.statusBar?.addWidget(widget, "before Position")
-                frame.statusBar?.updateWidget(widgetId)
+        val extensionPoint = StatusBarWidgetFactory.EP_NAME.getPoint { Extensions.getRootArea() }
+        val factory = object: StatusBarWidgetFactory {
+            override fun getId() = widgetId
+            override fun getDisplayName() = widgetId
+            override fun isAvailable(project: Project) = true
+            override fun canBeEnabledOn(statusBar: StatusBar) = true
+            override fun createWidget(project: Project) = object: StatusBarWidget, StatusBarWidget.Multiframe {
+                override fun ID() = widgetId
+                override fun getPresentation() = presentation
+                override fun install(statusBar: StatusBar) = statusBar.updateWidget(ID())
+                override fun copy() = this
+                override fun dispose() {}
             }
-
-            override fun beforeFrameReleased(frame: IdeFrame) {
-                frame.statusBar?.removeWidget(widgetId)
-            }
-        })
+            override fun disposeWidget(widget: StatusBarWidget) {}
+        }
+        extensionPoint.registerExtension(factory, LoadingOrder.before("positionWidget"), parentDisposable)
     }
 
     private fun createListPopup(dataContext: DataContext) =
@@ -139,7 +139,7 @@ class PluginUI(
                     eventAnalyzer.analyze(whenDone = { result ->
                         invokeLaterOnEDT {
                             when (result) {
-                                is Ok -> {
+                                is Ok             -> {
                                     StatsToolWindow.showIn(project, result.stats, eventAnalyzer, parentDisposable)
                                     if (result.errors.isNotEmpty()) {
                                         showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
@@ -216,9 +216,5 @@ class PluginUI(
             })
             add(openHelp)
         }
-    }
-
-    companion object {
-        const val widgetId = "$pluginId-Widget"
     }
 }

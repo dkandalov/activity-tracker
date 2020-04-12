@@ -24,7 +24,6 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.wm.WindowManager
-import com.intellij.openapi.wm.WindowManagerListener
 import com.intellij.util.text.CharArrayUtil
 import org.jetbrains.annotations.NonNls
 import java.io.PrintWriter
@@ -58,14 +57,6 @@ fun showNotification(message: Any?, onLinkClick: (HyperlinkEvent) -> Unit = {}) 
             }
         )
         ApplicationManager.getApplication().messageBus.syncPublisher(Notifications.TOPIC).notify(notification)
-    }
-}
-
-fun registerWindowManagerListener(disposable: Disposable, listener: WindowManagerListener) {
-    val windowManager = WindowManager.getInstance()
-    windowManager.addListener(listener)
-    disposable.whenDisposed {
-        windowManager.removeListener(listener)
     }
 }
 
