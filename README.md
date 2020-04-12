@@ -2,15 +2,13 @@
 
 ## Activity Tracker
 This is proof-of-concept plugin for IntelliJ IDEs to track and record user activity.
-Currently the main feature is recording user activity into csv files.
+Currently, the main feature is recording user activity into csv files.
 
-To install the plugin use `IDE Settings -> Plugins -> Browse Repositories`
-or download [latest zip](https://github.com/dkandalov/activity-tracker/blob/master/activity-tracker-plugin.zip)
-and use `IDE Settings -> Plugins -> Install plugin from disk...`.
+To install the plugin use `IDE Settings -> Plugins -> Marketplace -> Search for "Activity Tracker"`.
 
 To use the plugin see "Activity tracker" widget in IDE statusbar.
 
-<img src="https://raw.githubusercontent.com/dkandalov/activity-tracker/master/screenshot.png" alt="screenshot" title="screenshot" align="center"/>
+<img src="https://raw.githubusercontent.com/dkandalov/activity-tracker/master/screenshot.png" alt="screenshot" title="screenshot" style="text-align:center"/>
 
 
 ## Why?
