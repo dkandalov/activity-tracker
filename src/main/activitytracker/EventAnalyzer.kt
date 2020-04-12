@@ -71,35 +71,35 @@ fun analyze(events: Sequence<TrackerEvent>): Stats {
 
 private fun secondsInEditorByFile(event: TrackerEvent, map: MutableMap<String, Int>) {
     if (event.type == IdeState && event.focusedComponent == "Editor" && event.file != "") {
-        val key = fileName(event.file)
-        map[key] = (map[key] ?: 0) + 1
+        val key = event.file.fileName()
+        map[key] = map.getOrDefault(key, 0) + 1
     }
 }
 
 private fun secondsByProject(event: TrackerEvent, map: MutableMap<String, Int>) {
     if (event.type == IdeState && event.data == "Active") {
         val key = event.projectName
-        map[key] = (map[key] ?: 0) + 1
+        map[key] = map.getOrDefault(key, 0) + 1
     }
 }
 
 private fun secondsByTask(event: TrackerEvent, map: MutableMap<String, Int>) {
     if (event.type == IdeState && event.data == "Active") {
         val key = event.task
-        map[key] = (map[key] ?: 0) + 1
+        map[key] = map.getOrDefault(key, 0) + 1
     }
 }
 
 private fun countByActionId(event: TrackerEvent, map: MutableMap<String, Int>) {
     if (event.type == TrackerEvent.Type.Action) {
         val key = event.data
-        map[key] = (map[key] ?: 0) + 1
+        map[key] = map.getOrDefault(key, 0) + 1
     }
 }
 
-private fun fileName(filePath: String): String {
-    val i = filePath.lastIndexOf(File.separator)
-    return if (i == -1) filePath else filePath.substring(i + 1)
+private fun String.fileName(): String {
+    val i = lastIndexOf(File.separator)
+    return if (i == -1) this else substring(i + 1)
 }
 
 private fun List<Pair<String, Int>>.withTotal() = this + Pair("Total", sumBy { it.second })
