@@ -2,31 +2,30 @@ package activitytracker
 
 import activitytracker.liveplugin.currentVirtualFile
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
 
-class PsiPathProvider {
-    private var hasPsiClasses: Boolean? = null
+interface PsiPathProvider {
+    fun psiPath(project: Project, editor: Editor): String? = null
 
-    fun psiPath(project: Project, editor: Editor): String? {
-        return if (hasPsiClasses(project)) {
-            val elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
-            val psiMethod = findPsiParent<PsiMethod>(elementAtOffset) { it is PsiMethod }
-            val psiFile = findPsiParent<PsiFile>(elementAtOffset) { it is PsiFile }
-            val currentElement = psiMethod ?: psiFile
-            psiPathOf(currentElement)
-        } else {
-            null
-        }
+    companion object {
+        var instance: PsiPathProvider = object: PsiPathProvider {}
     }
+}
 
-    private fun hasPsiClasses(project: Project): Boolean {
-        if (hasPsiClasses == null && !DumbService.getInstance(project).isDumb) {
-            hasPsiClasses = isOnClasspath("com.intellij.psi.PsiMethod")
-        }
-        return hasPsiClasses ?: false
+class InitJavaPsiPathProvider {
+    init {
+        PsiPathProvider.instance = JavaPsiPathProvider()
+    }
+}
+
+private class JavaPsiPathProvider: PsiPathProvider {
+    override fun psiPath(project: Project, editor: Editor): String? {
+        val elementAtOffset = project.currentPsiFile()?.findElementAt(editor.caretModel.offset)
+        val psiMethod = findPsiParent<PsiMethod>(elementAtOffset) { it is PsiMethod }
+        val psiFile = findPsiParent<PsiFile>(elementAtOffset) { it is PsiFile }
+        return psiPathOf(psiMethod ?: psiFile)
     }
 
     private fun psiPathOf(psiElement: PsiElement?): String =
@@ -53,12 +52,9 @@ class PsiPathProvider {
             else             -> findPsiParent(element.parent, matches)
         }
 
-    private fun currentPsiFileIn(project: Project): PsiFile? =
-        project.currentVirtualFile()?.toPsiFile(project)
+    private fun Project.currentPsiFile(): PsiFile? =
+        currentVirtualFile()?.toPsiFile(this)
 
     private fun VirtualFile.toPsiFile(project: Project): PsiFile? =
         PsiManager.getInstance(project).findFile(this)
-
-    private fun isOnClasspath(className: String) =
-        ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
 }
