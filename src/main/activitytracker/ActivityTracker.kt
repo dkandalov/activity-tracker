@@ -21,12 +21,10 @@ import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vcs.changes.ChangeListManager
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
-import com.intellij.psi.*
 import com.intellij.tasks.TaskManager
 import com.intellij.util.SystemProperties
 import org.joda.time.DateTime
@@ -49,65 +47,6 @@ class ActivityTracker(
     private var trackingDisposable: Disposable? = null
     private val trackerCallDurations: MutableList<Long> = mutableListOf()
     private var hasTaskManager: Boolean? = null
-
-    class PsiPathProvider {
-        private var hasPsiClasses: Boolean? = null
-
-        fun psiPath(project: Project, editor: Editor): String? {
-            return if (hasPsiClasses(project)) {
-                val elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
-                val psiMethod = findPsiParent<PsiMethod>(elementAtOffset) { it is PsiMethod }
-                val psiFile = findPsiParent<PsiFile>(elementAtOffset) { it is PsiFile }
-                val currentElement = psiMethod ?: psiFile
-                psiPathOf(currentElement)
-            } else {
-                null
-            }
-        }
-
-        private fun hasPsiClasses(project: Project): Boolean {
-            if (hasPsiClasses == null && !DumbService.getInstance(project).isDumb) {
-                hasPsiClasses = isOnClasspath("com.intellij.psi.PsiMethod")
-            }
-            return hasPsiClasses ?: false
-        }
-
-        private fun psiPathOf(psiElement: PsiElement?): String =
-            when (psiElement) {
-                null, is PsiFile          -> ""
-                is PsiAnonymousClass      -> {
-                    val parentName = psiPathOf(psiElement.parent)
-                    val name = "[${psiElement.baseClassType.className}]"
-                    if (parentName.isEmpty()) name else "$parentName::$name"
-                }
-                is PsiMethod, is PsiClass -> {
-                    val parentName = psiPathOf(psiElement.parent)
-                    val name = (psiElement as PsiNamedElement).name ?: ""
-                    if (parentName.isEmpty()) name else "$parentName::$name"
-                }
-                else                      -> psiPathOf(psiElement.parent)
-            }
-
-        @Suppress("UNCHECKED_CAST")
-        private fun <T> findPsiParent(element: PsiElement?, matches: (PsiElement) -> Boolean): T? =
-            when {
-                element == null  -> null
-                matches(element) -> element as T?
-                else             -> findPsiParent(element.parent, matches)
-            }
-
-        private fun currentPsiFileIn(project: Project): PsiFile? =
-            psiFile(currentFileIn(project), project)
-
-        private fun psiFile(file: VirtualFile?, project: Project): PsiFile? {
-            file ?: return null
-            return PsiManager.getInstance(project).findFile(file)
-        }
-
-        private fun isOnClasspath(className: String) =
-            ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
-
-    }
 
     fun startTracking(config: Config) {
         if (trackingDisposable != null) return
@@ -331,6 +270,3 @@ class ActivityTracker(
         val mouseMoveEventsThresholdMs: Long
     )
 }
-
-private fun currentFileIn(project: Project): VirtualFile? =
-    (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).currentFile

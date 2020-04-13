@@ -13,7 +13,7 @@ class AppComponent {
 
                 val pathToTrackingLogFile = "${PathManager.getPluginsPath()}/activity-tracker/ide-events.csv"
                 val trackerLog = TrackerLog(pathToTrackingLogFile).initWriter(parentDisposable = application, writeFrequencyMs = 10000L)
-                val tracker = ActivityTracker(JavaActivityTracker.instance, ActivityTracker.PsiPathProvider(), trackerLog, parentDisposable = application, logTrackerCallDuration = false)
+                val tracker = ActivityTracker(JavaActivityTracker.instance, PsiPathProvider(), trackerLog, parentDisposable = application, logTrackerCallDuration = false)
                 val plugin = ActivityTrackerPlugin(tracker, trackerLog, PropertiesComponent.getInstance()).init()
                 val eventAnalyzer = EventAnalyzer(trackerLog)
                 PluginUI(plugin, trackerLog, eventAnalyzer, parentDisposable = application).init()

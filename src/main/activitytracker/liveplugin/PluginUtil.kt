@@ -12,6 +12,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.progress.PerformInBackgroundOption
 import com.intellij.openapi.progress.PerformInBackgroundOption.ALWAYS_BACKGROUND
@@ -203,6 +204,9 @@ fun registerProjectListener(disposable: Disposable, listener: ProjectManagerList
     val connection = ApplicationManager.getApplication().messageBus.connect(disposable)
     connection.subscribe(ProjectManager.TOPIC, listener)
 }
+
+fun currentFileIn(project: Project): VirtualFile? =
+    (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).currentFile
 
 val logger = Logger.getInstance("LivePlugin")
 
