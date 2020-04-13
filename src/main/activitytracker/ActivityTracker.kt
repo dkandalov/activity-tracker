@@ -214,7 +214,7 @@ class ActivityTracker(
             val editor = currentEditorIn(project)
             if (editor != null) {
                 // Keep full file name because projects and libraries might have files with the same names/partial paths.
-                val file = currentFileIn(project)
+                val file = project.currentVirtualFile()
                 filePath = file?.path ?: ""
                 line = editor.caretModel.logicalPosition.line
                 column = editor.caretModel.logicalPosition.column

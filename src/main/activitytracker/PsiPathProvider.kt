@@ -1,6 +1,6 @@
 package activitytracker
 
-import activitytracker.liveplugin.currentFileIn
+import activitytracker.liveplugin.currentVirtualFile
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
@@ -54,12 +54,10 @@ class PsiPathProvider {
         }
 
     private fun currentPsiFileIn(project: Project): PsiFile? =
-        psiFile(currentFileIn(project), project)
+        project.currentVirtualFile()?.toPsiFile(project)
 
-    private fun psiFile(file: VirtualFile?, project: Project): PsiFile? {
-        file ?: return null
-        return PsiManager.getInstance(project).findFile(file)
-    }
+    private fun VirtualFile.toPsiFile(project: Project): PsiFile? =
+        PsiManager.getInstance(project).findFile(this)
 
     private fun isOnClasspath(className: String) =
         ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
