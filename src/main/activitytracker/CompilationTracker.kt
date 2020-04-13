@@ -1,5 +1,6 @@
 package activitytracker
 
+import activitytracker.TrackerEvent.Type.CompilationFinished
 import activitytracker.liveplugin.newDisposable
 import activitytracker.liveplugin.registerProjectListener
 import com.intellij.openapi.Disposable
@@ -11,21 +12,28 @@ interface CompilationTracker {
     fun startActionListener(
         parentDisposable: Disposable,
         callback: (eventType: TrackerEvent.Type, originalEventData: String) -> Unit
-    )
+    ) {}
 
     companion object {
-        val instance = object: CompilationTracker {
+        var instance = object: CompilationTracker {}
+    }
+}
+
+/**
+ * Also works for other JVM-based languages.
+ */
+class InitJavaCompilationTracker {
+    init {
+        CompilationTracker.instance = object: CompilationTracker {
             override fun startActionListener(
                 parentDisposable: Disposable,
                 callback: (eventType: TrackerEvent.Type, originalEventData: String) -> Unit
             ) {
-                if (haveCompilation()) {
-                    registerCompilationListener(parentDisposable, object: CompilationStatusListener {
-                        override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext) {
-                            callback(TrackerEvent.Type.CompilationFinished, errors.toString())
-                        }
-                    })
-                }
+                registerCompilationListener(parentDisposable, object: CompilationStatusListener {
+                    override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext) {
+                        callback(CompilationFinished, errors.toString())
+                    }
+                })
             }
 
             private fun registerCompilationListener(disposable: Disposable, listener: CompilationStatusListener) {
@@ -36,11 +44,5 @@ interface CompilationTracker {
                 }
             }
         }
-
-
-        private fun haveCompilation() = isOnClasspath("com.intellij.openapi.compiler.CompilationStatusListener")
-
-        private fun isOnClasspath(className: String) =
-            ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
     }
 }
