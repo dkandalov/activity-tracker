@@ -7,14 +7,14 @@ import com.intellij.openapi.compiler.CompilationStatusListener
 import com.intellij.openapi.compiler.CompileContext
 import com.intellij.openapi.compiler.CompilerTopics
 
-interface JavaActivityTracker {
+interface CompilationTracker {
     fun startActionListener(
         parentDisposable: Disposable,
         callback: (eventType: TrackerEvent.Type, originalEventData: String) -> Unit
     )
 
     companion object {
-        val instance = object : JavaActivityTracker {
+        val instance = object: CompilationTracker {
             override fun startActionListener(
                 parentDisposable: Disposable,
                 callback: (eventType: TrackerEvent.Type, originalEventData: String) -> Unit

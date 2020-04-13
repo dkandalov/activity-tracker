@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import javax.swing.JDialog
 
 class ActivityTracker(
-    private val javaTracker: JavaActivityTracker,
+    private val compilationTracker: CompilationTracker,
     private val psiPathProvider: PsiPathProvider,
     private val trackerLog: TrackerLog,
     private val parentDisposable: Disposable,
@@ -57,7 +57,7 @@ class ActivityTracker(
         }
         if (config.trackIdeActions) {
             startActionListener(trackerLog, trackingDisposable!!)
-            javaTracker.startActionListener(trackingDisposable!!) { eventType, originalEventData ->
+            compilationTracker.startActionListener(trackingDisposable!!) { eventType, originalEventData ->
                 invokeOnEDT { trackerLog.append(captureIdeState(eventType, originalEventData)) }
             }
         }
