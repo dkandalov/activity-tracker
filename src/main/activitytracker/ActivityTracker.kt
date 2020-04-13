@@ -14,9 +14,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.compiler.CompilationStatusListener
-import com.intellij.openapi.compiler.CompileContext
-import com.intellij.openapi.compiler.CompilerTopics
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorComponentImpl
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
@@ -43,15 +40,74 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import javax.swing.JDialog
 
 class ActivityTracker(
+    private val javaTracker: JavaActivityTracker,
+    private val psiPathProvider: PsiPathProvider,
     private val trackerLog: TrackerLog,
     private val parentDisposable: Disposable,
     private val logTrackerCallDuration: Boolean = false
 ) {
     private var trackingDisposable: Disposable? = null
     private val trackerCallDurations: MutableList<Long> = mutableListOf()
-    private var hasPsiClasses: Boolean? = null
     private var hasTaskManager: Boolean? = null
 
+    class PsiPathProvider {
+        private var hasPsiClasses: Boolean? = null
+
+        fun psiPath(project: Project, editor: Editor): String? {
+            return if (hasPsiClasses(project)) {
+                val elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
+                val psiMethod = findPsiParent<PsiMethod>(elementAtOffset) { it is PsiMethod }
+                val psiFile = findPsiParent<PsiFile>(elementAtOffset) { it is PsiFile }
+                val currentElement = psiMethod ?: psiFile
+                psiPathOf(currentElement)
+            } else {
+                null
+            }
+        }
+
+        private fun hasPsiClasses(project: Project): Boolean {
+            if (hasPsiClasses == null && !DumbService.getInstance(project).isDumb) {
+                hasPsiClasses = isOnClasspath("com.intellij.psi.PsiMethod")
+            }
+            return hasPsiClasses ?: false
+        }
+
+        private fun psiPathOf(psiElement: PsiElement?): String =
+            when (psiElement) {
+                null, is PsiFile          -> ""
+                is PsiAnonymousClass      -> {
+                    val parentName = psiPathOf(psiElement.parent)
+                    val name = "[${psiElement.baseClassType.className}]"
+                    if (parentName.isEmpty()) name else "$parentName::$name"
+                }
+                is PsiMethod, is PsiClass -> {
+                    val parentName = psiPathOf(psiElement.parent)
+                    val name = (psiElement as PsiNamedElement).name ?: ""
+                    if (parentName.isEmpty()) name else "$parentName::$name"
+                }
+                else                      -> psiPathOf(psiElement.parent)
+            }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun <T> findPsiParent(element: PsiElement?, matches: (PsiElement) -> Boolean): T? =
+            when {
+                element == null  -> null
+                matches(element) -> element as T?
+                else             -> findPsiParent(element.parent, matches)
+            }
+
+        private fun currentPsiFileIn(project: Project): PsiFile? =
+            psiFile(currentFileIn(project), project)
+
+        private fun psiFile(file: VirtualFile?, project: Project): PsiFile? {
+            file ?: return null
+            return PsiManager.getInstance(project).findFile(file)
+        }
+
+        private fun isOnClasspath(className: String) =
+            ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
+
+    }
 
     fun startTracking(config: Config) {
         if (trackingDisposable != null) return
@@ -62,6 +118,9 @@ class ActivityTracker(
         }
         if (config.trackIdeActions) {
             startActionListener(trackerLog, trackingDisposable!!)
+            javaTracker.startActionListener(trackingDisposable!!) { eventType, originalEventData ->
+                invokeOnEDT { trackerLog.append(captureIdeState(eventType, originalEventData)) }
+            }
         }
         if (config.trackKeyboard || config.trackMouse) {
             startAWTEventListener(trackerLog, trackingDisposable!!, config.trackKeyboard, config.trackMouse, config.mouseMoveEventsThresholdMs)
@@ -161,26 +220,6 @@ class ActivityTracker(
                 invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Push")) }
             }
         })
-
-        if (haveCompilation()) {
-            registerCompilationListener(parentDisposable, object: CompilationStatusListener {
-                override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext) {
-                    invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.CompilationFinished, errors.toString())) }
-                }
-            })
-        }
-    }
-
-    private fun registerCompilationListener(disposable: Disposable, listener: CompilationStatusListener) {
-        registerProjectListener(disposable) { project ->
-            registerCompilationListener(disposable, project, listener)
-        }
-    }
-
-    private fun registerCompilationListener(disposable: Disposable, project: Project, listener: CompilationStatusListener) {
-        project.messageBus
-            .connect(newDisposable(disposable, project))
-            .subscribe(CompilerTopics.COMPILATION_STATUS, listener)
     }
 
     private fun captureIdeState(eventType: TrackerEvent.Type, originalEventData: String): TrackerEvent? {
@@ -240,15 +279,7 @@ class ActivityTracker(
                 filePath = file?.path ?: ""
                 line = editor.caretModel.logicalPosition.line
                 column = editor.caretModel.logicalPosition.column
-
-                // Non-java IDEs might not have PsiMethod class.
-                if (hasPsiClasses(project)) {
-                    val elementAtOffset = currentPsiFileIn(project)?.findElementAt(editor.caretModel.offset)
-                    val psiMethod = findPsiParent<PsiMethod>(elementAtOffset) { it is PsiMethod }
-                    val psiFile = findPsiParent<PsiFile>(elementAtOffset) { it is PsiFile }
-                    val currentElement = psiMethod ?: psiFile
-                    psiPath = psiPathOf(currentElement)
-                }
+                psiPath = psiPathProvider.psiPath(project, editor) ?: ""
             }
 
             val task = if (hasTaskManager(project)) {
@@ -277,41 +308,8 @@ class ActivityTracker(
         return hasTaskManager ?: false
     }
 
-    private fun hasPsiClasses(project: Project): Boolean {
-        if (hasPsiClasses == null && !DumbService.getInstance(project).isDumb) {
-            hasPsiClasses = isOnClasspath("com.intellij.psi.PsiMethod")
-        }
-        return hasPsiClasses ?: false
-    }
-
-    private fun haveCompilation() = isOnClasspath("com.intellij.openapi.compiler.CompilationStatusListener")
-
     private fun isOnClasspath(className: String) =
         ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
-
-    private fun psiPathOf(psiElement: PsiElement?): String =
-        when (psiElement) {
-            null, is PsiFile          -> ""
-            is PsiAnonymousClass      -> {
-                val parentName = psiPathOf(psiElement.parent)
-                val name = "[${psiElement.baseClassType.className}]"
-                if (parentName.isEmpty()) name else "$parentName::$name"
-            }
-            is PsiMethod, is PsiClass -> {
-                val parentName = psiPathOf(psiElement.parent)
-                val name = (psiElement as PsiNamedElement).name ?: ""
-                if (parentName.isEmpty()) name else "$parentName::$name"
-            }
-            else                      -> psiPathOf(psiElement.parent)
-        }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> findPsiParent(element: PsiElement?, matches: (PsiElement) -> Boolean): T? =
-        when {
-            element == null  -> null
-            matches(element) -> element as T?
-            else             -> findPsiParent(element.parent, matches)
-        }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> findParentComponent(component: Component?, matches: (Component) -> Boolean): T? =
@@ -324,17 +322,6 @@ class ActivityTracker(
     private fun currentEditorIn(project: Project): Editor? =
         (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).selectedTextEditor
 
-    private fun currentFileIn(project: Project): VirtualFile? =
-        (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).currentFile
-
-    private fun currentPsiFileIn(project: Project): PsiFile? =
-        psiFile(currentFileIn(project), project)
-
-    private fun psiFile(file: VirtualFile?, project: Project): PsiFile? {
-        file ?: return null
-        return PsiManager.getInstance(project).findFile(file)
-    }
-
     data class Config(
         val pollIdeState: Boolean,
         val pollIdeStateMs: Long,
@@ -344,3 +331,6 @@ class ActivityTracker(
         val mouseMoveEventsThresholdMs: Long
     )
 }
+
+private fun currentFileIn(project: Project): VirtualFile? =
+    (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).currentFile
