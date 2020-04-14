@@ -6,7 +6,7 @@ import com.intellij.ide.actions.RevealFileAction
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project
 
-class ActivityTrackerPlugin(
+class Plugin(
     private val tracker: ActivityTracker,
     private val trackerLog: TrackerLog,
     private val propertiesComponent: PropertiesComponent
@@ -14,13 +14,13 @@ class ActivityTrackerPlugin(
     private var state: State = State.defaultValue
     private var pluginUI: PluginUI? = null
 
-    fun init(): ActivityTrackerPlugin {
+    fun init(): Plugin {
         state = State.load(propertiesComponent, pluginId)
         onStateChange(state)
         return this
     }
 
-    fun setPluginUI(pluginUI: PluginUI) {
+    fun setUI(pluginUI: PluginUI) {
         this.pluginUI = pluginUI
         pluginUI.update(state)
     }

@@ -1,6 +1,6 @@
 package activitytracker
 
-import activitytracker.ActivityTrackerPlugin.Companion.pluginId
+import activitytracker.Plugin.Companion.pluginId
 import activitytracker.EventAnalyzer.Result.*
 import activitytracker.liveplugin.*
 import com.intellij.CommonBundle
@@ -27,18 +27,18 @@ import java.awt.Point
 import java.awt.event.MouseEvent
 
 class PluginUI(
-    private val plugin: ActivityTrackerPlugin,
+    private val plugin: Plugin,
     private val trackerLog: TrackerLog,
     private val eventAnalyzer: EventAnalyzer,
     private val parentDisposable: Disposable
 ) {
     private val log = Logger.getInstance(PluginUI::class.java)
-    private var state = ActivityTrackerPlugin.State.defaultValue
+    private var state = Plugin.State.defaultValue
     private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
     private val widgetId = "Activity Tracker Widget"
 
     fun init(): PluginUI {
-        plugin.setPluginUI(this)
+        plugin.setUI(this)
         registerWidget(parentDisposable)
         registerPopup(parentDisposable)
         eventAnalyzer.runner = { task ->
@@ -47,7 +47,7 @@ class PluginUI(
         return this
     }
 
-    fun update(state: ActivityTrackerPlugin.State) {
+    fun update(state: Plugin.State) {
         this.state = state
         updateWidget(widgetId)
     }

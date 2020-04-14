@@ -25,7 +25,7 @@ class AppComponent {
                     parentDisposable = application,
                     logTrackerCallDuration = false
                 )
-                val plugin = ActivityTrackerPlugin(tracker, trackerLog, PropertiesComponent.getInstance()).init()
+                val plugin = Plugin(tracker, trackerLog, PropertiesComponent.getInstance()).init()
                 val eventAnalyzer = EventAnalyzer(trackerLog)
                 PluginUI(plugin, trackerLog, eventAnalyzer, parentDisposable = application).init()
 

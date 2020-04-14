@@ -1,6 +1,6 @@
 package activitytracker.liveplugin
 
-import activitytracker.ActivityTrackerPlugin
+import activitytracker.Plugin
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType
@@ -50,7 +50,7 @@ fun showNotification(message: Any?, onLinkClick: (HyperlinkEvent) -> Unit = {}) 
         val messageString = asString(message)
         val title = ""
         val notificationType = INFORMATION
-        val groupDisplayId = ActivityTrackerPlugin.pluginId
+        val groupDisplayId = Plugin.pluginId
         val notification = Notification(
             groupDisplayId, title, messageString, notificationType,
             NotificationListener { _, event ->
