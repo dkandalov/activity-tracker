@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>Activity Tracker</id>
     <name>Activity Tracker</name>
-    <version>0.1.10 beta</version>
+    <version>0.1.11 beta</version>
     <vendor url="https://github.com/dkandalov/activity-tracker">Dmitry Kandalov</vendor>
 
     <description><![CDATA[
