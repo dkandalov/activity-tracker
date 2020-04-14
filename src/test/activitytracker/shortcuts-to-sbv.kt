@@ -1,6 +1,6 @@
 package activitytracker
 
-import activitytracker.TrackerEvent.Type.KeyEvent
+import activitytracker.tracking.TrackerEvent.Type.KeyEvent
 import org.joda.time.DateTime
 import org.joda.time.DateTimeFieldType.*
 import org.joda.time.format.DateTimeFormatterBuilder

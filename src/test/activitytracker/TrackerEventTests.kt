@@ -1,9 +1,10 @@
 package activitytracker
 
-import activitytracker.TrackerEvent.Companion.parseDateTime
-import activitytracker.TrackerEvent.Companion.printEvent
-import activitytracker.TrackerEvent.Companion.toTrackerEvent
-import activitytracker.TrackerEvent.Type.IdeState
+import activitytracker.tracking.TrackerEvent
+import activitytracker.tracking.TrackerEvent.Companion.parseDateTime
+import activitytracker.tracking.TrackerEvent.Companion.printEvent
+import activitytracker.tracking.TrackerEvent.Companion.toTrackerEvent
+import activitytracker.tracking.TrackerEvent.Type.IdeState
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVPrinter

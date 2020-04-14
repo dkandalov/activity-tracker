@@ -1,7 +1,8 @@
-package activitytracker
+package activitytracker.tracking
 
-import activitytracker.TrackerEvent.Type.Duration
-import activitytracker.TrackerEvent.Type.IdeState
+import activitytracker.TrackerLog
+import activitytracker.tracking.TrackerEvent.Type.Duration
+import activitytracker.tracking.TrackerEvent.Type.IdeState
 import activitytracker.liveplugin.*
 import activitytracker.liveplugin.VcsActions.Companion.registerVcsListener
 import com.intellij.concurrency.JobScheduler

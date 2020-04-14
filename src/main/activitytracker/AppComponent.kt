@@ -1,5 +1,9 @@
 package activitytracker
 
+import activitytracker.tracking.ActivityTracker
+import activitytracker.tracking.CompilationTracker
+import activitytracker.tracking.PsiPathProvider
+import activitytracker.tracking.TaskNameProvider
 import com.intellij.ide.AppLifecycleListener
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.application.ApplicationManager

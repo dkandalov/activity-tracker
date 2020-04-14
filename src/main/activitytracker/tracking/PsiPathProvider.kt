@@ -1,4 +1,4 @@
-package activitytracker
+package activitytracker.tracking
 
 import activitytracker.liveplugin.currentVirtualFile
 import com.intellij.openapi.editor.Editor

@@ -1,7 +1,8 @@
 package activitytracker
 
 import activitytracker.EventAnalyzer.Result.*
-import activitytracker.TrackerEvent.Type.IdeState
+import activitytracker.tracking.TrackerEvent
+import activitytracker.tracking.TrackerEvent.Type.IdeState
 import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean

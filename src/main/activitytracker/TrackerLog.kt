@@ -1,8 +1,9 @@
 package activitytracker
 
-import activitytracker.TrackerEvent.Companion.printEvent
-import activitytracker.TrackerEvent.Companion.toTrackerEvent
+import activitytracker.tracking.TrackerEvent.Companion.printEvent
+import activitytracker.tracking.TrackerEvent.Companion.toTrackerEvent
 import activitytracker.liveplugin.whenDisposed
+import activitytracker.tracking.TrackerEvent
 import com.intellij.concurrency.JobScheduler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger

@@ -1,6 +1,7 @@
 package activitytracker
 
 import activitytracker.liveplugin.openInEditor
+import activitytracker.tracking.ActivityTracker
 import com.intellij.ide.actions.RevealFileAction
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project

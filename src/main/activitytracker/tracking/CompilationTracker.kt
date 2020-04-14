@@ -1,6 +1,6 @@
-package activitytracker
+package activitytracker.tracking
 
-import activitytracker.TrackerEvent.Type.CompilationFinished
+import activitytracker.tracking.TrackerEvent.Type.CompilationFinished
 import activitytracker.liveplugin.newDisposable
 import activitytracker.liveplugin.registerProjectListener
 import com.intellij.openapi.Disposable

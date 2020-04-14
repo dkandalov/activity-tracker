@@ -1,4 +1,4 @@
-package activitytracker
+package activitytracker.tracking
 
 import org.apache.commons.csv.CSVPrinter
 import org.apache.commons.csv.CSVRecord

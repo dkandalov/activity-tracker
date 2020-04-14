@@ -1,7 +1,7 @@
 <idea-plugin>
     <application-components>
         <component>
-            <implementation-class>activitytracker.InitTaskNameProviderViaTaskManager</implementation-class>
+            <implementation-class>activitytracker.tracking.InitTaskNameProviderViaTaskManager</implementation-class>
         </component>
     </application-components>
 </idea-plugin>

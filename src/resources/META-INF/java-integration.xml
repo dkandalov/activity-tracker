@@ -1,8 +1,8 @@
 <idea-plugin>
     <application-components>
         <component>
-            <implementation-class>activitytracker.InitJavaCompilationTracker</implementation-class>
-            <implementation-class>activitytracker.InitJavaPsiPathProvider</implementation-class>
+            <implementation-class>activitytracker.tracking.InitJavaCompilationTracker</implementation-class>
+            <implementation-class>activitytracker.tracking.InitJavaPsiPathProvider</implementation-class>
         </component>
     </application-components>
 </idea-plugin>
