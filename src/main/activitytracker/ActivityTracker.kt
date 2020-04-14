@@ -17,15 +17,12 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorComponentImpl
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
-import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.openapi.wm.impl.IdeFrameImpl
-import com.intellij.tasks.TaskManager
 import com.intellij.util.SystemProperties
 import org.joda.time.DateTime
 import java.awt.AWTEvent
@@ -40,13 +37,13 @@ import javax.swing.JDialog
 class ActivityTracker(
     private val compilationTracker: CompilationTracker,
     private val psiPathProvider: PsiPathProvider,
+    private val taskNameProvider: TaskNameProvider,
     private val trackerLog: TrackerLog,
     private val parentDisposable: Disposable,
     private val logTrackerCallDuration: Boolean = false
 ) {
     private var trackingDisposable: Disposable? = null
     private val trackerCallDurations: MutableList<Long> = mutableListOf()
-    private var hasTaskManager: Boolean? = null
 
     fun startTracking(config: Config) {
         if (trackingDisposable != null) return
@@ -221,12 +218,7 @@ class ActivityTracker(
                 psiPath = psiPathProvider.psiPath(project, editor) ?: ""
             }
 
-            val task = if (hasTaskManager(project)) {
-                TaskManager.getManager(project)?.activeTask?.presentableName
-                    ?: ChangeListManager.getInstance(project).defaultChangeList.name
-            } else {
-                ChangeListManager.getInstance(project).defaultChangeList.name
-            }
+            val task = taskNameProvider.taskName(project)
 
             return TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column, task)
 
@@ -239,16 +231,6 @@ class ActivityTracker(
             }
         }
     }
-
-    private fun hasTaskManager(project: Project): Boolean {
-        if (hasTaskManager == null && !DumbService.getInstance(project).isDumb) {
-            hasTaskManager = isOnClasspath("com.intellij.tasks.TaskManager")
-        }
-        return hasTaskManager ?: false
-    }
-
-    private fun isOnClasspath(className: String) =
-        ActivityTracker::class.java.classLoader.getResource(className.replace(".", "/") + ".class") != null
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> findParentComponent(component: Component?, matches: (Component) -> Boolean): T? =

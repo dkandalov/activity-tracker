@@ -63,7 +63,7 @@ intellij {
 	// *.csv files are stored in the "activity-tracker" directory.
 	// If plugin archive has the same name, the directory will be deleted on plugin update.
 	pluginName "activity-tracker-plugin"
-    plugins = ["java"]
+    plugins = ["java", "tasks"]
 	downloadSources true
 	sameSinceUntilBuild false
 	updateSinceUntilBuild false
