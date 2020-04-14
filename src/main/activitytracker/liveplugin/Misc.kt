@@ -59,13 +59,3 @@ fun <T> accessField(o: Any, fieldName: String, fieldClass: Class<*>? = null): T 
     val className = if (fieldClass == null) "" else " (with class ${fieldClass.canonicalName})"
     throw IllegalStateException("Didn't find field '$fieldName'$className in object $o")
 }
-
-fun registerDisposable(id: String): Disposable {
-    val disposable = newDisposable()
-    Disposer.register(disposable, disposable, id)
-    return disposable
-}
-
-fun unregisterDisposable(id: String) {
-    Disposer.get(id).dispose()
-}
