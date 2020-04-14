@@ -1,9 +1,8 @@
 package activitytracker
 
-import activitytracker.tracking.TrackerEvent.Companion.printEvent
-import activitytracker.tracking.TrackerEvent.Companion.toTrackerEvent
 import activitytracker.liveplugin.whenDisposed
-import activitytracker.tracking.TrackerEvent
+import activitytracker.TrackerEvent.Companion.printEvent
+import activitytracker.TrackerEvent.Companion.toTrackerEvent
 import com.intellij.concurrency.JobScheduler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
@@ -11,7 +10,6 @@ import com.intellij.openapi.util.io.FileUtil
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVPrinter
-import java.io.Closeable
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -110,28 +108,4 @@ private fun <T> Sequence<T>.onClose(action: () -> Unit): Sequence<T> {
             override fun next() = iterator.next()
         }
     }
-}
-
-// Copied from Kotlin stdlib because it's only available in Kotlin 1.2 but the plugin supports 1.1.
-private inline fun <T : Closeable?, R> T.use(block: (T) -> R): R {
-    var exception: Throwable? = null
-    try {
-        return block(this)
-    } catch (e: Throwable) {
-        exception = e
-        throw e
-    } finally {
-        closeFinally(exception)
-    }
-}
-
-private fun Closeable?.closeFinally(cause: Throwable?) = when {
-    this == null -> {}
-    cause == null -> close()
-    else ->
-        try {
-            close()
-        } catch (closeException: Throwable) {
-            cause.addSuppressed(closeException)
-        }
 }

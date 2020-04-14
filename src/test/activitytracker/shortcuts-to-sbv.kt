@@ -1,18 +1,17 @@
 package activitytracker
 
-import activitytracker.tracking.TrackerEvent.Type.KeyEvent
+import activitytracker.TrackerEvent.Type.KeyEvent
 import org.joda.time.DateTime
 import org.joda.time.DateTimeFieldType.*
 import org.joda.time.format.DateTimeFormatterBuilder
 import java.awt.event.InputEvent
 import java.lang.reflect.Modifier
-import kotlin.coroutines.experimental.buildSequence
 
 /**
  * Script to read IDE shortcuts from events log and
  * produce output compatible with .sbv file format.
  */
-fun main(args: Array<String>) {
+fun main() {
     val eventsFilePath = "2019-01-11.csv"
     val shortcuts = TrackerLog(eventsFilePath)
         .readEvents(onParseError = printError)
@@ -71,8 +70,7 @@ private fun Int.toPrintableModifiers(): List<String> =
     ).filter(String::isNotEmpty)
 
 private fun String.vkToPrintableName(): String {
-    val s = removePrefix("VK_").toLowerCase()
-    return when (s) {
+    return when (val s = removePrefix("VK_").toLowerCase()) {
         "comma"         -> ","
         "minus"         -> "-"
         "period"        -> "."
@@ -88,7 +86,7 @@ private fun String.vkToPrintableName(): String {
 
 private fun <T, R> List<T>.chunkedBy(f: (T) -> R): List<List<T>> = asSequence().chunkedBy(f).toList()
 
-private fun <T, R> Sequence<T>.chunkedBy(f: (T) -> R): Sequence<List<T>> = buildSequence {
+private fun <T, R> Sequence<T>.chunkedBy(f: (T) -> R): Sequence<List<T>> = sequence {
     var lastKey: R? = null
     var list = ArrayList<T>()
     forEach { item ->

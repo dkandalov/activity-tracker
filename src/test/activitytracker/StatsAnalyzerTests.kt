@@ -1,8 +1,7 @@
 package activitytracker
 
-import activitytracker.tracking.TrackerEvent
-import activitytracker.tracking.TrackerEvent.Companion.parseDateTime
-import activitytracker.tracking.TrackerEvent.Type.IdeState
+import activitytracker.TrackerEvent.Companion.parseDateTime
+import activitytracker.TrackerEvent.Type.IdeState
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.joda.time.DateTime

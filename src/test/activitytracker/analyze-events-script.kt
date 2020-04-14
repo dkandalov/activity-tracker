@@ -1,20 +1,18 @@
 package activitytracker
 
-import activitytracker.tracking.TrackerEvent
-import activitytracker.tracking.TrackerEvent.Type.*
+import activitytracker.TrackerEvent.Type.*
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.Duration
 import java.util.*
-import kotlin.coroutines.experimental.buildSequence
 
 val userHome = System.getProperty("user.home")!!
 val printError = { line: String, _: Exception -> println("Failed to parse: $line") }
 
-fun main(args: Array<String>) {
+fun main() {
 //    val eventsFilePath = "$userHome/Library/Application Support/IntelliJIdea2017.2/activity-tracker/2017-09-01.csv"
     val eventsFilePath = "$userHome/Library/Application Support/IntelliJIdea2017.2/activity-tracker/ide-events.csv"
-    val eventSequence = TrackerLog(eventsFilePath).readEvents { line: String, e: Exception ->
+    val eventSequence = TrackerLog(eventsFilePath).readEvents { line: String, _: Exception ->
         println("Failed to parse: $line")
     }
 
@@ -93,7 +91,7 @@ private data class Session(val events: List<TrackerEvent>) {
 fun TrackerEvent.ideIsActive() = type != IdeState || (type == IdeState && data != "Inactive")
 
 private fun Sequence<TrackerEvent>.groupIntoSessions(): Sequence<Session> =
-    buildSequence {
+    sequence {
         var currentEvents = ArrayList<TrackerEvent>()
         forEach { event ->
             val isEndOfCurrentSession =
@@ -108,24 +106,23 @@ private fun Sequence<TrackerEvent>.groupIntoSessions(): Sequence<Session> =
     }
 
 private fun Sequence<Session>.filterAndMergeSessions(): Sequence<Session> =
-    buildSequence {
+    sequence {
         var lastSession: Session? = null
         this@filterAndMergeSessions
             .filter { session ->
                 session.events.first().ideIsActive()
-                && session.duration > Duration.standardMinutes(5)
-                && session.events.any { it.type == IdeState && it.focusedComponent == "Editor" }
+                    && session.duration > Duration.standardMinutes(5)
+                    && session.events.any { it.type == IdeState && it.focusedComponent == "Editor" }
             }
             .forEach { session ->
-                if (lastSession == null) {
-                    lastSession = session
-                } else {
+                lastSession = if (lastSession == null) session
+                else {
                     val timeBetweenSessions = Duration(lastSession!!.events.last().time, session.events.first().time)
                     if (timeBetweenSessions < Duration.standardMinutes(5)) {
-                        lastSession = Session(lastSession!!.events + session.events)
+                        Session(lastSession!!.events + session.events)
                     } else {
                         yield(lastSession!!)
-                        lastSession = session
+                        session
                     }
                 }
             }
@@ -161,8 +158,8 @@ private class Histogram<T>(val frequencyByValue: HashMap<T, Int> = HashMap()) {
     }
 
     fun add(value: T): Histogram<T> {
-        val frequency = frequencyByValue.getOrElse(value, { -> 0 })
-        frequencyByValue.put(value, frequency + 1)
+        val frequency = frequencyByValue.getOrElse(value, { 0 })
+        frequencyByValue[value] = frequency + 1
         return this
     }
 
