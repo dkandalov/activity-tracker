@@ -27,9 +27,7 @@
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
 
-    <application-components>
-        <component>
-            <implementation-class>activitytracker.AppComponent</implementation-class>
-        </component>
-    </application-components>
+    <applicationListeners>
+        <listener class="activitytracker.Main" topic="com.intellij.ide.AppLifecycleListener"/>
+    </applicationListeners>
 </idea-plugin>
