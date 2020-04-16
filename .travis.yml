@@ -1,6 +1,5 @@
-dist: trusty
 language: java
-jdk: oraclejdk8
+jdk: oraclejdk11
 
 env:
   - ACTIVITY_TRACKER_IDEA_VERSION=IC-201.6668.113
