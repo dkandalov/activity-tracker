@@ -47,8 +47,7 @@ compileKotlin {
 
 intellij {
 	// To find available IDE versions see https://www.jetbrains.com/intellij-repository/releases
-	def ideVersion = System.getenv().getOrDefault(
-			"ACTIVITY_TRACKER_IDEA_VERSION",
+	def ideVersion = System.getenv().getOrDefault("IJ_VERSION",
 			"201.6668.113" // this is the first public version with StatusBarWidgetFactory
 //			"LATEST-EAP-SNAPSHOT"
 	)
