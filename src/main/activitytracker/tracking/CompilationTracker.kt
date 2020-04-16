@@ -4,6 +4,7 @@ import activitytracker.TrackerEvent
 import activitytracker.TrackerEvent.Type.CompilationFinished
 import activitytracker.liveplugin.newDisposable
 import activitytracker.liveplugin.registerProjectListener
+import com.intellij.ide.AppLifecycleListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.compiler.CompilationStatusListener
 import com.intellij.openapi.compiler.CompileContext
@@ -23,8 +24,8 @@ interface CompilationTracker {
 /**
  * Also works for other JVM-based languages.
  */
-class InitJavaCompilationTracker {
-    init {
+class InitJavaCompilationTracker: AppLifecycleListener {
+    override fun appFrameCreated(commandLineArgs: List<String>) {
         CompilationTracker.instance = object: CompilationTracker {
             override fun startActionListener(
                 parentDisposable: Disposable,

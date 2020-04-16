@@ -1,7 +1,6 @@
 <idea-plugin>
-    <application-components>
-        <component>
-            <implementation-class>activitytracker.tracking.InitTaskNameProviderViaTaskManager</implementation-class>
-        </component>
-    </application-components>
+    <applicationListeners>
+        <listener class="activitytracker.tracking.InitTaskNameProviderViaTaskManager"
+                  topic="com.intellij.ide.AppLifecycleListener"/>
+    </applicationListeners>
 </idea-plugin>

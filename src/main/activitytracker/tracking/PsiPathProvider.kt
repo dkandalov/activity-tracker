@@ -1,6 +1,7 @@
 package activitytracker.tracking
 
 import activitytracker.liveplugin.currentVirtualFile
+import com.intellij.ide.AppLifecycleListener
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -14,8 +15,8 @@ interface PsiPathProvider {
     }
 }
 
-class InitJavaPsiPathProvider {
-    init {
+class InitJavaPsiPathProvider: AppLifecycleListener {
+    override fun appFrameCreated(commandLineArgs: List<String>) {
         PsiPathProvider.instance = JavaPsiPathProvider()
     }
 }
