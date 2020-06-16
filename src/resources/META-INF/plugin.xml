@@ -21,11 +21,11 @@
 
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="201.5985"/> <!-- StatusBarWidgetFactory was introduced in this version -->
-    <depends optional="true" config-file="java-integration.xml">com.intellij.modules.java</depends>
-    <depends optional="true" config-file="tasks-integration.xml">com.intellij.tasks</depends>
 
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends optional="true" config-file="java-integration.xml">com.intellij.modules.java</depends>
+    <depends optional="true" config-file="tasks-integration.xml">com.intellij.tasks</depends>
 
     <applicationListeners>
         <listener class="activitytracker.Main" topic="com.intellij.ide.AppLifecycleListener"/>
