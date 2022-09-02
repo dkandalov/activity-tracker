@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/dkandalov/activity-tracker.svg?branch=master)](https://travis-ci.org/dkandalov/activity-tracker)
+[![Build Status](https://github.com/dkandalov/activity-tracker/workflows/CI/badge.svg)](https://github.com/dkandalov/activity-tracker/actions)
 
 ## Activity Tracker
 This is proof-of-concept plugin for IntelliJ IDEs to track and record user activity.
