@@ -1,11 +1,16 @@
 package activitytracker.tracking
 
 import activitytracker.TrackerEvent
-import activitytracker.TrackerLog
 import activitytracker.TrackerEvent.Type.Duration
 import activitytracker.TrackerEvent.Type.IdeState
-import activitytracker.liveplugin.*
+import activitytracker.TrackerLog
+import activitytracker.liveplugin.VcsActions
 import activitytracker.liveplugin.VcsActions.Companion.registerVcsListener
+import activitytracker.liveplugin.currentVirtualFile
+import activitytracker.liveplugin.invokeOnEDT
+import activitytracker.liveplugin.log
+import activitytracker.liveplugin.newDisposable
+import activitytracker.liveplugin.whenDisposed
 import com.intellij.concurrency.JobScheduler
 import com.intellij.ide.IdeEventQueue
 import com.intellij.notification.NotificationType
@@ -13,7 +18,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.AnActionListener
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
@@ -123,7 +127,7 @@ class ActivityTracker(
                 }
             }
             if (trackKeyboard && awtEvent is KeyEvent && awtEvent.id == KeyEvent.KEY_PRESSED) {
-                trackerLog.append(captureIdeState(TrackerEvent.Type.KeyEvent, "" + (awtEvent.keyChar.toInt()) + ":" + awtEvent.keyCode + ":" + awtEvent.modifiers))
+                trackerLog.append(captureIdeState(TrackerEvent.Type.KeyEvent, "" + (awtEvent.keyChar.code) + ":" + awtEvent.keyCode + ":" + awtEvent.modifiers))
             }
             false
         }, parentDisposable)
@@ -131,10 +135,10 @@ class ActivityTracker(
 
     private fun startActionListener(trackerLog: TrackerLog, parentDisposable: Disposable) {
         val actionListener = object: AnActionListener {
-            override fun beforeActionPerformed(anAction: AnAction, dataContext: DataContext, event: AnActionEvent) {
+            override fun beforeActionPerformed(anAction: AnAction, event: AnActionEvent) {
                 // Track action in "before" callback because otherwise timestamp of the action can be wrong
                 // (e.g. commit action shows dialog and finishes only after the dialog is closed).
-                // Action id can be null e.g. on 'ctrl+o' action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction).
+                // Action id can be null e.g. on ctrl+o action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction).
                 val actionId = ActionManager.getInstance().getId(anAction) ?: return
                 trackerLog.append(captureIdeState(TrackerEvent.Type.Action, actionId))
             }

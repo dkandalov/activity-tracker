@@ -20,7 +20,7 @@
         ]]></description>
 
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
-    <idea-version since-build="201.5985"/> <!-- StatusBarWidgetFactory was introduced in this version -->
+    <idea-version since-build="221.5080.210"/> <!-- StatusBarWidgetFactory was introduced in this version -->
 
     <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
     <depends>com.intellij.modules.platform</depends>

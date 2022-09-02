@@ -2,8 +2,10 @@ package activitytracker.liveplugin
 
 import activitytracker.Plugin
 import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.notification.NotificationType.ERROR
+import com.intellij.notification.NotificationType.IDE_UPDATE
 import com.intellij.notification.NotificationType.INFORMATION
 import com.intellij.notification.NotificationType.WARNING
 import com.intellij.notification.Notifications
@@ -37,7 +39,6 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.util.concurrent.atomic.AtomicReference
 import javax.swing.KeyStroke
-import javax.swing.event.HyperlinkEvent
 
 fun <T> invokeOnEDT(callback: () -> T): T? {
     var result: T? = null
@@ -50,15 +51,14 @@ fun invokeLaterOnEDT(callback: () -> Unit) {
     ApplicationManager.getApplication().invokeLater { callback() }
 }
 
-fun showNotification(message: Any?, onLinkClick: (HyperlinkEvent) -> Unit = {}) {
+fun showNotification(message: Any?, onLinkClick: () -> Unit = {}) {
     invokeLaterOnEDT {
         val messageString = asString(message)
         val title = ""
         val notificationType = INFORMATION
         val groupDisplayId = Plugin.pluginId
-        val notification = Notification(groupDisplayId, title, messageString, notificationType) { _, event ->
-            onLinkClick(event)
-        }
+        val notification = Notification(groupDisplayId, title, messageString, notificationType)
+            .addAction(NotificationAction.create { onLinkClick() })
         ApplicationManager.getApplication().messageBus.syncPublisher(Notifications.TOPIC).notify(notification)
     }
 }
@@ -215,9 +215,9 @@ val logger = Logger.getInstance("LivePlugin")
 fun log(message: Any?, notificationType: NotificationType = INFORMATION) {
     val s = (message as? Throwable)?.toString() ?: asString(message)
     when (notificationType) {
-        INFORMATION -> logger.info(s)
-        WARNING     -> logger.warn(s)
-        ERROR       -> logger.error(s)
+        INFORMATION, IDE_UPDATE -> logger.info(s)
+        WARNING                 -> logger.warn(s)
+        ERROR                   -> logger.error(s)
     }
 }
 

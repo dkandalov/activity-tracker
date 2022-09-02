@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.CheckinProjectPanel
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.VcsKey
+import com.intellij.openapi.vcs.changes.CommitContext
 import com.intellij.openapi.vcs.checkin.CheckinHandler
 import com.intellij.openapi.vcs.checkin.VcsCheckinHandlerFactory
 import com.intellij.openapi.vcs.impl.CheckinHandlersManager
@@ -86,7 +87,7 @@ class VcsActions(private val project: Project, private val listener: Listener) {
     }
 
     private inner class DelegatingCheckinHandlerFactory(val project: Project, key: VcsKey): VcsCheckinHandlerFactory(key) {
-        override fun createVcsHandler(panel: CheckinProjectPanel): CheckinHandler {
+        override fun createVcsHandler(panel: CheckinProjectPanel, commitContext: CommitContext): CheckinHandler {
             return object : CheckinHandler() {
                 override fun checkinSuccessful() {
                     if (panel.project == project) listener.onVcsCommit()
