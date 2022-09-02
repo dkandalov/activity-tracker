@@ -30,7 +30,7 @@ private fun amountOfKeyPresses(eventSequence: Sequence<TrackerEvent>) {
         .filter { it.type == KeyEvent }
         .map { it.data.split(":") }
         .filter { it[0] != "65535" }
-        .map { it[0].toInt().toChar().toLowerCase() }
+        .map { it[0].toInt().toChar().lowercaseChar() }
         .map {
             when (it) {
                 '~' -> '`'

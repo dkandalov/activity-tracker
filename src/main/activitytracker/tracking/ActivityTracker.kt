@@ -103,7 +103,7 @@ class ActivityTracker(
         trackMouse: Boolean, mouseMoveEventsThresholdMs: Long
     ) {
         var lastMouseMoveTimestamp = 0L
-        IdeEventQueue.getInstance().addPostprocessor(IdeEventQueue.EventDispatcher { awtEvent: AWTEvent ->
+        IdeEventQueue.getInstance().addPostprocessor({ awtEvent: AWTEvent ->
             if (trackMouse && awtEvent is MouseEvent && awtEvent.id == MouseEvent.MOUSE_CLICKED) {
                 val eventData = "click:" + awtEvent.button + ":" + awtEvent.clickCount + ":" + awtEvent.modifiers
                 trackerLog.append(captureIdeState(TrackerEvent.Type.MouseEvent, eventData))

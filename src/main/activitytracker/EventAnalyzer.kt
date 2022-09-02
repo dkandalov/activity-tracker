@@ -102,4 +102,4 @@ private fun String.fileName(): String {
     return if (i == -1) this else substring(i + 1)
 }
 
-private fun List<Pair<String, Int>>.withTotal() = this + Pair("Total", sumBy { it.second })
+private fun List<Pair<String, Int>>.withTotal() = this + Pair("Total", sumOf { it.second })

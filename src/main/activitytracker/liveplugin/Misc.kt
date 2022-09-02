@@ -19,9 +19,9 @@ fun newDisposable(vararg parents: Disposable, callback: () -> Any = {}): Disposa
     parents.forEach { parent ->
         // can't use here "Disposer.register(parent, disposable)"
         // because Disposer only allows one parent to one child registration of Disposable objects
-        Disposer.register(parent, Disposable {
+        Disposer.register(parent) {
             Disposer.dispose(disposable)
-        })
+        }
     }
     return disposable
 }

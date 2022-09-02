@@ -22,7 +22,7 @@ class InitJavaPsiPathProvider: AppLifecycleListener {
 }
 
 private class JavaPsiPathProvider: PsiPathProvider {
-    override fun psiPath(project: Project, editor: Editor): String? {
+    override fun psiPath(project: Project, editor: Editor): String {
         val elementAtOffset = project.currentPsiFile()?.findElementAt(editor.caretModel.offset)
         val psiMethod = findPsiParent<PsiMethod>(elementAtOffset) { it is PsiMethod }
         val psiFile = findPsiParent<PsiFile>(elementAtOffset) { it is PsiFile }

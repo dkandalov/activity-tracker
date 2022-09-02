@@ -2,12 +2,18 @@ package activitytracker.liveplugin
 
 import activitytracker.Plugin
 import com.intellij.notification.Notification
-import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType
-import com.intellij.notification.NotificationType.*
+import com.intellij.notification.NotificationType.ERROR
+import com.intellij.notification.NotificationType.INFORMATION
+import com.intellij.notification.NotificationType.WARNING
 import com.intellij.notification.Notifications
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.Logger
@@ -29,7 +35,6 @@ import com.intellij.util.text.CharArrayUtil
 import org.jetbrains.annotations.NonNls
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 import javax.swing.KeyStroke
 import javax.swing.event.HyperlinkEvent
@@ -51,12 +56,9 @@ fun showNotification(message: Any?, onLinkClick: (HyperlinkEvent) -> Unit = {}) 
         val title = ""
         val notificationType = INFORMATION
         val groupDisplayId = Plugin.pluginId
-        val notification = Notification(
-            groupDisplayId, title, messageString, notificationType,
-            NotificationListener { _, event ->
-                onLinkClick(event)
-            }
-        )
+        val notification = Notification(groupDisplayId, title, messageString, notificationType) { _, event ->
+            onLinkClick(event)
+        }
         ApplicationManager.getApplication().messageBus.syncPublisher(Notifications.TOPIC).notify(notification)
     }
 }
@@ -139,7 +141,7 @@ private fun assignKeyStroke(actionId: String, keyStroke: String, macKeyStroke: S
 private fun asKeyboardShortcut(keyStroke: String): KeyboardShortcut? {
     if (keyStroke.trim().isEmpty()) return null
 
-    val firstKeystroke: KeyStroke
+    val firstKeystroke: KeyStroke?
     var secondKeystroke: KeyStroke? = null
     if (keyStroke.contains(",")) {
         firstKeystroke = KeyStroke.getKeyStroke(keyStroke.substring(0, keyStroke.indexOf(",")).trim())

@@ -53,12 +53,12 @@ class PluginUI(
     }
 
     private fun registerPopup(parentDisposable: Disposable) {
-        registerAction("$pluginId-Popup", "ctrl shift alt O", "", "Activity Tracker Popup", parentDisposable, {
+        registerAction("$pluginId-Popup", "ctrl shift alt O", "", "Activity Tracker Popup", parentDisposable) {
             val project = it.project
             if (project != null) {
                 createListPopup(it.dataContext).showCenteredInCurrentWindow(project)
             }
-        })
+        }
     }
 
     private fun registerWidget(parentDisposable: Disposable) {
@@ -109,19 +109,19 @@ class PluginUI(
                 event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
             }
         }
-        val togglePollIdeState = object: CheckboxAction("Poll IDE State") {
+        val togglePollIdeState = object: CheckboxAction("Poll IDE state") {
             override fun isSelected(event: AnActionEvent) = state.pollIdeState
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enablePollIdeState(value)
         }
-        val toggleTrackActions = object: CheckboxAction("Track IDE Actions") {
+        val toggleTrackActions = object: CheckboxAction("Track IDE actions") {
             override fun isSelected(event: AnActionEvent) = state.trackIdeActions
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackIdeActions(value)
         }
-        val toggleTrackKeyboard = object: CheckboxAction("Track Keyboard") {
+        val toggleTrackKeyboard = object: CheckboxAction("Track keyboard") {
             override fun isSelected(event: AnActionEvent) = state.trackKeyboard
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboard(value)
         }
-        val toggleTrackMouse = object: CheckboxAction("Track Mouse") {
+        val toggleTrackMouse = object: CheckboxAction("Track mouse") {
             override fun isSelected(event: AnActionEvent) = state.trackMouse
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackMouse(value)
         }

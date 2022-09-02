@@ -2,7 +2,10 @@ package activitytracker
 
 import activitytracker.TrackerEvent.Type.KeyEvent
 import org.joda.time.DateTime
-import org.joda.time.DateTimeFieldType.*
+import org.joda.time.DateTimeFieldType.hourOfDay
+import org.joda.time.DateTimeFieldType.millisOfSecond
+import org.joda.time.DateTimeFieldType.minuteOfHour
+import org.joda.time.DateTimeFieldType.secondOfMinute
 import org.joda.time.format.DateTimeFormatterBuilder
 import java.awt.event.InputEvent
 import java.lang.reflect.Modifier
@@ -70,7 +73,7 @@ private fun Int.toPrintableModifiers(): List<String> =
     ).filter(String::isNotEmpty)
 
 private fun String.vkToPrintableName(): String {
-    return when (val s = removePrefix("VK_").toLowerCase()) {
+    return when (val s = removePrefix("VK_").lowercase()) {
         "comma"         -> ","
         "minus"         -> "-"
         "period"        -> "."
@@ -80,7 +83,7 @@ private fun String.vkToPrintableName(): String {
         "open_bracket"  -> "["
         "back_slash"    -> "\\"
         "close_bracket" -> "]"
-        else            -> s.replace("_", "").capitalize()
+        else            -> s.replace("_", "").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
     }
 }
 
