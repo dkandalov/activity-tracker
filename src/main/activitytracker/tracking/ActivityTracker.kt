@@ -2,6 +2,7 @@ package activitytracker.tracking
 
 import activitytracker.TrackerEvent
 import activitytracker.TrackerEvent.Type.Duration
+import activitytracker.TrackerEvent.Type.Execution
 import activitytracker.TrackerEvent.Type.IdeState
 import activitytracker.TrackerLog
 import activitytracker.liveplugin.VcsActions
@@ -12,6 +13,11 @@ import activitytracker.liveplugin.log
 import activitytracker.liveplugin.newDisposable
 import activitytracker.liveplugin.whenDisposed
 import com.intellij.concurrency.JobScheduler
+import com.intellij.execution.ExecutionListener
+import com.intellij.execution.ExecutionManager
+import com.intellij.execution.process.BaseProcessHandler
+import com.intellij.execution.process.ProcessHandler
+import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.ide.IdeEventQueue
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
@@ -60,6 +66,7 @@ class ActivityTracker(
         }
         if (config.trackIdeActions) {
             startActionListener(trackerLog, trackingDisposable!!)
+            startExecutionListener(trackerLog, trackingDisposable!!)
             compilationTracker.startActionListener(trackingDisposable!!) { eventType, originalEventData ->
                 invokeOnEDT { trackerLog.append(captureIdeState(eventType, originalEventData)) }
             }
@@ -162,6 +169,21 @@ class ActivityTracker(
                 invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Push")) }
             }
         })
+    }
+
+    private fun startExecutionListener(trackerLog: TrackerLog, parentDisposable: Disposable) {
+        val executionListener = object : ExecutionListener {
+            override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
+
+                if (handler is BaseProcessHandler<*>) {
+                    val eventData = executorId + ":" + env.runProfile.toString() + ":" + handler.commandLine.toString()
+                    trackerLog.append(captureIdeState(Execution, eventData))
+                }
+            }
+        }
+        ApplicationManager.getApplication()
+            .messageBus.connect(parentDisposable)
+            .subscribe(ExecutionManager.EXECUTION_TOPIC, executionListener)
     }
 
     private fun captureIdeState(eventType: TrackerEvent.Type, originalEventData: String): TrackerEvent? {

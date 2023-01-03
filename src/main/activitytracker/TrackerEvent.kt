@@ -28,7 +28,8 @@ data class TrackerEvent(
         Action,
         VcsAction,
         CompilationFinished,
-        Duration
+        Duration,
+        Execution
     }
 
     companion object {
