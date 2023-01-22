@@ -187,8 +187,9 @@ class ActivityTracker(
     private fun startExecutionListener(trackerLog: TrackerLog, parentDisposable: Disposable) {
         val executionListener = object : ExecutionListener {
             override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
-                if (handler is BaseProcessHandler<*>) {
-                    trackerLog.append(captureIdeState(Execution, "$executorId:${env.runProfile}:${handler.commandLine}"))
+                invokeOnEDT {
+                    val commandLine = (handler as? BaseProcessHandler<*>)?.commandLine ?: ""
+                    trackerLog.append(captureIdeState(Execution, "$executorId:'${env.runProfile}':$commandLine"))
                 }
             }
         }
