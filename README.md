@@ -59,7 +59,7 @@ The event log file is written as [csv RFC4180](https://tools.ietf.org/html/rfc41
     - **IDE actions**: event type = `Action`, event data = `[action id]` (e.g. `Action,EditorUp`);
                        or event type = `VcsAction`, event data = `[Push|Update|Commit]`;
                        or event type = `CompilationFinished`, event data = `[amount of errors during compilation]`.
-    - **Executions**: event type = `Execution`, event data = `[Run:Debug:Coverage]:[Run Configuration name]:[full commandline instruction]`.
+    - **Executions**: event type = `Execution`, event data = `[Run|Debug|Coverage]:[Run configuration name]:[full commandline instruction]`.
     - **IDE polling events**: event type = `IdeState`, event data = `[Active|Inactive|NoProject]`,
       where `Inactive` means IDE doesn't have focus, `NoProject` mean all projects are closed.
     - **keyboard events**: event type = `KeyEvent`, event data = `[keyChar]:[keyCode]:[modifiers]`

@@ -1,9 +1,11 @@
 package activitytracker.tracking
 
 import activitytracker.TrackerEvent
+import activitytracker.TrackerEvent.Type.Action
 import activitytracker.TrackerEvent.Type.Duration
 import activitytracker.TrackerEvent.Type.Execution
 import activitytracker.TrackerEvent.Type.IdeState
+import activitytracker.TrackerEvent.Type.VcsAction
 import activitytracker.TrackerLog
 import activitytracker.liveplugin.VcsActions
 import activitytracker.liveplugin.VcsActions.Companion.registerVcsListener
@@ -116,25 +118,36 @@ class ActivityTracker(
         var lastMouseMoveTimestamp = 0L
         IdeEventQueue.getInstance().addPostprocessor({ awtEvent: AWTEvent ->
             if (trackMouse && awtEvent is MouseEvent && awtEvent.id == MouseEvent.MOUSE_CLICKED) {
-                val eventData = "click:" + awtEvent.button + ":" + awtEvent.clickCount + ":" + awtEvent.modifiers
-                trackerLog.append(captureIdeState(TrackerEvent.Type.MouseEvent, eventData))
+                trackerLog.append(captureIdeState(
+                    TrackerEvent.Type.MouseEvent,
+                    "click:${awtEvent.button}:${awtEvent.clickCount}:${awtEvent.modifiers}"
+                ))
             }
             if (trackMouse && awtEvent is MouseEvent && awtEvent.id == MouseEvent.MOUSE_MOVED) {
                 val now = currentTimeMillis()
                 if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
-                    trackerLog.append(captureIdeState(TrackerEvent.Type.MouseEvent, "move:" + awtEvent.x + ":" + awtEvent.y + ":" + awtEvent.modifiers))
+                    trackerLog.append(captureIdeState(
+                        TrackerEvent.Type.MouseEvent,
+                        "move:${awtEvent.x}:${awtEvent.y}:${awtEvent.modifiers}"
+                    ))
                     lastMouseMoveTimestamp = now
                 }
             }
             if (trackMouse && awtEvent is MouseWheelEvent && awtEvent.id == MouseEvent.MOUSE_WHEEL) {
                 val now = currentTimeMillis()
                 if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
-                    trackerLog.append(captureIdeState(TrackerEvent.Type.MouseEvent, "wheel:" + awtEvent.wheelRotation + ":" + awtEvent.modifiers))
+                    trackerLog.append(captureIdeState(
+                        TrackerEvent.Type.MouseEvent,
+                        "wheel:${awtEvent.wheelRotation}:${awtEvent.modifiers}"
+                    ))
                     lastMouseMoveTimestamp = now
                 }
             }
             if (trackKeyboard && awtEvent is KeyEvent && awtEvent.id == KeyEvent.KEY_PRESSED) {
-                trackerLog.append(captureIdeState(TrackerEvent.Type.KeyEvent, "" + (awtEvent.keyChar.code) + ":" + awtEvent.keyCode + ":" + awtEvent.modifiers))
+                trackerLog.append(captureIdeState(
+                    TrackerEvent.Type.KeyEvent,
+                    "${awtEvent.keyChar.code}:${awtEvent.keyCode}:${awtEvent.modifiers}"
+                ))
             }
             false
         }, parentDisposable)
@@ -147,7 +160,7 @@ class ActivityTracker(
                 // (e.g. commit action shows dialog and finishes only after the dialog is closed).
                 // Action id can be null e.g. on ctrl+o action (class com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$AnCancelAction).
                 val actionId = ActionManager.getInstance().getId(anAction) ?: return
-                trackerLog.append(captureIdeState(TrackerEvent.Type.Action, actionId))
+                trackerLog.append(captureIdeState(Action, actionId))
             }
         }
         ApplicationManager.getApplication()
@@ -158,15 +171,15 @@ class ActivityTracker(
         // doesn't notify about actual commits but only about opening commit dialog (see VcsActions source code for details).
         registerVcsListener(parentDisposable, object: VcsActions.Listener {
             override fun onVcsCommit() {
-                invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Commit")) }
+                invokeOnEDT { trackerLog.append(captureIdeState(VcsAction, "Commit")) }
             }
 
             override fun onVcsUpdate() {
-                invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Update")) }
+                invokeOnEDT { trackerLog.append(captureIdeState(VcsAction, "Update")) }
             }
 
             override fun onVcsPush() {
-                invokeOnEDT { trackerLog.append(captureIdeState(TrackerEvent.Type.VcsAction, "Push")) }
+                invokeOnEDT { trackerLog.append(captureIdeState(VcsAction, "Push")) }
             }
         })
     }
@@ -174,10 +187,8 @@ class ActivityTracker(
     private fun startExecutionListener(trackerLog: TrackerLog, parentDisposable: Disposable) {
         val executionListener = object : ExecutionListener {
             override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
-
                 if (handler is BaseProcessHandler<*>) {
-                    val eventData = executorId + ":" + env.runProfile.toString() + ":" + handler.commandLine.toString()
-                    trackerLog.append(captureIdeState(Execution, eventData))
+                    trackerLog.append(captureIdeState(Execution, "$executorId:${env.runProfile}:${handler.commandLine}"))
                 }
             }
         }
@@ -188,7 +199,7 @@ class ActivityTracker(
 
     private fun captureIdeState(eventType: TrackerEvent.Type, originalEventData: String): TrackerEvent? {
         val start = currentTimeMillis()
-        try {
+        return try {
             var eventData = originalEventData
             if (eventType == IdeState) {
                 eventData = "Inactive"
@@ -226,10 +237,7 @@ class ActivityTracker(
             val focusOwnerId = when {
                 findParentComponent<JDialog>(focusOwner) { it is JDialog } != null                         -> "Dialog"
                 findParentComponent<EditorComponentImpl>(focusOwner) { it is EditorComponentImpl } != null -> "Editor"
-                else                                                                                       -> {
-                    val toolWindowId = ToolWindowManager.getInstance(project).activeToolWindowId
-                    toolWindowId ?: "Popup"
-                }
+                else -> ToolWindowManager.getInstance(project).activeToolWindowId ?: "Popup"
             }
 
             var filePath = ""
@@ -245,14 +253,13 @@ class ActivityTracker(
                 column = editor.caretModel.logicalPosition.column
                 psiPath = psiPathProvider.psiPath(project, editor) ?: ""
             }
-
             val task = taskNameProvider.taskName(project)
 
-            return TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column, task)
+            TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column, task)
 
         } catch (e: Exception) {
             log(e, NotificationType.ERROR)
-            return null
+            null
         } finally {
             if (logTrackerCallDuration) {
                 trackerCallDurations.add(currentTimeMillis() - start)
