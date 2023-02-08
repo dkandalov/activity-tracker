@@ -74,7 +74,7 @@ class ActivityTracker(
             }
         }
         if (config.trackKeyboard || config.trackMouse) {
-            startAWTEventListener(trackerLog, trackingDisposable!!, config.trackKeyboard, config.trackMouse, config.mouseMoveEventsThresholdMs)
+            startAWTEventListener(trackerLog, trackingDisposable!!, config.trackKeyboard, config.trackKeyboardReleased, config.trackMouse, config.mouseMoveEventsThresholdMs)
         }
     }
 
@@ -112,7 +112,7 @@ class ActivityTracker(
     }
 
     private fun startAWTEventListener(
-        trackerLog: TrackerLog, parentDisposable: Disposable, trackKeyboard: Boolean,
+        trackerLog: TrackerLog, parentDisposable: Disposable, trackKeyboard: Boolean, trackKeyboardReleased: Boolean,
         trackMouse: Boolean, mouseMoveEventsThresholdMs: Long
     ) {
         var lastMouseMoveTimestamp = 0L
@@ -146,7 +146,13 @@ class ActivityTracker(
             if (trackKeyboard && awtEvent is KeyEvent && awtEvent.id == KeyEvent.KEY_PRESSED) {
                 trackerLog.append(captureIdeState(
                     TrackerEvent.Type.KeyEvent,
-                    "${awtEvent.keyChar.code}:${awtEvent.keyCode}:${awtEvent.modifiers}"
+                    "${awtEvent.id}:${awtEvent.keyChar.code}:${awtEvent.keyCode}:${awtEvent.modifiers}"
+                ))
+            }
+            if (trackKeyboard && trackKeyboardReleased && awtEvent is KeyEvent && awtEvent.id == KeyEvent.KEY_RELEASED) {
+                trackerLog.append(captureIdeState(
+                        TrackerEvent.Type.KeyEvent,
+                        "${awtEvent.id}:${awtEvent.keyChar.code}:${awtEvent.keyCode}:${awtEvent.modifiers}"
                 ))
             }
             false
@@ -284,6 +290,7 @@ class ActivityTracker(
         val pollIdeStateMs: Long,
         val trackIdeActions: Boolean,
         val trackKeyboard: Boolean,
+        val trackKeyboardReleased: Boolean,
         val trackMouse: Boolean,
         val mouseMoveEventsThresholdMs: Long
     )

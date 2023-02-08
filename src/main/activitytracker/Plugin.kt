@@ -33,6 +33,8 @@ class Plugin(
 
     fun enableTrackKeyboard(value: Boolean) = updateState { it.copy(trackKeyboard = value) }
 
+    fun enableTrackKeyboardReleased(value: Boolean) = updateState { it.copy(trackKeyboardReleased = value) }
+
     fun enableTrackMouse(value: Boolean) = updateState { it.copy(trackMouse = value) }
 
     fun openTrackingLogFile(project: Project?) {
@@ -66,6 +68,7 @@ class Plugin(
         pollIdeStateMs.toLong(),
         trackIdeActions,
         trackKeyboard,
+        trackKeyboardReleased,
         trackMouse,
         mouseMoveEventsThresholdMs.toLong()
     )
@@ -77,6 +80,7 @@ class Plugin(
         val pollIdeStateMs: Int,
         val trackIdeActions: Boolean,
         val trackKeyboard: Boolean,
+        val trackKeyboardReleased: Boolean,
         val trackMouse: Boolean,
         val mouseMoveEventsThresholdMs: Int
     ) {
@@ -87,6 +91,7 @@ class Plugin(
                 setValue("$id-pollIdeStateMs", pollIdeStateMs, defaultValue.pollIdeStateMs)
                 setValue("$id-trackIdeActions", trackIdeActions, defaultValue.trackIdeActions)
                 setValue("$id-trackKeyboard", trackKeyboard, defaultValue.trackKeyboard)
+                setValue("$id-trackKeyboardReleased", trackKeyboardReleased, defaultValue.trackKeyboard)
                 setValue("$id-trackMouse", trackMouse, defaultValue.trackMouse)
                 setValue("$id-mouseMoveEventsThresholdMs", mouseMoveEventsThresholdMs, defaultValue.mouseMoveEventsThresholdMs)
             }
@@ -99,6 +104,7 @@ class Plugin(
                 pollIdeStateMs = 1000,
                 trackIdeActions = true,
                 trackKeyboard = false,
+                trackKeyboardReleased = false,
                 trackMouse = false,
                 mouseMoveEventsThresholdMs = 250
             )
@@ -111,6 +117,7 @@ class Plugin(
                         getInt("$id-pollIdeStateMs", defaultValue.pollIdeStateMs),
                         getBoolean("$id-trackIdeActions", defaultValue.trackIdeActions),
                         getBoolean("$id-trackKeyboard", defaultValue.trackKeyboard),
+                        getBoolean("$id-trackKeyboardReleased", defaultValue.trackKeyboard),
                         getBoolean("$id-trackMouse", defaultValue.trackMouse),
                         getInt("$id-mouseMoveEventsThresholdMs", defaultValue.mouseMoveEventsThresholdMs)
                     )

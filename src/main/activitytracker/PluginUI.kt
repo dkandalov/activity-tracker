@@ -119,6 +119,10 @@ class PluginUI(
             override fun isSelected(event: AnActionEvent) = state.trackKeyboard
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboard(value)
         }
+        val trackKeyboardReleased = object: CheckboxAction("Track keyboard(Released)") {
+            override fun isSelected(event: AnActionEvent) = state.trackKeyboardReleased
+            override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboardReleased(value)
+        }
         val toggleTrackMouse = object: CheckboxAction("Track mouse") {
             override fun isSelected(event: AnActionEvent) = state.trackMouse
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackMouse(value)
@@ -211,6 +215,7 @@ class PluginUI(
                 add(toggleTrackActions)
                 add(togglePollIdeState)
                 add(toggleTrackKeyboard)
+                add(trackKeyboardReleased)
                 add(toggleTrackMouse)
             })
             add(openHelp)

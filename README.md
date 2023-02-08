@@ -62,7 +62,7 @@ The event log file is written as [csv RFC4180](https://tools.ietf.org/html/rfc41
     - **Executions**: event type = `Execution`, event data = `[Run|Debug|Coverage]:[Run configuration name]:[full commandline instruction]`.
     - **IDE polling events**: event type = `IdeState`, event data = `[Active|Inactive|NoProject]`,
       where `Inactive` means IDE doesn't have focus, `NoProject` mean all projects are closed.
-    - **keyboard events**: event type = `KeyEvent`, event data = `[keyChar]:[keyCode]:[modifiers]`
+    - **keyboard events**: event type = `KeyEvent`, event data = `[eventId]:[keyChar]:[keyCode]:[modifiers]`
       (see [AWT KeyEvent](https://docs.oracle.com/javase/7/docs/api/java/awt/event/KeyEvent.html)).
     - **mouse events**: event type = `MouseEvent`, event data can be
         - `click:[button]:[clickCount]:[modifiers]`
@@ -87,10 +87,10 @@ The event log file is written as [csv RFC4180](https://tools.ietf.org/html/rfc41
 ```
 2015-12-31T17:42:30.171Z,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
 2015-12-31T17:42:30.35Z,dima,Action,EditorLineEnd,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
-2015-12-31T17:42:30.351Z,dima,KeyEvent,97:79:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24,
+2015-12-31T17:42:30.351Z,dima,KeyEvent,401:97:79:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24,
 2015-12-31T17:42:30.566Z,dima,Action,EditorLineStart,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,24,
-2015-12-31T17:42:30.568Z,dima,KeyEvent,97:85:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
-2015-12-31T17:42:30.998Z,dima,KeyEvent,65535:157:4,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
+2015-12-31T17:42:30.568Z,dima,KeyEvent,401:97:85:8,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
+2015-12-31T17:42:30.998Z,dima,KeyEvent,401:65535:157:4,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
 2015-12-31T17:42:31.17Z,dima,IdeState,Active,activity-tracker,Editor,/path/to/jdk/src.zip!/java/awt/AWTEvent.java,AWTEvent::isConsumed,450,8,
 2015-12-31T17:42:32.169Z,dima,IdeState,Inactive,,,,,-1,-1,
 2015-12-31T17:42:33.168Z,dima,IdeState,Inactive,,,,,-1,-1,
