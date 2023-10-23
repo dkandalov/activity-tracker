@@ -8,7 +8,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVPrinter
 import org.hamcrest.CoreMatchers.equalTo
-import org.junit.Assert.assertThat
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import java.io.StringReader
 

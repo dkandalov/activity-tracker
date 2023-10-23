@@ -47,7 +47,7 @@ fun main() {
         }
 }
 
-private data class Shortcut(val time: DateTime, val text: String)
+data class Shortcut(val time: DateTime, val text: String)
 
 private val sbvTimeFormatter = DateTimeFormatterBuilder()
     .appendFixedDecimal(hourOfDay(), 1).appendLiteral(':')
@@ -62,13 +62,13 @@ private val keyNameByCode = java.awt.event.KeyEvent::class.java.declaredFields
     .filter { it.name.startsWith("VK_") && Modifier.isStatic(it.modifiers) }
     .associate { Pair(it.get(null), it.name.vkToPrintableName()) }
 
-private fun Int.toPrintableKeyName(): String = keyNameByCode[this] ?: error("")
+fun Int.toPrintableKeyName(): String = keyNameByCode[this] ?: error("")
 
-private fun Int.toPrintableModifiers(): List<String> =
+fun Int.toPrintableModifiers(): List<String> =
     listOf(
         if (and(InputEvent.CTRL_MASK) != 0) "Ctrl" else "",
         if (and(InputEvent.ALT_MASK) != 0) "Alt" else "",
-        if (and(InputEvent.META_MASK) != 0) "Meta" else "",
+        if (and(InputEvent.META_MASK) != 0) "Cmd" else "",
         if (and(InputEvent.SHIFT_MASK) != 0) "Shift" else ""
     ).filter(String::isNotEmpty)
 

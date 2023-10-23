@@ -90,7 +90,7 @@ class TrackerLog(private val eventsFilePath: String) {
     fun currentLogFile(): File = File(eventsFilePath)
 
     fun isTooLargeToProcess(): Boolean {
-        val `2gb` = 2000000000L
+        val `2gb` = 2_000_000_000L
         return File(eventsFilePath).length() > `2gb`
     }
 }
