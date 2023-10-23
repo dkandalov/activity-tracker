@@ -120,7 +120,7 @@ class ActivityTracker(
             if (trackMouse && awtEvent is MouseEvent && awtEvent.id == MouseEvent.MOUSE_CLICKED) {
                 trackerLog.append(captureIdeState(
                     TrackerEvent.Type.MouseEvent,
-                    "click:${awtEvent.button}:${awtEvent.clickCount}:${awtEvent.modifiers}"
+                    "click:${awtEvent.button}:${awtEvent.clickCount}:${awtEvent.modifiersEx}"
                 ))
             }
             if (trackMouse && awtEvent is MouseEvent && awtEvent.id == MouseEvent.MOUSE_MOVED) {
@@ -128,7 +128,7 @@ class ActivityTracker(
                 if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
                     trackerLog.append(captureIdeState(
                         TrackerEvent.Type.MouseEvent,
-                        "move:${awtEvent.x}:${awtEvent.y}:${awtEvent.modifiers}"
+                        "move:${awtEvent.x}:${awtEvent.y}:${awtEvent.modifiersEx}"
                     ))
                     lastMouseMoveTimestamp = now
                 }
@@ -138,7 +138,7 @@ class ActivityTracker(
                 if (now - lastMouseMoveTimestamp > mouseMoveEventsThresholdMs) {
                     trackerLog.append(captureIdeState(
                         TrackerEvent.Type.MouseEvent,
-                        "wheel:${awtEvent.wheelRotation}:${awtEvent.modifiers}"
+                        "wheel:${awtEvent.wheelRotation}:${awtEvent.modifiersEx}"
                     ))
                     lastMouseMoveTimestamp = now
                 }
@@ -146,13 +146,13 @@ class ActivityTracker(
             if (trackKeyboard && awtEvent is KeyEvent && awtEvent.id == KeyEvent.KEY_PRESSED) {
                 trackerLog.append(captureIdeState(
                     TrackerEvent.Type.KeyEvent,
-                    "${awtEvent.id}:${awtEvent.keyChar.code}:${awtEvent.keyCode}:${awtEvent.modifiers}"
+                    "${awtEvent.id}:${awtEvent.keyChar.code}:${awtEvent.keyCode}:${awtEvent.modifiersEx}"
                 ))
             }
             if (trackKeyboard && trackKeyboardReleased && awtEvent is KeyEvent && awtEvent.id == KeyEvent.KEY_RELEASED) {
                 trackerLog.append(captureIdeState(
                         TrackerEvent.Type.KeyEvent,
-                        "${awtEvent.id}:${awtEvent.keyChar.code}:${awtEvent.keyCode}:${awtEvent.modifiers}"
+                        "${awtEvent.id}:${awtEvent.keyChar.code}:${awtEvent.keyCode}:${awtEvent.modifiersEx}"
                 ))
             }
             false
