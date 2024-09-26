@@ -110,15 +110,16 @@ object StatsToolWindow {
 
             add(JPanel().apply {
                 layout = GridBagLayout()
-                val message = "Results are based on data from '${stats.dataFile}'.\n\n" +
-                    "To see the time spent in editor/project or on tasks, enable Activity Tracker -> Settings -> Poll IDE State.\n\n" +
-                    "The time spent in a project includes the time in IDE toolwindows and dialogs and, therefore, " +
-                    "it will be greater than the time spent in IDE editor."
+                val message = "The stats are based on data from '${stats.dataFile}'.\n\n" +
+                    "To see the time spent in the editor/project or on tasks, enable Activity Tracker -> Settings -> Poll IDE State.\n\n" +
+                    "The time spent on a project includes the time in IDE tool windows and dialogs and, therefore, " +
+                    "it will be greater than the time spent in the IDE editor."
+                val panelBackground = background
                 add(JTextArea(message).apply {
                     isEditable = false
                     lineWrap = true
                     wrapStyleWord = true
-                    background = this.background
+                    background = panelBackground
                     font = StartupUiUtil.labelFont
                     UIUtil.applyStyle(UIUtil.ComponentStyle.REGULAR, this)
                 }, GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).nextLine().next().fillCellHorizontally().anchor(NORTH))
