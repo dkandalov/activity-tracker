@@ -73,7 +73,8 @@ class PluginUI(
             override fun getAlignment() = Component.CENTER_ALIGNMENT
             override fun getTooltipText() = "Click to open menu"
             override fun getClickConsumer() = Consumer { mouseEvent: MouseEvent ->
-                val popup = createListPopup(MapDataContext().put(PlatformDataKeys.CONTEXT_COMPONENT.name, mouseEvent.component))
+                @Suppress("UnstableApiUsage")
+                val popup = createListPopup(IdeUiService.getInstance().createUiDataContext(mouseEvent.component))
                 val point = Point(0, -popup.content.preferredSize.height)
                 popup.show(RelativePoint(mouseEvent.component, point))
             }
