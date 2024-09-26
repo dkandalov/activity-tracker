@@ -39,8 +39,8 @@ class EventAnalyzer(private val trackerLog: TrackerLog) {
 
     sealed class Result {
         class Ok(val stats: Stats, val errors: List<Pair<String, Exception>>): Result()
-        object AlreadyRunning: Result()
-        object DataIsTooLarge: Result()
+        data object AlreadyRunning: Result()
+        data object DataIsTooLarge: Result()
     }
 }
 

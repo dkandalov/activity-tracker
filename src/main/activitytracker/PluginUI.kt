@@ -6,9 +6,13 @@ import activitytracker.liveplugin.*
 import com.intellij.CommonBundle
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.RevealFileAction
+import com.intellij.ide.ui.IdeUiService
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ActionUpdateThread.EDT
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.Extensions
@@ -18,6 +22,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.JBPopupFactory.ActionSelectionAid.SPEEDSEARCH
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
@@ -35,7 +40,7 @@ class PluginUI(
 ) {
     private val log = Logger.getInstance(PluginUI::class.java)
     private var state = Plugin.State.defaultValue
-    private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
+    private val actionGroup by lazy { createActionGroup() }
     private val widgetId = "Activity Tracker Widget"
 
     fun init(): PluginUI {
@@ -95,13 +100,8 @@ class PluginUI(
     }
 
     private fun createListPopup(dataContext: DataContext) =
-        JBPopupFactory.getInstance().createActionGroupPopup(
-            "Activity Tracker",
-            actionGroup,
-            dataContext,
-            JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
-            true
-        )
+        JBPopupFactory.getInstance()
+            .createActionGroupPopup("Activity Tracker", actionGroup, dataContext, SPEEDSEARCH, true)
 
     private fun createActionGroup(): DefaultActionGroup {
         val toggleTracking = object : AnAction(), DumbAware {
