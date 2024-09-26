@@ -1,13 +1,14 @@
 package activitytracker
 
-import activitytracker.Plugin.Companion.pluginId
 import activitytracker.EventAnalyzer.Result.*
+import activitytracker.Plugin.Companion.pluginId
 import activitytracker.liveplugin.*
 import com.intellij.CommonBundle
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.RevealFileAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.ActionUpdateThread.EDT
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.Extensions
@@ -104,6 +105,7 @@ class PluginUI(
     private fun createActionGroup(): DefaultActionGroup {
         val toggleTracking = object: AnAction(), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.toggleTracking()
+            override fun getActionUpdateThread() = EDT
             override fun update(event: AnActionEvent) {
                 event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
             }
@@ -111,22 +113,27 @@ class PluginUI(
         val togglePollIdeState = object: CheckboxAction("Poll IDE state") {
             override fun isSelected(event: AnActionEvent) = state.pollIdeState
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enablePollIdeState(value)
+            override fun getActionUpdateThread() = EDT
         }
         val toggleTrackActions = object: CheckboxAction("Track IDE actions") {
             override fun isSelected(event: AnActionEvent) = state.trackIdeActions
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackIdeActions(value)
+            override fun getActionUpdateThread() = EDT
         }
         val toggleTrackKeyboard = object: CheckboxAction("Track keyboard") {
             override fun isSelected(event: AnActionEvent) = state.trackKeyboard
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboard(value)
+            override fun getActionUpdateThread() = EDT
         }
         val trackKeyboardReleased = object: CheckboxAction("Track keyboard(Released)") {
             override fun isSelected(event: AnActionEvent) = state.trackKeyboardReleased
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboardReleased(value)
+            override fun getActionUpdateThread() = EDT
         }
         val toggleTrackMouse = object: CheckboxAction("Track mouse") {
             override fun isSelected(event: AnActionEvent) = state.trackMouse
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackMouse(value)
+            override fun getActionUpdateThread() = EDT
         }
         val openLogInIde = object: AnAction("Open in IDE"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFile(event.project)
