@@ -42,19 +42,19 @@ object StatsToolWindow {
 
         val disposable = parentDisposable.createChild()
         val actionGroup = DefaultActionGroup().apply {
-            add(object: AnAction(Cancel) {
+            add(object : AnAction(Cancel) {
                 override fun actionPerformed(event: AnActionEvent) {
                     Disposer.dispose(disposable)
                 }
             })
-            add(object: AnAction(Refresh) {
+            add(object : AnAction(Refresh) {
                 override fun actionPerformed(e: AnActionEvent) {
                     eventAnalyzer.analyze(whenDone = { result ->
                         invokeLaterOnEDT {
                             when (result) {
                                 is AlreadyRunning -> showNotification("Analysis is already running.")
                                 is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE.")
-                                is Ok             -> {
+                                is Ok -> {
                                     toolWindowPanel.remove(rootComponent)
                                     rootComponent = createRootComponent(result.stats)
                                     toolWindowPanel.setContent(rootComponent)
@@ -127,7 +127,7 @@ object StatsToolWindow {
     }
 
     private fun createTable(header: Collection<String>, data: List<Pair<String, String>>): JBTable {
-        val tableModel = object: DefaultTableModel() {
+        val tableModel = object : DefaultTableModel() {
             override fun isCellEditable(row: Int, column: Int) = false
         }
         header.forEach {
@@ -146,7 +146,7 @@ object StatsToolWindow {
 
     private fun registerCopyToClipboardShortCut(table: JTable, tableModel: DefaultTableModel) {
         val copyKeyStroke = KeymapUtil.getKeyStroke(ActionManager.getInstance().getAction(IdeActions.ACTION_COPY).shortcutSet)
-        table.registerKeyboardAction(object: AbstractAction() {
+        table.registerKeyboardAction(object : AbstractAction() {
             override fun actionPerformed(event: ActionEvent) {
                 val selectedCells = table.selectedRows.map { row ->
                     0.until(tableModel.columnCount).map { column ->

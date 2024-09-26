@@ -63,7 +63,7 @@ class PluginUI(
     }
 
     private fun registerWidget(parentDisposable: Disposable) {
-        val presentation = object: StatusBarWidget.TextPresentation {
+        val presentation = object : StatusBarWidget.TextPresentation {
             override fun getText() = "Activity tracker: " + (if (state.isTracking) "on" else "off")
             override fun getAlignment() = Component.CENTER_ALIGNMENT
             override fun getTooltipText() = "Click to open menu"
@@ -75,18 +75,19 @@ class PluginUI(
         }
 
         val extensionPoint = StatusBarWidgetFactory.EP_NAME.getPoint { Extensions.getRootArea() }
-        val factory = object: StatusBarWidgetFactory {
+        val factory = object : StatusBarWidgetFactory {
             override fun getId() = widgetId
             override fun getDisplayName() = widgetId
             override fun isAvailable(project: Project) = true
             override fun canBeEnabledOn(statusBar: StatusBar) = true
-            override fun createWidget(project: Project) = object: StatusBarWidget, StatusBarWidget.Multiframe {
+            override fun createWidget(project: Project) = object : StatusBarWidget, StatusBarWidget.Multiframe {
                 override fun ID() = widgetId
                 override fun getPresentation() = presentation
                 override fun install(statusBar: StatusBar) = statusBar.updateWidget(ID())
                 override fun copy() = this
                 override fun dispose() {}
             }
+
             override fun disposeWidget(widget: StatusBarWidget) {}
         }
         @Suppress("UnstableApiUsage")
@@ -103,45 +104,45 @@ class PluginUI(
         )
 
     private fun createActionGroup(): DefaultActionGroup {
-        val toggleTracking = object: AnAction(), DumbAware {
+        val toggleTracking = object : AnAction(), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.toggleTracking()
             override fun getActionUpdateThread() = EDT
             override fun update(event: AnActionEvent) {
                 event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
             }
         }
-        val togglePollIdeState = object: CheckboxAction("Poll IDE state") {
+        val togglePollIdeState = object : CheckboxAction("Poll IDE state") {
             override fun isSelected(event: AnActionEvent) = state.pollIdeState
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enablePollIdeState(value)
             override fun getActionUpdateThread() = EDT
         }
-        val toggleTrackActions = object: CheckboxAction("Track IDE actions") {
+        val toggleTrackActions = object : CheckboxAction("Track IDE actions") {
             override fun isSelected(event: AnActionEvent) = state.trackIdeActions
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackIdeActions(value)
             override fun getActionUpdateThread() = EDT
         }
-        val toggleTrackKeyboard = object: CheckboxAction("Track keyboard") {
+        val toggleTrackKeyboard = object : CheckboxAction("Track keyboard") {
             override fun isSelected(event: AnActionEvent) = state.trackKeyboard
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboard(value)
             override fun getActionUpdateThread() = EDT
         }
-        val trackKeyboardReleased = object: CheckboxAction("Track keyboard(Released)") {
+        val trackKeyboardReleased = object : CheckboxAction("Track keyboard(Released)") {
             override fun isSelected(event: AnActionEvent) = state.trackKeyboardReleased
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboardReleased(value)
             override fun getActionUpdateThread() = EDT
         }
-        val toggleTrackMouse = object: CheckboxAction("Track mouse") {
+        val toggleTrackMouse = object : CheckboxAction("Track mouse") {
             override fun isSelected(event: AnActionEvent) = state.trackMouse
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackMouse(value)
             override fun getActionUpdateThread() = EDT
         }
-        val openLogInIde = object: AnAction("Open in IDE"), DumbAware {
+        val openLogInIde = object : AnAction("Open in IDE"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFile(event.project)
         }
-        val openLogFolder = object: AnAction("Open in File Manager"), DumbAware {
+        val openLogFolder = object : AnAction("Open in File Manager"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFolder()
         }
-        val showStatistics = object: AnAction("Show Stats"), DumbAware {
+        val showStatistics = object : AnAction("Show Stats"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
                 val project = event.project
                 if (trackerLog.isTooLargeToProcess()) {
@@ -150,7 +151,7 @@ class PluginUI(
                     eventAnalyzer.analyze(whenDone = { result ->
                         invokeLaterOnEDT {
                             when (result) {
-                                is Ok             -> {
+                                is Ok -> {
                                     StatsToolWindow.showIn(project, result.stats, eventAnalyzer, parentDisposable)
                                     if (result.errors.isNotEmpty()) {
                                         showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
@@ -165,7 +166,7 @@ class PluginUI(
                 }
             }
         }
-        val rollCurrentLog = object: AnAction("Roll Tracking Log"), DumbAware {
+        val rollCurrentLog = object : AnAction("Roll Tracking Log"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
                 val userAnswer = showOkCancelDialog(
                     event.project,
@@ -183,7 +184,7 @@ class PluginUI(
                 }
             }
         }
-        val clearCurrentLog = object: AnAction("Clear Tracking Log"), DumbAware {
+        val clearCurrentLog = object : AnAction("Clear Tracking Log"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
                 val userAnswer = showOkCancelDialog(
                     event.project,
@@ -199,7 +200,7 @@ class PluginUI(
                 if (wasCleared) showNotification("Tracking log was cleared")
             }
         }
-        val openHelp = object: AnAction("Help"), DumbAware {
+        val openHelp = object : AnAction("Help"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = BrowserUtil.open("https://github.com/dkandalov/activity-tracker#help")
         }
 
