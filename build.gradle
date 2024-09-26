@@ -1,6 +1,6 @@
 plugins {
-	id "org.jetbrains.intellij" version "1.16.0"
-	id "org.jetbrains.kotlin.jvm" version "1.6.21"
+	id "org.jetbrains.intellij" version "1.17.3"
+	id "org.jetbrains.kotlin.jvm" version "1.9.10"
 	id "java"
 }
 
@@ -26,8 +26,8 @@ sourceSets {
 
 compileKotlin {
 	kotlinOptions {
-		apiVersion = "1.6"
-		languageVersion = "1.6"
+		apiVersion = "1.9"
+		languageVersion = "1.9"
         // Compiler flag to allow building against pre-released versions of Kotlin
         // because IJ EAP can be built using pre-released Kotlin but it's still worth doing to check API compatibility
         freeCompilerArgs = ["-Xskip-metadata-version-check"] 
@@ -36,10 +36,8 @@ compileKotlin {
 
 intellij {
 	// Available IDE versions https://www.jetbrains.com/intellij-repository/releases, https://www.jetbrains.com/intellij-repository/snapshots
-	version = System.getenv().getOrDefault("IJ_VERSION",
-        "221.5080.210" // Compatibility with IJ 2022.1
-//			"LATEST-EAP-SNAPSHOT"
-    )
+	// Bundled Kotlin version https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#kotlin-standard-library
+	version = "241.18034.62" // IntelliJ 2024.1.4
 	// The artifact name is deliberately not "activity-tracker" because
 	// *.csv files are stored in the "activity-tracker" directory.
 	// If plugin archive has the same name, the directory will be deleted on plugin update.

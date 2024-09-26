@@ -19,10 +19,8 @@
         For more details see <a href="https://github.com/dkandalov/activity-tracker">project page on github</a>.
         ]]></description>
 
-    <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
-    <idea-version since-build="221.5080.210"/> <!-- StatusBarWidgetFactory was introduced in this version -->
+    <idea-version since-build="241.18034.62"/>
 
-    <!-- http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="java-integration.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="tasks-integration.xml">com.intellij.tasks</depends>

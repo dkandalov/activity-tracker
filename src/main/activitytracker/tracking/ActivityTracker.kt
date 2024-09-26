@@ -283,7 +283,7 @@ class ActivityTracker(
         }
 
     private fun currentEditorIn(project: Project): Editor? =
-        (FileEditorManagerEx.getInstance(project) as FileEditorManagerEx).selectedTextEditor
+        FileEditorManagerEx.getInstanceEx(project).selectedTextEditor
 
     data class Config(
         val pollIdeState: Boolean,

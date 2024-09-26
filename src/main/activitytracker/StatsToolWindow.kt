@@ -119,7 +119,7 @@ object StatsToolWindow {
                     lineWrap = true
                     wrapStyleWord = true
                     background = this.background
-                    font = StartupUiUtil.getLabelFont()
+                    font = StartupUiUtil.labelFont
                     UIUtil.applyStyle(UIUtil.ComponentStyle.REGULAR, this)
                 }, GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).nextLine().next().fillCellHorizontally().anchor(NORTH))
             }, bag.nextLine().next().weighty(0.5).anchor(SOUTH))
@@ -173,7 +173,7 @@ object StatsToolWindow {
         }
 
         val toolWindow = manager.registerToolWindow(toolWindowId, false, location)
-        val content = ContentFactory.SERVICE.getInstance().createContent(component, "", false)
+        val content = ContentFactory.getInstance().createContent(component, "", false)
         toolWindow.contentManager.addContent(content)
         toolWindow.setIcon(AllIcons.Vcs.History)
         return toolWindow

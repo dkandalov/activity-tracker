@@ -208,7 +208,7 @@ fun registerProjectListener(disposable: Disposable, listener: ProjectManagerList
 }
 
 fun Project.currentVirtualFile(): VirtualFile? =
-    (FileEditorManagerEx.getInstance(this) as FileEditorManagerEx).currentFile
+    FileEditorManagerEx.getInstanceEx(this).currentFile
 
 val logger = Logger.getInstance("LivePlugin")
 
