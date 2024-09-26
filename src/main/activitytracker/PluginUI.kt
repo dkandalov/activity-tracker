@@ -88,6 +88,7 @@ class PluginUI(
             }
             override fun disposeWidget(widget: StatusBarWidget) {}
         }
+        @Suppress("UnstableApiUsage")
         extensionPoint.registerExtension(factory, LoadingOrder.before("positionWidget"), parentDisposable)
     }
 

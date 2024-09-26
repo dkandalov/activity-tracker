@@ -35,8 +35,7 @@ compileKotlin {
 }
 
 intellij {
-	// To find available IDE versions see https://www.jetbrains.com/intellij-repository/releases
-	// and https://www.jetbrains.com/intellij-repository/snapshots
+	// Available IDE versions https://www.jetbrains.com/intellij-repository/releases, https://www.jetbrains.com/intellij-repository/snapshots
 	version = System.getenv().getOrDefault("IJ_VERSION",
         "221.5080.210" // Compatibility with IJ 2022.1
 //			"LATEST-EAP-SNAPSHOT"
