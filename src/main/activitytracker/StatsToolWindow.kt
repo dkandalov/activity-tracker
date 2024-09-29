@@ -71,6 +71,7 @@ object StatsToolWindow {
         }
 
         val actionToolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.EDITOR_TOOLBAR, actionGroup, true)
+        actionToolbar.targetComponent = rootComponent
         toolWindowPanel.toolbar = actionToolbar.component
 
         val toolWindow = registerToolWindowIn(project, toolWindowId, disposable, toolWindowPanel, RIGHT)
@@ -177,8 +178,7 @@ object StatsToolWindow {
         }
 
         val toolWindow = manager.registerToolWindow(toolWindowId, false, location)
-        val content = ContentFactory.getInstance().createContent(component, "", false)
-        toolWindow.contentManager.addContent(content)
+        toolWindow.contentManager.addContent(ContentFactory.getInstance().createContent(component, "", false))
         toolWindow.setIcon(AllIcons.Vcs.History)
         return toolWindow
     }
