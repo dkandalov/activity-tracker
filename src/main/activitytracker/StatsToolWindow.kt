@@ -54,11 +54,11 @@ object StatsToolWindow {
                                     toolWindowPanel.setContent(rootComponent)
 
                                     if (result.errors.isNotEmpty()) {
-                                        showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
+                                        showNotification("There were ${result.errors.size} errors parsing log file, see IDE log for details")
                                     }
                                 }
-                                is AlreadyRunning -> showNotification("Analysis is already running.")
-                                is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE.")
+                                is AlreadyRunning -> showNotification("Analysis is already running")
+                                is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE")
                             }
                         }
                     })
