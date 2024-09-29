@@ -29,6 +29,7 @@ import java.awt.GridBagConstraints.*
 import java.awt.GridBagLayout
 import java.awt.datatransfer.StringSelection
 import java.awt.event.ActionEvent
+import java.util.function.Supplier
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
@@ -42,13 +43,11 @@ object StatsToolWindow {
 
         val disposable = parentDisposable.createChild()
         val actionGroup = DefaultActionGroup().apply {
-            add(object : AnAction(Refresh) {
+            add(object : AnAction(Supplier { "Rerun activity log analysis" }, Refresh) {
                 override fun actionPerformed(e: AnActionEvent) =
                     eventAnalyzer.analyze(whenDone = { result ->
                         invokeLaterOnEDT {
                             when (result) {
-                                is AlreadyRunning -> showNotification("Analysis is already running.")
-                                is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE.")
                                 is Ok -> {
                                     toolWindowPanel.remove(rootComponent)
                                     rootComponent = createRootComponent(result.stats)
@@ -58,11 +57,13 @@ object StatsToolWindow {
                                         showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
                                     }
                                 }
+                                is AlreadyRunning -> showNotification("Analysis is already running.")
+                                is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE.")
                             }
                         }
                     })
             })
-            add(object : AnAction(Cancel) {
+            add(object : AnAction(Supplier { "Close tool window" }, Cancel) {
                 override fun actionPerformed(event: AnActionEvent) =
                     Disposer.dispose(disposable)
             })
