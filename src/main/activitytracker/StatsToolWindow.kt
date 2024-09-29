@@ -43,7 +43,7 @@ object StatsToolWindow {
         val disposable = parentDisposable.createChild()
         val actionGroup = DefaultActionGroup().apply {
             add(object : AnAction(Refresh) {
-                override fun actionPerformed(e: AnActionEvent) {
+                override fun actionPerformed(e: AnActionEvent) =
                     eventAnalyzer.analyze(whenDone = { result ->
                         invokeLaterOnEDT {
                             when (result) {
@@ -61,12 +61,10 @@ object StatsToolWindow {
                             }
                         }
                     })
-                }
             })
             add(object : AnAction(Cancel) {
-                override fun actionPerformed(event: AnActionEvent) {
+                override fun actionPerformed(event: AnActionEvent) =
                     Disposer.dispose(disposable)
-                }
             })
         }
 
@@ -74,13 +72,11 @@ object StatsToolWindow {
         actionToolbar.targetComponent = rootComponent
         toolWindowPanel.toolbar = actionToolbar.component
 
-        val toolWindow = registerToolWindowIn(project, toolWindowId, disposable, toolWindowPanel, RIGHT)
-        val doNothing = null
-        toolWindow.show(doNothing)
+        registerToolWindowIn(project, toolWindowId, disposable, toolWindowPanel, RIGHT).show()
     }
 
-    private fun createRootComponent(stats: Stats): JComponent {
-        return JPanel().apply {
+    private fun createRootComponent(stats: Stats): JComponent =
+        JPanel().apply {
             layout = GridBagLayout()
             val bag = GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).setDefaultFill(BOTH)
 
@@ -126,7 +122,6 @@ object StatsToolWindow {
                 }, GridBag().setDefaultWeightX(1.0).setDefaultWeightY(1.0).nextLine().next().fillCellHorizontally().anchor(NORTH))
             }, bag.nextLine().next().weighty(0.5).anchor(SOUTH))
         }
-    }
 
     private fun createTable(header: Collection<String>, data: List<Pair<String, String>>): JBTable {
         val tableModel = object : DefaultTableModel() {
