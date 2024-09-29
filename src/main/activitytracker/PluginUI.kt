@@ -127,7 +127,7 @@ class PluginUI(
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboard(value)
             override fun getActionUpdateThread() = EDT
         }
-        val trackKeyboardReleased = object : CheckboxAction("Track keyboard(Released)") {
+        val trackKeyboardReleased = object : CheckboxAction("Track keyboard (key released)") {
             override fun isSelected(event: AnActionEvent) = state.trackKeyboardReleased
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboardReleased(value)
             override fun getActionUpdateThread() = EDT
