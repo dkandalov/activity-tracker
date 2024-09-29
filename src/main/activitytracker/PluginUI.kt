@@ -145,26 +145,25 @@ class PluginUI(
         }
         val showStatistics = object : AnAction("Show Stats"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
-                val project = event.project
+                val project = event.project ?: return
                 if (trackerLog.isTooLargeToProcess()) {
-                    showNotification("Current activity log is too large to process in IDE.")
-                } else if (project != null) {
-                    eventAnalyzer.analyze(whenDone = { result ->
-                        invokeLaterOnEDT {
-                            when (result) {
-                                is Ok -> {
-                                    StatsToolWindow.showIn(project, result.stats, eventAnalyzer, parentDisposable)
-                                    if (result.errors.isNotEmpty()) {
-                                        showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
-                                        result.errors.forEach { log.warn(it.first, it.second) }
-                                    }
-                                }
-                                is AlreadyRunning -> showNotification("Analysis is already running.")
-                                is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE.")
-                            }
-                        }
-                    })
+                    return showNotification("Current activity log is too large to process in IDE.")
                 }
+                eventAnalyzer.analyze(whenDone = { result ->
+                    invokeLaterOnEDT {
+                        when (result) {
+                            is Ok -> {
+                                StatsToolWindow.showIn(project, result.stats, eventAnalyzer, parentDisposable)
+                                if (result.errors.isNotEmpty()) {
+                                    showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
+                                    result.errors.forEach { log.warn(it.first, it.second) }
+                                }
+                            }
+                            is AlreadyRunning -> showNotification("Analysis is already running.")
+                            is DataIsTooLarge -> showNotification("Activity log is too large to process in IDE.")
+                        }
+                    }
+                })
             }
         }
         val rollCurrentLog = object : AnAction("Roll Tracking Log"), DumbAware {
