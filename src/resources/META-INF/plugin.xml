@@ -6,17 +6,18 @@
 
     <description><![CDATA[
         This is a proof-of-concept plugin for tracking and recording IDE user activity.
-        Currently the main feature is recording user activity into csv files.
-        To use the plugin see "Activity tracker" widget in IDE statusbar.<br/><br/>
+        Currently, the main feature is recording user activity into CSV files.
+        To use the plugin see the "Activity tracker" widget in the IDE status bar.<br/><br/>
 
         The main idea is to mine recorded data for interesting user or project-specific insights,
-        e.g. time spent in each part of project or editing/browsing ratio.
-        If you happen to use the plugin and find interesting way to analyze data, get in touch on
-        <a href="https://twitter.com/dmitrykandalov">twitter</a> or
+        e.g. time spent in each part of the project or editing/browsing ratio.
+        If you happen to use the plugin and find an interesting way to analyze data, get in touch on
+        <a href="https://mastodon.social/@dkandalov">Mastodon</a>,
+        <a href="https://twitter.com/dmitrykandalov">Twitter</a> or
         <a href="https://github.com/dkandalov/activity-tracker/issues">GitHub</a>.
         <br/><br/>
 
-        For more details see <a href="https://github.com/dkandalov/activity-tracker">project page on github</a>.
+        For more details see <a href="https://github.com/dkandalov/activity-tracker">the project page on GitHub</a>.
         ]]></description>
 
     <idea-version since-build="241.18034.62"/>
