@@ -1,8 +1,8 @@
 package activitytracker
 
-import activitytracker.liveplugin.whenDisposed
 import activitytracker.TrackerEvent.Companion.printEvent
 import activitytracker.TrackerEvent.Companion.toTrackerEvent
+import activitytracker.liveplugin.whenDisposed
 import com.intellij.concurrency.JobScheduler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
@@ -21,13 +21,13 @@ import kotlin.text.Charsets.UTF_8
 class TrackerLog(private val eventsFilePath: String) {
     private val log = Logger.getInstance(TrackerLog::class.java)
     private val eventQueue: Queue<TrackerEvent> = ConcurrentLinkedQueue()
+    private val eventsFile = File(eventsFilePath)
 
     fun initWriter(parentDisposable: Disposable, writeFrequencyMs: Long): TrackerLog {
         val runnable = {
             try {
-                val file = File(eventsFilePath)
-                FileUtil.createIfDoesntExist(file)
-                FileOutputStream(file, true).buffered().writer(UTF_8).use { writer ->
+                FileUtil.createIfDoesntExist(eventsFile)
+                FileOutputStream(eventsFile, true).buffered().writer(UTF_8).use { writer ->
                     val csvPrinter = CSVPrinter(writer, CSVFormat.RFC4180)
                     var event: TrackerEvent? = eventQueue.poll()
                     while (event != null) {
@@ -54,10 +54,10 @@ class TrackerLog(private val eventsFilePath: String) {
         eventQueue.add(event)
     }
 
-    fun clearLog(): Boolean = FileUtil.delete(File(eventsFilePath))
+    fun clearLog(): Boolean = FileUtil.delete(eventsFile)
 
     fun readEvents(onParseError: (String, Exception) -> Any): Sequence<TrackerEvent> {
-        val reader = File(eventsFilePath).bufferedReader(UTF_8)
+        val reader = eventsFile.bufferedReader(UTF_8)
         val parser = CSVParser(reader, CSVFormat.RFC4180)
         val sequence = parser.asSequence().map { csvRecord ->
             try {
@@ -76,14 +76,14 @@ class TrackerLog(private val eventsFilePath: String) {
 
     fun rollLog(now: Date = Date()): File {
         val postfix = SimpleDateFormat("_yyyy-MM-dd").format(now)
-        var rolledStatsFile = File(eventsFilePath + postfix)
+        var rolledStatsFile = File(eventsFile.path + postfix)
         var i = 1
         while (rolledStatsFile.exists()) {
-            rolledStatsFile = File(eventsFilePath + postfix + "_" + i)
+            rolledStatsFile = File(eventsFile.path + postfix + "_" + i)
             i++
         }
 
-        FileUtil.rename(File(eventsFilePath), rolledStatsFile)
+        FileUtil.rename(eventsFile, rolledStatsFile)
         return rolledStatsFile
     }
 
@@ -91,7 +91,7 @@ class TrackerLog(private val eventsFilePath: String) {
 
     fun isTooLargeToProcess(): Boolean {
         val `2gb` = 2_000_000_000L
-        return File(eventsFilePath).length() > `2gb`
+        return eventsFile.length() > `2gb`
     }
 }
 

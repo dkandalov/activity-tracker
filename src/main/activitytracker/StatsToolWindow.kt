@@ -42,11 +42,6 @@ object StatsToolWindow {
 
         val disposable = parentDisposable.createChild()
         val actionGroup = DefaultActionGroup().apply {
-            add(object : AnAction(Cancel) {
-                override fun actionPerformed(event: AnActionEvent) {
-                    Disposer.dispose(disposable)
-                }
-            })
             add(object : AnAction(Refresh) {
                 override fun actionPerformed(e: AnActionEvent) {
                     eventAnalyzer.analyze(whenDone = { result ->
@@ -66,6 +61,11 @@ object StatsToolWindow {
                             }
                         }
                     })
+                }
+            })
+            add(object : AnAction(Cancel) {
+                override fun actionPerformed(event: AnActionEvent) {
+                    Disposer.dispose(disposable)
                 }
             })
         }
@@ -161,8 +161,11 @@ object StatsToolWindow {
     }
 
     private fun registerToolWindowIn(
-        project: Project, toolWindowId: String, disposable: Disposable,
-        component: JComponent, location: ToolWindowAnchor = RIGHT
+        project: Project,
+        toolWindowId: String,
+        disposable: Disposable,
+        component: JComponent,
+        location: ToolWindowAnchor = RIGHT
     ): ToolWindow {
         disposable.whenDisposed {
             ToolWindowManager.getInstance(project).unregisterToolWindow(toolWindowId)
