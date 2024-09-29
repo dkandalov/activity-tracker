@@ -12,18 +12,24 @@ import com.intellij.openapi.application.PathManager
 class Main: AppLifecycleListener {
     override fun appFrameCreated(commandLineArgs: List<String>) {
         val application = ApplicationManager.getApplication()
-        val pathToTrackingLogFile = "${PathManager.getPluginsPath()}/activity-tracker/ide-events.csv"
-        val trackerLog = TrackerLog(pathToTrackingLogFile).initWriter(parentDisposable = application, writeFrequencyMs = 10000L)
-        val tracker = ActivityTracker(
-            CompilationTracker.instance,
-            PsiPathProvider.instance,
-            TaskNameProvider.instance,
+        val trackerLog = TrackerLog("${PathManager.getPluginsPath()}/activity-tracker/ide-events.csv")
+            .initWriter(parentDisposable = application, writeFrequencyMs = 10000L)
+        PluginUI(
+            Plugin(
+                ActivityTracker(
+                    CompilationTracker.instance,
+                    PsiPathProvider.instance,
+                    TaskNameProvider.instance,
+                    trackerLog,
+                    parentDisposable = application,
+                    logTrackerCallDuration = false
+                ),
+                trackerLog,
+                PropertiesComponent.getInstance()
+            ).init(),
             trackerLog,
-            parentDisposable = application,
-            logTrackerCallDuration = false
-        )
-        val plugin = Plugin(tracker, trackerLog, PropertiesComponent.getInstance()).init()
-        val eventAnalyzer = EventAnalyzer(trackerLog)
-        PluginUI(plugin, trackerLog, eventAnalyzer, parentDisposable = application).init()
+            EventAnalyzer(trackerLog),
+            parentDisposable = application
+        ).init()
     }
 }
