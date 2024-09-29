@@ -4,18 +4,10 @@ import activitytracker.Plugin
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
-import com.intellij.notification.NotificationType.ERROR
-import com.intellij.notification.NotificationType.IDE_UPDATE
-import com.intellij.notification.NotificationType.INFORMATION
-import com.intellij.notification.NotificationType.WARNING
+import com.intellij.notification.NotificationType.*
 import com.intellij.notification.Notifications
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.KeyboardShortcut
-import com.intellij.openapi.actionSystem.impl.AsyncDataContext
+import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.Logger
@@ -286,18 +278,6 @@ private object Unscramble {
         return if (len < line.length) line.substring(0, len) else line
     }
 }
-
-class MapDataContext(private val map: MutableMap<Any, Any?> = HashMap()) : AsyncDataContext {
-    override fun getData(dataId: String): Any? {
-        return map[dataId]
-    }
-
-    fun put(key: String, value: Any): MapDataContext {
-        map[key] = value
-        return this
-    }
-}
-
 
 fun updateWidget(widgetId: String) {
     WindowManager.getInstance().allProjectFrames.forEach {
