@@ -57,6 +57,8 @@ class TrackerLog(private val eventsFilePath: String) {
     fun clearLog(): Boolean = FileUtil.delete(eventsFile)
 
     fun readEvents(onParseError: (String, Exception) -> Any): Sequence<TrackerEvent> {
+        if (!eventsFile.exists()) return emptySequence()
+
         val reader = eventsFile.bufferedReader(UTF_8)
         val parser = CSVParser(reader, CSVFormat.RFC4180)
         val sequence = parser.asSequence().map { csvRecord ->
